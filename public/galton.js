@@ -21,7 +21,7 @@ export function drawGalton(canvas,round,elapsed=0,duration=8000,reduced=false){
  const left=30,width=540,cell=width/n;
  for(let row=0;row<n-1;row++)for(let j=0;j<=row;j++){
   if(n>65&&row%2)continue;
-  const x=300+(j-row/2)*cell,y=45+row*355/(n-1);
+  const x=300+(j-row/2)*Math.min(29,500/(row+1)),y=45+row*355/Math.max(1,n-1);
   c.fillStyle='#8193a6';c.beginPath();c.arc(x,y,2,0,Math.PI*2);c.fill();
  }
  const visible=Math.min(round.drops.length,Math.max(0,Math.floor(p*(round.drops.length+24)-24))),bins=Array(n).fill(0);
@@ -42,12 +42,19 @@ export function drawGalton(canvas,round,elapsed=0,duration=8000,reduced=false){
   for(let j=Math.max(0,Math.floor(launch)-23);j<Math.min(total,Math.ceil(launch));j++){
    const age=(launch-j)/24;
    if(age<0||age>=1)continue;
-   const d=round.drops[j],steps=d.turns.length;
-   const q=age*steps,row=Math.max(0,Math.min(steps-1,Math.floor(q))),part=q-row;
-   let right=0;for(let k=0;k<row;k++)right+=d.turns[k];
-   const x0=300+(right-row/2)*cell;
-   const x1=steps===0?300:300+(right+d.turns[row]-(row+1)/2)*cell;
-   const x=x0+(x1-x0)*part,y=45+age*355;
+   const d=round.drops[j],turns=d.turns;
+   // Enlarge the visible left/right steps: at 40 pockets a literal step
+   // is only 6.75px and all paths appear identical on a phone.
+   const stages=Math.min(14,turns.length);
+   const q=age*(stages+1),stage=Math.min(stages,Math.floor(q)),alpha=q-stage;
+   function point(t){
+    if(t===stages+1)return [left+(d.slot+.5)*cell,409];
+    let balance=0;
+    for(let h=0;h<t;h++)balance+=turns[h*2%turns.length]?1:-1;
+    return [Math.max(49,Math.min(551,300+balance*26)),45+t*345/(stages+1)];
+   }
+   const A=point(stage),B=point(Math.min(stages+1,stage+1));
+   const x=A[0]+(B[0]-A[0])*alpha,y=A[1]+(B[1]-A[1])*alpha;
    c.beginPath();c.arc(x,y,Math.max(1.5,Math.min(4,cell*.38)),0,Math.PI*2);
    c.fillStyle='#b9c9d6';c.fill();
   }
