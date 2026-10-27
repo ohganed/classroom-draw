@@ -25,3 +25,11 @@ test('deadline settles even after a background delay; no early settlement', () =
  assert.equal(frameAt(0,times).index,0);
  assert.equal(frameAt(500,times).done,false);
 });
+
+test('custom class sizes include endpoints and validate limits', () => {
+ for (const count of [1, 2, 30, 40, 99]) {
+  assert.equal(randomNumber(() => 0, count), 1);
+  assert.equal(randomNumber(() => count - 1, count), count);
+ }
+ for (const count of [0, -1, 100, 2.5, NaN]) assert.throws(() => randomNumber(() => 0, count), RangeError);
+});

@@ -1,9 +1,10 @@
-export function randomNumber(next = () => crypto.getRandomValues(new Uint32Array(1))[0]) {
+export function randomNumber(next = () => crypto.getRandomValues(new Uint32Array(1))[0], count = 40) {
+  if (!Number.isInteger(count) || count < 1 || count > 99) throw new RangeError("人数は1〜99人です");
   // Reject the incomplete bucket so every number has exactly the same probability.
-  const limit = Math.floor(2 ** 32 / 40) * 40;
+  const limit = Math.floor(2 ** 32 / count) * count;
   let value;
   do { value = next(); } while (value >= limit);
-  return value % 40 + 1;
+  return value % count + 1;
 }
 export function buildSchedule() {
   const times = [0];

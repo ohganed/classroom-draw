@@ -2,6 +2,25 @@ import { randomNumber, buildSchedule, frameAt } from './draw.js';
 const $ = id => document.getElementById(id);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 const schedule = buildSchedule();
+let count = 40;
+try { const saved = Number(localStorage.getItem('classroom-draw-count')); if (Number.isInteger(saved) && saved >= 1 && saved <= 99) count = saved; } catch {}
+function updateCount() {
+ $('count').value = count;
+ $('range').textContent = `1–${count}`;
+ $('caption').textContent = `1〜${count}番から、ひとりを選びます`;
+}
+updateCount();
+$('count').addEventListener('change', () => {
+ if (running) { $('count').value = count; return; }
+ const value = Number($('count').value);
+ if (!Number.isInteger(value) || value < 1 || value > 99) {
+  $('count').value = count; $('hint').textContent = '人数は1〜99の整数で入力してください'; return;
+ }
+ count = value; updateCount();
+ $('app').className = ''; $('number').textContent = '?'; $('status').textContent = '次の主役は、だれだろう。';
+ $('hint').textContent = 'タップすると、8秒で決まります'; $('announcement').textContent = `${count}人に設定しました。`;
+ try { localStorage.setItem('classroom-draw-count', String(count)); } catch {}
+});
 let sound = false, context, master, running = false, started = 0, lastIndex = -1, winner, raf;
 try { sound = localStorage.getItem('classroom-draw-sound') === 'on'; } catch {}
 function updateSound() { $('sound').textContent = `音 ${sound ? 'ON' : 'OFF'}`; $('sound').setAttribute('aria-pressed', String(sound)); }
@@ -22,10 +41,10 @@ function tone(frequency, delay = 0, duration = .045, type = 'sine') {
  osc.onended = () => { osc.disconnect(); gain.disconnect(); };
 }
 function finish(audible = true) {
- running = false; cancelAnimationFrame(raf);
+ running = false; $('count').disabled = false; cancelAnimationFrame(raf);
  $('number').textContent = winner; $('app').className = 'result'; $('status').textContent = 'あなたの番です！';
  $('caption').textContent = `${winner} 番`; $('start').disabled = false; $('start').innerHTML = 'もう一度ひく <span aria-hidden="true">↗</span>';
- $('hint').textContent = '毎回、1〜40番からランダムに選びます'; $('announcement').textContent = `${winner}番に決まりました。`;
+ $('hint').textContent = `毎回、1〜${count}番からランダムに選びます`; $('announcement').textContent = `${winner}番に決まりました。`;
  $('progress-fill').style.width = '100%';
  if (audible) { [523.25,659.25,783.99,1046.5].forEach((f,i)=>tone(f,i*.16,i===3?.7:.18,'triangle')); }
 }
@@ -37,7 +56,7 @@ function tick() {
  if (frame.index !== lastIndex) {
   lastIndex = frame.index;
   if (!reduced.matches) {
-   let next; do { next = randomNumber(); } while (String(next) === $('number').textContent);
+   let next; do { next = randomNumber(undefined, count); } while (count > 1 && String(next) === $('number').textContent);
    $('number').textContent = next;
    tone(660 + (next % 5)*70);
   }
@@ -49,7 +68,7 @@ $('start').addEventListener('click', () => {
  unlockAudio();
  // Silence any remaining fanfare before a new round.
  if (master) { master.gain.setValueAtTime(0,context.currentTime); const previous = master; master = context.createGain(); master.gain.value=.18; master.connect(context.destination); setTimeout(()=>previous.disconnect(),1200); }
- running = true; winner = randomNumber(); started = performance.now(); lastIndex = -1;
+ running = true; $('count').disabled = true; winner = randomNumber(undefined, count); started = performance.now(); lastIndex = -1;
  $('app').className = 'running'; $('start').disabled = true; $('start').textContent = '抽選中…'; $('status').textContent = 'だれの番かな…';
  $('caption').textContent = 'あと少し、お楽しみに'; $('hint').textContent = '8秒で番号が決まります'; $('announcement').textContent = '抽選中です。8秒で決まります。';
  if (reduced.matches) $('number').textContent = '…';
