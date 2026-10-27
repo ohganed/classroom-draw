@@ -15,13 +15,13 @@ export function drawPinball(canvas,count=40,elapsed=0,duration=8000,winner=null,
   g.beginPath();g.arc(x-5,y-6,9,0,Math.PI*2);g.fillStyle='#899bab';g.fill();
  }
  const columns=Math.min(20,count),rows=Math.ceil(count/columns);
- const left=40,right=560,slotW=(right-left)/columns,slotTop=403,slotH=rows===1?78:41;
+ const left=40,right=560,slotW=(right-left)/columns,slotTop=403,slotH=(490-slotTop)/rows;
  g.textAlign='center';g.textBaseline='middle';
  for(let i=0;i<count;i++){
   const row=Math.floor(i/columns),col=i%columns,x=left+col*slotW,y=slotTop+row*slotH;
   g.fillStyle='#344c63';g.fillRect(x+1,y+1,slotW-2,slotH-2);
   g.strokeStyle='#8093a6';g.lineWidth=1;g.strokeRect(x+1,y+1,slotW-2,slotH-2);
-  g.fillStyle='#dce5ed';g.font='bold '+(columns>16?'12':'15')+'px Arial';
+  g.fillStyle='#dce5ed';g.font='bold '+(rows>3?'9':columns>16?'12':'15')+'px Arial';
   g.fillText(String(i+1),x+slotW/2,y+slotH*.52);
  }
  // Piecewise quadratic path through bumpers: settles at the selected pocket.
