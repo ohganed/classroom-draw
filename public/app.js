@@ -78,7 +78,7 @@ function drawDie(time = 0, selected = null) {
 function syncMode(){raceWrap.hidden=mode!=='race';rouletteWrap.hidden=mode!=='roulette';dieWrap.hidden=mode!=='die';lotteryWrap.hidden=mode!=='lottery';$('number').hidden=mode!=='numbers'&&!$('app').classList.contains('result');if(mode==='die')drawDie(0,null);if(mode==='lottery')drawLottery(lotteryCanvas,0,duration,count,null,reduced.matches);if(mode==='roulette')drawRoulette(rouletteCanvas,count,0,null);if(mode==='race')drawBallRace(raceCanvas,count,0,duration,null,true);}
 $('mode').addEventListener('change',()=>{if(running){$('mode').value=mode;return;}mode=$('mode').value;try{localStorage.setItem('classroom-draw-mode',mode);}catch{} $('app').className='';$('number').textContent='?';syncMode();});
 syncMode();
-let sound = false, context, master, running = false, started = 0, lastIndex = -1, winner, raf;
+let sound = false, context, master, running = false, started = 0, lastIndex = -1, winner, raf, raceStory='comeback';
 try { sound = localStorage.getItem('classroom-draw-sound') === 'on'; } catch {}
 function updateSound() { $('sound').textContent = `音 ${sound ? 'ON' : 'OFF'}`; $('sound').setAttribute('aria-pressed', String(sound)); }
 function unlockAudio() {
@@ -99,7 +99,7 @@ function tone(frequency, delay = 0, duration = .045, type = 'sine') {
 }
 function finish(audible = true) {
  running = false; $('count').disabled = false; $('duration').disabled = false; $('mode').disabled = false; cancelAnimationFrame(raf);
- $('number').textContent = winner; $('app').className = 'result'; if(mode==='die'){drawDie(0,winner);dieWrap.hidden=false;$('number').hidden=false;} if(mode==='lottery'){drawLottery(lotteryCanvas,duration,duration,count,winner,true);lotteryWrap.hidden=false;$('number').hidden=false;}if(mode==='roulette'){drawRoulette(rouletteCanvas,count,rouletteAngle(duration,duration,winner,count,true),winner);rouletteWrap.hidden=false;$('number').hidden=false;} if(mode==='race'){drawBallRace(raceCanvas,count,duration,duration,winner,false);raceWrap.hidden=false;$('number').hidden=false;} $('status').textContent = 'あなたの番です！';
+ $('number').textContent = winner; $('app').className = 'result'; if(mode==='die'){drawDie(0,winner);dieWrap.hidden=false;$('number').hidden=false;} if(mode==='lottery'){drawLottery(lotteryCanvas,duration,duration,count,winner,true);lotteryWrap.hidden=false;$('number').hidden=false;}if(mode==='roulette'){drawRoulette(rouletteCanvas,count,rouletteAngle(duration,duration,winner,count,true),winner);rouletteWrap.hidden=false;$('number').hidden=false;} if(mode==='race'){drawBallRace(raceCanvas,count,duration,duration,winner,false,raceStory);raceWrap.hidden=false;$('number').hidden=false;} $('status').textContent = 'あなたの番です！';
  $('caption').textContent = `${winner} 番`; $('start').disabled = false; $('start').innerHTML = 'もう一度ひく <span aria-hidden="true">↗</span>';
  $('hint').textContent = `毎回、1〜${count}番からランダムに選びます`; $('announcement').textContent = `${winner}番に決まりました。`;
  $('progress-fill').style.width = '100%';
@@ -112,7 +112,7 @@ function tick() {
  if(mode==='die' && !reduced.matches){drawDie(elapsed,null);raf=requestAnimationFrame(tick);return;}
  if(mode==='lottery'){ if(!reduced.matches) drawLottery(lotteryCanvas,elapsed,duration,count,null,false);raf=requestAnimationFrame(tick);return;}
  if(mode==='roulette'){if(!reduced.matches)drawRoulette(rouletteCanvas,count,rouletteAngle(elapsed,duration,winner,count),null);raf=requestAnimationFrame(tick);return;}
- if(mode==='race'){if(!reduced.matches)drawBallRace(raceCanvas,count,elapsed,duration,winner,false);raf=requestAnimationFrame(tick);return;}
+ if(mode==='race'){if(!reduced.matches)drawBallRace(raceCanvas,count,elapsed,duration,winner,false,raceStory);raf=requestAnimationFrame(tick);return;}
  // Keep progress visually still.
  if (!reduced.matches && frame.index !== lastIndex && elapsed - (window.__lastVisualChange || 0) >= 300) {
   lastIndex = frame.index;
@@ -129,11 +129,11 @@ $('start').addEventListener('click', () => {
  unlockAudio();
  // Silence any remaining fanfare before a new round.
  if (master) { master.gain.setValueAtTime(0,context.currentTime); const previous = master; master = context.createGain(); master.gain.value=.18; master.connect(context.destination); setTimeout(()=>previous.disconnect(),1200); }
- running = true; $('count').disabled = true; $('duration').disabled = true; $('mode').disabled = true; winner = randomNumber(undefined, count); started = performance.now(); lastIndex = -1; window.__lastVisualChange = -300;
+ running = true; $('count').disabled = true; $('duration').disabled = true; $('mode').disabled = true; winner = randomNumber(undefined, count); raceStory=['front','close','comeback'][randomNumber(undefined,3)-1]; started = performance.now(); lastIndex = -1; window.__lastVisualChange = -300;
  $('app').className = 'running'; $('start').disabled = true; $('start').textContent = '抽選中…'; $('status').textContent = 'だれの番かな…';
  $('caption').textContent = 'あと少し、お楽しみに'; $('hint').textContent = `${duration / 1000}秒で番号が決まります`; $('announcement').textContent = `抽選中です。${duration / 1000}秒で決まります。`;
  $('number').textContent = '…'; if(mode==='die'){$('number').hidden=true;dieWrap.hidden=false;drawDie(0,null);}if(mode==='lottery'){$('number').hidden=true;lotteryWrap.hidden=false;drawLottery(lotteryCanvas,0,duration,count,null,reduced.matches);}if(mode==='roulette'){$('number').hidden=true;rouletteWrap.hidden=false;drawRoulette(rouletteCanvas,count,0,null);}
- if(mode==='race'){$('number').hidden=true;raceWrap.hidden=false;drawBallRace(raceCanvas,count,0,duration,winner,reduced.matches);}
+ if(mode==='race'){$('number').hidden=true;raceWrap.hidden=false;drawBallRace(raceCanvas,count,0,duration,winner,reduced.matches,raceStory);}
  tick();
 });
 $('sound').addEventListener('click', () => {
