@@ -1,5 +1,5 @@
 const PREFIX = `classroom-draw:${self.registration.scope}:`;
-const CACHE = PREFIX + 'v4';
+const CACHE = PREFIX + 'v5';
 const ASSETS = ['./','./index.html','./style.css','./app.js','./draw.js','./manifest.webmanifest','./icons/icon.svg','./icons/icon-192.png','./icons/icon-512.png','./icons/apple-touch-icon.png'];
 self.addEventListener('install', event => { event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS))); });
 // A new version takes over after existing app windows close, avoiding mixed versions.
