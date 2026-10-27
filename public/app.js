@@ -64,15 +64,8 @@ function tick() {
  if (!running) return;
  const elapsed = performance.now()-started, frame = frameAt(elapsed,schedule);
  if (frame.done) { finish(); return; }
- $('progress-fill').style.width = `${Math.min(100,elapsed / duration * 100)}%`;
- if (frame.index !== lastIndex) {
-  lastIndex = frame.index;
-  if (!reduced.matches) {
-   let next; do { next = randomNumber(undefined, count); } while (count > 1 && String(next) === $('number').textContent);
-   $('number').textContent = next;
-   tone(660 + (next % 5)*70);
-  }
- }
+ // Keep progress visually still.
+ // No rapid numbers or beeps while drawing.
  raf = requestAnimationFrame(tick);
 }
 $('start').addEventListener('click', () => {
@@ -83,7 +76,7 @@ $('start').addEventListener('click', () => {
  running = true; $('count').disabled = true; $('duration').disabled = true; winner = randomNumber(undefined, count); started = performance.now(); lastIndex = -1;
  $('app').className = 'running'; $('start').disabled = true; $('start').textContent = '抽選中…'; $('status').textContent = 'だれの番かな…';
  $('caption').textContent = 'あと少し、お楽しみに'; $('hint').textContent = `${duration / 1000}秒で番号が決まります`; $('announcement').textContent = `抽選中です。${duration / 1000}秒で決まります。`;
- if (reduced.matches) $('number').textContent = '…';
+ $('number').textContent = '…';
  tick();
 });
 $('sound').addEventListener('click', () => {
@@ -92,7 +85,7 @@ $('sound').addEventListener('click', () => {
  if (sound) unlockAudio();
  updateSound(); try { localStorage.setItem('classroom-draw-sound',sound?'on':'off'); } catch {}
 });
-reduced.addEventListener('change', () => { if (running && reduced.matches) $('number').textContent = '…'; });
+reduced.addEventListener('change', () => { if (running) $('number').textContent = '…'; });
 document.addEventListener('visibilitychange', () => {
  if (document.hidden) { if(master) master.gain.setValueAtTime(0,context.currentTime); cancelAnimationFrame(raf); }
  else if (running) { if (performance.now()-started>=duration) finish(false); else { if(master && sound) master.gain.setValueAtTime(.18,context.currentTime); tick(); } }
