@@ -65,7 +65,14 @@ function tick() {
  const elapsed = performance.now()-started, frame = frameAt(elapsed,schedule);
  if (frame.done) { finish(); return; }
  // Keep progress visually still.
- // No rapid numbers or beeps while drawing.
+ if (!reduced.matches && frame.index !== lastIndex && elapsed - (window.__lastVisualChange || 0) >= 300) {
+  lastIndex = frame.index;
+  window.__lastVisualChange = elapsed;
+  let next;
+  do { next = randomNumber(undefined, count); } while (count > 1 && String(next) === $('number').textContent);
+  $('number').textContent = next;
+  tone(660 + (next % 5) * 70);
+ }
  raf = requestAnimationFrame(tick);
 }
 $('start').addEventListener('click', () => {
@@ -73,7 +80,7 @@ $('start').addEventListener('click', () => {
  unlockAudio();
  // Silence any remaining fanfare before a new round.
  if (master) { master.gain.setValueAtTime(0,context.currentTime); const previous = master; master = context.createGain(); master.gain.value=.18; master.connect(context.destination); setTimeout(()=>previous.disconnect(),1200); }
- running = true; $('count').disabled = true; $('duration').disabled = true; winner = randomNumber(undefined, count); started = performance.now(); lastIndex = -1;
+ running = true; $('count').disabled = true; $('duration').disabled = true; winner = randomNumber(undefined, count); started = performance.now(); lastIndex = -1; window.__lastVisualChange = -300;
  $('app').className = 'running'; $('start').disabled = true; $('start').textContent = '抽選中…'; $('status').textContent = 'だれの番かな…';
  $('caption').textContent = 'あと少し、お楽しみに'; $('hint').textContent = `${duration / 1000}秒で番号が決まります`; $('announcement').textContent = `抽選中です。${duration / 1000}秒で決まります。`;
  $('number').textContent = '…';
