@@ -38,3 +38,10 @@ header{flex-wrap:wrap}.tools{flex-wrap:wrap;align-items:center}.count-label{disp
 #lottery-wrap[hidden]{display:none!important}
 #lottery{display:block;width:100%;height:100%}
 .result #lottery-wrap{width:min(42vw,29dvh,310px)}
+
+/* Low-stimulation roulette layout for portrait/landscape iOS screens. */
+#roulette-wrap{width:min(75vw,52dvh,475px);aspect-ratio:1;z-index:1;flex-shrink:1}
+#roulette-wrap[hidden]{display:none!important}
+#roulette{display:block;width:100%;height:100%}
+.result #roulette-wrap{width:min(42vw,29dvh,270px)}
+@media(max-width:600px){#roulette-wrap{width:min(88vw,43dvh,420px)}.result #roulette-wrap{width:min(54vw,26dvh,240px)}}
