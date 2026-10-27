@@ -1,7 +1,19 @@
 import { randomNumber, buildSchedule, frameAt } from './draw.js';
 const $ = id => document.getElementById(id);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
-const schedule = buildSchedule();
+let duration = 8000;
+try { const saved = Number(localStorage.getItem('classroom-draw-duration')); if ([3000, 5000, 8000].includes(saved)) duration = saved; } catch {}
+let schedule = buildSchedule(duration);
+$('duration').value = String(duration);
+$('hint').textContent = `タップすると、${duration / 1000}秒で決まります`;
+$('duration').addEventListener('change', () => {
+ if (running) { $('duration').value = String(duration); return; }
+ const next = Number($('duration').value);
+ if (![3000, 5000, 8000].includes(next)) return;
+ duration = next; schedule = buildSchedule(duration);
+ $('hint').textContent = `タップすると、${duration / 1000}秒で決まります`;
+ try { localStorage.setItem('classroom-draw-duration', String(duration)); } catch {}
+});
 let count = 40;
 try { const saved = Number(localStorage.getItem('classroom-draw-count')); if (Number.isInteger(saved) && saved >= 1 && saved <= 99) count = saved; } catch {}
 function updateCount() {
@@ -18,7 +30,7 @@ $('count').addEventListener('change', () => {
  }
  count = value; updateCount();
  $('app').className = ''; $('number').textContent = '?'; $('status').textContent = '次の主役は、だれだろう。';
- $('hint').textContent = 'タップすると、8秒で決まります'; $('announcement').textContent = `${count}人に設定しました。`;
+ $('hint').textContent = `タップすると、${duration / 1000}秒で決まります`; $('announcement').textContent = `${count}人に設定しました。`;
  try { localStorage.setItem('classroom-draw-count', String(count)); } catch {}
 });
 let sound = false, context, master, running = false, started = 0, lastIndex = -1, winner, raf;
@@ -41,7 +53,7 @@ function tone(frequency, delay = 0, duration = .045, type = 'sine') {
  osc.onended = () => { osc.disconnect(); gain.disconnect(); };
 }
 function finish(audible = true) {
- running = false; $('count').disabled = false; cancelAnimationFrame(raf);
+ running = false; $('count').disabled = false; $('duration').disabled = false; cancelAnimationFrame(raf);
  $('number').textContent = winner; $('app').className = 'result'; $('status').textContent = 'あなたの番です！';
  $('caption').textContent = `${winner} 番`; $('start').disabled = false; $('start').innerHTML = 'もう一度ひく <span aria-hidden="true">↗</span>';
  $('hint').textContent = `毎回、1〜${count}番からランダムに選びます`; $('announcement').textContent = `${winner}番に決まりました。`;
@@ -52,7 +64,7 @@ function tick() {
  if (!running) return;
  const elapsed = performance.now()-started, frame = frameAt(elapsed,schedule);
  if (frame.done) { finish(); return; }
- $('progress-fill').style.width = `${Math.min(100,elapsed/80)}%`;
+ $('progress-fill').style.width = `${Math.min(100,elapsed / duration * 100)}%`;
  if (frame.index !== lastIndex) {
   lastIndex = frame.index;
   if (!reduced.matches) {
@@ -68,9 +80,9 @@ $('start').addEventListener('click', () => {
  unlockAudio();
  // Silence any remaining fanfare before a new round.
  if (master) { master.gain.setValueAtTime(0,context.currentTime); const previous = master; master = context.createGain(); master.gain.value=.18; master.connect(context.destination); setTimeout(()=>previous.disconnect(),1200); }
- running = true; $('count').disabled = true; winner = randomNumber(undefined, count); started = performance.now(); lastIndex = -1;
+ running = true; $('count').disabled = true; $('duration').disabled = true; winner = randomNumber(undefined, count); started = performance.now(); lastIndex = -1;
  $('app').className = 'running'; $('start').disabled = true; $('start').textContent = '抽選中…'; $('status').textContent = 'だれの番かな…';
- $('caption').textContent = 'あと少し、お楽しみに'; $('hint').textContent = '8秒で番号が決まります'; $('announcement').textContent = '抽選中です。8秒で決まります。';
+ $('caption').textContent = 'あと少し、お楽しみに'; $('hint').textContent = `${duration / 1000}秒で番号が決まります`; $('announcement').textContent = `抽選中です。${duration / 1000}秒で決まります。`;
  if (reduced.matches) $('number').textContent = '…';
  tick();
 });
@@ -83,7 +95,7 @@ $('sound').addEventListener('click', () => {
 reduced.addEventListener('change', () => { if (running && reduced.matches) $('number').textContent = '…'; });
 document.addEventListener('visibilitychange', () => {
  if (document.hidden) { if(master) master.gain.setValueAtTime(0,context.currentTime); cancelAnimationFrame(raf); }
- else if (running) { if (performance.now()-started>=8000) finish(false); else { if(master && sound) master.gain.setValueAtTime(.18,context.currentTime); tick(); } }
+ else if (running) { if (performance.now()-started>=duration) finish(false); else { if(master && sound) master.gain.setValueAtTime(.18,context.currentTime); tick(); } }
 });
 if (document.documentElement.requestFullscreen && document.fullscreenEnabled) {
  $('fullscreen').hidden=false;

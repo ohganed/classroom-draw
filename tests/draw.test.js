@@ -33,3 +33,17 @@ test('custom class sizes include endpoints and validate limits', () => {
  }
  for (const count of [0, -1, 100, 2.5, NaN]) assert.throws(() => randomNumber(() => 0, count), RangeError);
 });
+
+test('3, 5 and 8 second draws slow down and settle at their own deadline', () => {
+ for (const duration of [3000, 5000, 8000]) {
+  const times = buildSchedule(duration);
+  assert.equal(times.at(-1), duration);
+  assert.equal(frameAt(duration - 1, times).done, false);
+  assert.equal(frameAt(duration, times).done, true);
+  assert.equal(frameAt(duration + 12000, times).done, true);
+  const gaps = times.slice(1, -1).map((time, i) => time - times[i]);
+  assert.ok(gaps.length > 10);
+  assert.ok(gaps.every((gap, i) => !i || gap >= gaps[i - 1]));
+ }
+ for (const duration of [0, 1000, NaN]) assert.throws(() => buildSchedule(duration), RangeError);
+});

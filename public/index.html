@@ -15,7 +15,7 @@
 </head>
 <body>
 <main id="app">
-<header><div class="brand"><span class="brand-mark" aria-hidden="true">✳</span><h1>だれの番？</h1><span id="range" class="range">1–40</span></div><div class="tools"><label class="count-label">人数 <input id="count" type="number" inputmode="numeric" min="1" max="99" step="1" value="40" aria-label="生徒の人数"> 人</label><button id="sound" aria-pressed="false">音 OFF</button><button id="fullscreen" hidden>全画面</button></div></header>
+<header><div class="brand"><span class="brand-mark" aria-hidden="true">✳</span><h1>だれの番？</h1><span id="range" class="range">1–40</span></div><div class="tools"><label class="count-label">人数 <input id="count" type="number" inputmode="numeric" min="1" max="99" step="1" value="40" aria-label="生徒の人数"> 人</label><label class="count-label">時間 <select id="duration" aria-label="抽選時間"><option value="3000">3秒</option><option value="5000">5秒</option><option value="8000" selected>8秒</option></select></label><button id="sound" aria-pressed="false">音 OFF</button><button id="fullscreen" hidden>全画面</button></div></header>
 <section class="stage" aria-label="抽選番号">
  <div class="halo" aria-hidden="true"></div>
  <p id="status">次の主役は、だれだろう。</p>
