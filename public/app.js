@@ -34,7 +34,7 @@ $('count').addEventListener('change', () => {
  if (!Number.isInteger(value) || value < 1 || value > 99) {
   $('count').value = count; $('hint').textContent = '人数は1〜99の整数で入力してください'; return;
  }
- count = value; updateCount();shuffleGalton();syncMode();
+ count = value; updateCount();shuffleGalton();galtonRound=makeGaltonRound(count,n=>randomNumber(undefined,n));syncMode();
  $('app').className = ''; $('number').textContent = '?'; $('status').textContent = '次の主役は、だれだろう。';
  $('hint').textContent = `タップすると、${duration / 1000}秒で決まります`; $('announcement').textContent = `${count}人に設定しました。`;
  try { localStorage.setItem('classroom-draw-count', String(count)); } catch {}
