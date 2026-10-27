@@ -15,3 +15,10 @@ header{flex-wrap:wrap}.tools{flex-wrap:wrap;align-items:center}.count-label{disp
 /* 確定時は点滅させず、明瞭な数字と静かな枠で強調する。 */
 .result:after{animation:none;border-color:#d9b86b;box-shadow:inset 0 0 18px #ffd57a12}
 .result .halo{animation:none;opacity:.45}
+
+/* Low-stimulation static draw and static result */
+.progress,.running .progress{display:none!important}
+.halo,.result .halo{display:none!important}
+.result:after{animation:none!important;box-shadow:none!important;border:2px solid #a38b56}
+#number,.running #number,.result #number{animation:none!important;transition:none!important;filter:none!important;text-shadow:none!important}
+.running #number{color:#9eabbc}
