@@ -49,7 +49,9 @@ function trajectory(count,winner,duration){
   }
  }
  // The ball settles in the assigned numbered pocket, not an arbitrary canvas location.
- frames[frames.length-1]=[goalX,goalY];
+ // Smooth final entry into the pocket across the last 8% of frames.
+ const from=Math.floor(frames.length*.92),anchor=frames[from];
+ for(let i=from;i<frames.length;i++){const u=(i-from)/(frames.length-1-from);const q=u*u*(3-2*u);frames[i]=[anchor[0]+(goalX-anchor[0])*q,anchor[1]+(goalY-anchor[1])*q];}
  const result={frames,goalX,goalY,columns,rows,sw,sh};
  cache.set(key,result);if(cache.size>8)cache.delete(cache.keys().next().value);
  return result;
