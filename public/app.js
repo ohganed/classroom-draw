@@ -4,7 +4,7 @@ import { drawRoulette, rouletteAngle } from './roulette.js';
 import { drawBallRace } from './ball-race.js';
 import { drawHorseRace } from './horse-race.js';
 import { drawPinball } from './pinball.js';
-import { drawGalton } from './galton.js';
+import { drawGalton, makeGaltonRound } from './galton.js';
 const $ = id => document.getElementById(id);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 let duration = 8000;
@@ -43,7 +43,7 @@ let mode = 'numbers';
 try { if (['die','lottery','roulette','race','horse','pinball','galton'].includes(localStorage.getItem('classroom-draw-mode'))) mode = localStorage.getItem('classroom-draw-mode'); } catch {}
 $('mode').value = mode;
 const galtonWrap=$('galton-wrap'),galtonCanvas=$('galton');
-let galtonLabels=[];
+let galtonLabels=[];let galtonRound=null;
 function shuffleGalton(){galtonLabels=Array.from({length:count},(_,i)=>i+1);for(let i=count-1;i>0;i--){const j=randomNumber(undefined,i+1)-1;const v=galtonLabels[i];galtonLabels[i]=galtonLabels[j];galtonLabels[j]=v;}}
 shuffleGalton();
 const pinballWrap=$('pinball-wrap'),pinballCanvas=$('pinball');
@@ -141,7 +141,7 @@ $('start').addEventListener('click', () => {
  unlockAudio();
  // Silence any remaining fanfare before a new round.
  if (master) { master.gain.setValueAtTime(0,context.currentTime); const previous = master; master = context.createGain(); master.gain.value=.18; master.connect(context.destination); setTimeout(()=>previous.disconnect(),1200); }
- running = true; $('count').disabled = true; $('duration').disabled = true; $('mode').disabled = true; winner = randomNumber(undefined, count); shuffleGalton(); raceStory=['front','close','comeback'][randomNumber(undefined,3)-1]; started = performance.now(); lastIndex = -1; window.__lastVisualChange = -300;
+ running = true; $('count').disabled = true; $('duration').disabled = true; $('mode').disabled = true; winner = randomNumber(undefined, count); shuffleGalton(); galtonRound=makeGaltonRound(count,n=>randomNumber(undefined,n)); if(mode==='galton')winner=galtonRound.winner; raceStory=['front','close','comeback'][randomNumber(undefined,3)-1]; started = performance.now(); lastIndex = -1; window.__lastVisualChange = -300;
  $('app').className = 'running'; $('start').disabled = true; $('start').textContent = '抽選中…'; $('status').textContent = 'だれの番かな…';
  $('caption').textContent = 'あと少し、お楽しみに'; $('hint').textContent = `${duration / 1000}秒で番号が決まります`; $('announcement').textContent = `抽選中です。${duration / 1000}秒で決まります。`;
  $('number').textContent = '…'; if(mode==='die'){$('number').hidden=true;dieWrap.hidden=false;drawDie(0,null);}if(mode==='lottery'){$('number').hidden=true;lotteryWrap.hidden=false;drawLottery(lotteryCanvas,0,duration,count,null,reduced.matches);}if(mode==='roulette'){$('number').hidden=true;rouletteWrap.hidden=false;drawRoulette(rouletteCanvas,count,0,null);}
