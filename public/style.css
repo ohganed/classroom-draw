@@ -33,3 +33,8 @@ header{flex-wrap:wrap}.tools{flex-wrap:wrap;align-items:center}.count-label{disp
 .result #number{font-size:min(36vw,37dvh);color:#ffd57a}
 #mode{font:inherit;min-height:48px;background:#101c30;color:#fff9ec;border:1px solid #536078;border-radius:12px;padding:6px}
 @media(prefers-reduced-motion:reduce){#die-wrap{animation:none!important}}
+
+#lottery-wrap{width:min(68vw,51dvh,500px);aspect-ratio:520/450;z-index:1;flex-shrink:1}
+#lottery-wrap[hidden]{display:none!important}
+#lottery{display:block;width:100%;height:100%}
+.result #lottery-wrap{width:min(42vw,29dvh,310px)}
