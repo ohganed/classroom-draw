@@ -33,6 +33,45 @@ $('count').addEventListener('change', () => {
  $('hint').textContent = `タップすると、${duration / 1000}秒で決まります`; $('announcement').textContent = `${count}人に設定しました。`;
  try { localStorage.setItem('classroom-draw-count', String(count)); } catch {}
 });
+let mode = 'numbers';
+try { if (localStorage.getItem('classroom-draw-mode') === 'die') mode = 'die'; } catch {}
+$('mode').value = mode;
+const dieWrap = $('die-wrap'), die = $('die'), dc = die.getContext('2d');
+// 40 facets in five belts of eight; a deliberately stylized, not precision, d40.
+function drawDie(time = 0, selected = null) {
+ const w=480, cx=240, cy=240, rad=162;
+ dc.clearRect(0,0,w,w);
+ const tilt = selected === null ? Math.sin(time*.0014)*.18 : 0;
+ const yaw = selected === null ? time*.0012 : 0;
+ const bounce = selected === null ? Math.abs(Math.sin(time*.008))*30*Math.pow(Math.max(0,1-time/duration),.75) : 0;
+ dc.save(); dc.translate(0,-bounce);
+ const faces=[];
+ for(let band=0;band<5;band++) for(let seg=0;seg<8;seg++) {
+  const lat1=-Math.PI/2+band*Math.PI/5,lat2=lat1+Math.PI/5;
+  const a1=seg*Math.PI/4+yaw+(band%2)*Math.PI/8;
+  const a2=a1+Math.PI/4;
+  const project=(lat,a)=>{const x=Math.cos(lat)*Math.cos(a),y=Math.sin(lat),z=Math.cos(lat)*Math.sin(a);return {x:cx+rad*(x*Math.cos(tilt)-y*Math.sin(tilt)),y:cy+rad*(x*Math.sin(tilt)+y*Math.cos(tilt)),z};};
+  const verts=[project(lat1,a1),project(lat1,a2),project(lat2,a2),project(lat2,a1)];
+  const depth=verts.reduce((n,p)=>n+p.z,0)/4;
+  faces.push({verts,depth,number:band*8+seg+1});
+ }
+ faces.sort((a,b)=>a.depth-b.depth);
+ for(const face of faces){if(face.depth<-.06)continue;
+  dc.beginPath();face.verts.forEach((p,i)=>i?dc.lineTo(p.x,p.y):dc.moveTo(p.x,p.y));dc.closePath();
+  dc.fillStyle=selected===null?'#465a73':'#5a7190';dc.fill();dc.strokeStyle='#94a5b9';dc.lineWidth=2;dc.stroke();
+  const x=face.verts.reduce((n,p)=>n+p.x,0)/4,y=face.verts.reduce((n,p)=>n+p.y,0)/4;
+  dc.fillStyle='#e0e7ee';dc.font='bold 19px Arial';dc.textAlign='center';dc.textBaseline='middle';dc.fillText(face.number,x,y);
+ }
+ if(selected!==null){
+  // Winner is the top-facing numbered facet; graphical highlight is symbolic.
+  dc.beginPath();dc.ellipse(cx,cy-97,66,37,0,0,Math.PI*2);dc.fillStyle='#e6c27c';dc.fill();dc.strokeStyle='#fff1c5';dc.lineWidth=3;dc.stroke();
+  dc.fillStyle='#18283c';dc.font='900 35px Arial';dc.fillText(selected,cx,cy-97);
+ }
+ dc.restore();
+}
+function syncMode(){dieWrap.hidden=mode!=='die';$('number').hidden=mode==='die'&&!$('app').classList.contains('result');if(mode==='die')drawDie(0,null);}
+$('mode').addEventListener('change',()=>{if(running){$('mode').value=mode;return;}mode=$('mode').value;try{localStorage.setItem('classroom-draw-mode',mode);}catch{} $('app').className='';$('number').textContent='?';syncMode();});
+syncMode();
 let sound = false, context, master, running = false, started = 0, lastIndex = -1, winner, raf;
 try { sound = localStorage.getItem('classroom-draw-sound') === 'on'; } catch {}
 function updateSound() { $('sound').textContent = `音 ${sound ? 'ON' : 'OFF'}`; $('sound').setAttribute('aria-pressed', String(sound)); }
@@ -53,8 +92,8 @@ function tone(frequency, delay = 0, duration = .045, type = 'sine') {
  osc.onended = () => { osc.disconnect(); gain.disconnect(); };
 }
 function finish(audible = true) {
- running = false; $('count').disabled = false; $('duration').disabled = false; cancelAnimationFrame(raf);
- $('number').textContent = winner; $('app').className = 'result'; $('status').textContent = 'あなたの番です！';
+ running = false; $('count').disabled = false; $('duration').disabled = false; $('mode').disabled = false; cancelAnimationFrame(raf);
+ $('number').textContent = winner; $('app').className = 'result'; if(mode==='die'){drawDie(0,winner);dieWrap.hidden=false;$('number').hidden=false;}  $('status').textContent = 'あなたの番です！';
  $('caption').textContent = `${winner} 番`; $('start').disabled = false; $('start').innerHTML = 'もう一度ひく <span aria-hidden="true">↗</span>';
  $('hint').textContent = `毎回、1〜${count}番からランダムに選びます`; $('announcement').textContent = `${winner}番に決まりました。`;
  $('progress-fill').style.width = '100%';
@@ -64,6 +103,7 @@ function tick() {
  if (!running) return;
  const elapsed = performance.now()-started, frame = frameAt(elapsed,schedule);
  if (frame.done) { finish(); return; }
+ if(mode==='die' && !reduced.matches){drawDie(elapsed,null);raf=requestAnimationFrame(tick);return;}
  // Keep progress visually still.
  if (!reduced.matches && frame.index !== lastIndex && elapsed - (window.__lastVisualChange || 0) >= 300) {
   lastIndex = frame.index;
@@ -80,10 +120,10 @@ $('start').addEventListener('click', () => {
  unlockAudio();
  // Silence any remaining fanfare before a new round.
  if (master) { master.gain.setValueAtTime(0,context.currentTime); const previous = master; master = context.createGain(); master.gain.value=.18; master.connect(context.destination); setTimeout(()=>previous.disconnect(),1200); }
- running = true; $('count').disabled = true; $('duration').disabled = true; winner = randomNumber(undefined, count); started = performance.now(); lastIndex = -1; window.__lastVisualChange = -300;
+ running = true; $('count').disabled = true; $('duration').disabled = true; $('mode').disabled = true; winner = randomNumber(undefined, count); started = performance.now(); lastIndex = -1; window.__lastVisualChange = -300;
  $('app').className = 'running'; $('start').disabled = true; $('start').textContent = '抽選中…'; $('status').textContent = 'だれの番かな…';
  $('caption').textContent = 'あと少し、お楽しみに'; $('hint').textContent = `${duration / 1000}秒で番号が決まります`; $('announcement').textContent = `抽選中です。${duration / 1000}秒で決まります。`;
- $('number').textContent = '…';
+ $('number').textContent = '…'; if(mode==='die'){$('number').hidden=true;dieWrap.hidden=false;drawDie(0,null);}
  tick();
 });
 $('sound').addEventListener('click', () => {
@@ -92,7 +132,7 @@ $('sound').addEventListener('click', () => {
  if (sound) unlockAudio();
  updateSound(); try { localStorage.setItem('classroom-draw-sound',sound?'on':'off'); } catch {}
 });
-reduced.addEventListener('change', () => { if (running) $('number').textContent = '…'; });
+reduced.addEventListener('change', () => { if (running) { $('number').textContent = '…'; if(mode==='die') drawDie(0,null); } });
 document.addEventListener('visibilitychange', () => {
  if (document.hidden) { if(master) master.gain.setValueAtTime(0,context.currentTime); cancelAnimationFrame(raf); }
  else if (running) { if (performance.now()-started>=duration) finish(false); else { if(master && sound) master.gain.setValueAtTime(.18,context.currentTime); tick(); } }
