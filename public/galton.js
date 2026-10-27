@@ -24,7 +24,7 @@ export function drawGalton(canvas,round,elapsed=0,duration=8000,reduced=false){
   const x=300+(j-row/2)*cell,y=45+row*355/(n-1);
   c.fillStyle='#8193a6';c.beginPath();c.arc(x,y,2,0,Math.PI*2);c.fill();
  }
- const visible=Math.floor(round.drops.length*Math.max(0,(p-.1)/.9)),bins=Array(n).fill(0);
+ const visible=Math.min(round.drops.length,Math.max(0,Math.floor(p*(round.drops.length+24)-24))),bins=Array(n).fill(0);
  for(let b=0;b<visible;b++)bins[round.drops[b].slot]++;
  const max=Math.max(1,...round.counts);
  for(let i=0;i<n;i++){
@@ -43,10 +43,10 @@ export function drawGalton(canvas,round,elapsed=0,duration=8000,reduced=false){
    const age=(launch-j)/24;
    if(age<0||age>=1)continue;
    const d=round.drops[j],steps=d.turns.length;
-   const q=age*steps,row=Math.min(steps-1,Math.floor(q)),part=q-row;
+   const q=age*steps,row=Math.max(0,Math.min(steps-1,Math.floor(q))),part=q-row;
    let right=0;for(let k=0;k<row;k++)right+=d.turns[k];
    const x0=300+(right-row/2)*cell;
-   const x1=300+(right+d.turns[row]-(row+1)/2)*cell;
+   const x1=steps===0?300:300+(right+d.turns[row]-(row+1)/2)*cell;
    const x=x0+(x1-x0)*part,y=45+age*355;
    c.beginPath();c.arc(x,y,Math.max(1.5,Math.min(4,cell*.38)),0,Math.PI*2);
    c.fillStyle='#b9c9d6';c.fill();
