@@ -124,7 +124,7 @@ function tick() {
  if(mode==='race'){if(!reduced.matches)drawBallRace(raceCanvas,count,elapsed,duration,winner,false,raceStory);raf=requestAnimationFrame(tick);return;}
  if(mode==='horse'){if(!reduced.matches)drawHorseRace(horseCanvas,count,elapsed,duration,winner,false,raceStory);raf=requestAnimationFrame(tick);return;}
  if(mode==='pinball'){if(!reduced.matches)drawPinball(pinballCanvas,count,elapsed,duration,winner,false);raf=requestAnimationFrame(tick);return;}
- if(mode==='galton'){if(!reduced.matches)drawGalton(galtonCanvas,galtonLabels,elapsed,duration,winner,false);raf=requestAnimationFrame(tick);return;}
+ if(mode==='galton'){if(!reduced.matches)drawGalton(galtonCanvas,galtonRound,elapsed,duration,false);raf=requestAnimationFrame(tick);return;}
  // Keep progress visually still.
  if (!reduced.matches && frame.index !== lastIndex && elapsed - (window.__lastVisualChange || 0) >= 300) {
   lastIndex = frame.index;
