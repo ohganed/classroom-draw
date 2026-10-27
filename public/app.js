@@ -42,6 +42,8 @@ $('count').addEventListener('change', () => {
 let mode = 'numbers';
 try { if (['die','lottery','roulette','race','horse','pinball','galton'].includes(localStorage.getItem('classroom-draw-mode'))) mode = localStorage.getItem('classroom-draw-mode'); } catch {}
 $('mode').value = mode;
+const galtonWrap=$('galton-wrap'),galtonCanvas=$('galton');
+let galtonLabels=[];
 const pinballWrap=$('pinball-wrap'),pinballCanvas=$('pinball');
 const horseWrap=$('horse-wrap'), horseCanvas=$('horse');
 const raceWrap=$('race-wrap'), raceCanvas=$('race');
