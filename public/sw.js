@@ -1,6 +1,6 @@
 const PREFIX = `classroom-draw:${self.registration.scope}:`;
-const CACHE = PREFIX + 'v9';
-const ASSETS = ['./','./index.html','./style.css','./app.js','./draw.js','./lottery.js','./roulette.js','./manifest.webmanifest','./icons/icon.svg','./icons/icon-192.png','./icons/icon-512.png','./icons/apple-touch-icon.png'];
+const CACHE = PREFIX + 'v10';
+const ASSETS = ['./','./index.html','./style.css','./app.js','./draw.js','./lottery.js','./roulette.js','./ball-race.js','./manifest.webmanifest','./icons/icon.svg','./icons/icon-192.png','./icons/icon-512.png','./icons/apple-touch-icon.png'];
 self.addEventListener('install', event => { event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS))); });
 // A new version takes over after existing app windows close, avoiding mixed versions.
 self.addEventListener('activate', event => { event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith(PREFIX) && key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())); });
