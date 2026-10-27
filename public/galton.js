@@ -1,44 +1,45 @@
-// Galton board visualizer. Selection is performed separately and uniformly.
-// The randomized permutation is fixed for each round (not reshuffled per frame).
-const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t)};
-export function drawGalton(canvas,labels,elapsed=0,duration=8000,winner=null,reduced=false){
+// Galton board: genuine binomial counts, independently shuffled number labels.
+export function makeGaltonRound(count,randomInt){
+ const labels=Array.from({length:count},(_,i)=>i+1);
+ for(let i=count-1;i>0;i--){let j=randomInt(i+1)-1;let t=labels[i];labels[i]=labels[j];labels[j]=t;}
+ const drops=[],counts=Array(count).fill(0);
+ for(let b=0;b<600;b++){
+  let slot=0;
+  for(let k=0;k<count-1;k++)slot+=randomInt(2)-1;
+  drops.push(slot);counts[slot]++;
+ }
+ const max=Math.max(...counts);
+ const ties=[];counts.forEach((v,i)=>{if(v===max)ties.push(i)});
+ const slot=ties[randomInt(ties.length)-1];
+ return {labels,drops,counts,slot,winner:labels[slot]};
+}
+export function drawGalton(canvas,round,elapsed=0,duration=8000,reduced=false){
+ if(!round)return;
  const c=canvas.getContext('2d');if(!c)return;
- const W=600,H=530,n=labels.length,p=Math.max(0,Math.min(1,elapsed/duration));
- c.clearRect(0,0,W,H);
- c.fillStyle='#16283d';c.fillRect(20,12,560,505);
- c.strokeStyle='#71849a';c.lineWidth=4;c.strokeRect(20,12,560,505);
- const left=30,right=570,cell=(right-left)/n,slotsY=454;
- // Fixed peg lattice, muted colors without flashing.
- for(let row=0;row<9;row++){
-  const y=82+row*39;
-  for(let j=0;j<=row+2;j++){
-   const x=300+(j-(row+2)/2)*Math.min(49,470/(row+2));
-   c.beginPath();c.arc(x,y,5,0,Math.PI*2);c.fillStyle='#8a9cb0';c.fill();
+ const n=round.labels.length,p=Math.min(1,elapsed/duration);
+ c.clearRect(0,0,600,530);c.fillStyle='#182a3f';c.fillRect(20,12,560,506);
+ const left=30,width=540,cell=width/n;
+ for(let row=0;row<18;row++)for(let j=0;j<=row+2;j++){
+  const x=300+(j-(row+2)/2)*Math.min(24,500/(row+2)),y=50+row*21;
+  c.fillStyle='#8193a6';c.beginPath();c.arc(x,y,2,0,Math.PI*2);c.fill();
+ }
+ const visible=Math.floor(round.drops.length*Math.max(0,(p-.1)/.9)),bins=Array(n).fill(0);
+ for(let b=0;b<visible;b++)bins[round.drops[b]]++;
+ const max=Math.max(1,...round.counts);
+ for(let i=0;i<n;i++){
+  const x=left+i*cell,h=80*bins[i]/max;
+  c.fillStyle='#344c62';c.fillRect(x+.3,411,Math.max(.3,cell-.6),95);
+  c.fillStyle=p>=1&&i===round.slot?'#d3bb7f':'#8da0b1';
+  c.fillRect(x+.4,489-h,Math.max(.3,cell-.8),h);
+  c.fillStyle='#ecf0f3';c.textAlign='center';c.font='bold '+(n>50?8:11)+'px Arial';
+  c.fillText(String(round.labels[i]),x+cell/2,501);
+ }
+ if(!reduced&&p<1){
+  for(let j=0;j<8;j++){
+   const u=((p*600-j)/18)%1;if(u<0)continue;
+   const x=300+Math.sin((p*600-j)*1.73)*u*155,y=45+u*352;
+   c.beginPath();c.arc(x,y,4,0,Math.PI*2);c.fillStyle='#b9c9d6';c.fill();
   }
  }
- for(let i=0;i<n;i++){
-  const x=left+i*cell;
-  c.fillStyle=i%2?'#354b61':'#40576d';
-  c.fillRect(x+0.5,slotsY,Math.max(0,cell-1),54);
-  c.strokeStyle='#8296aa';c.lineWidth=.7;c.strokeRect(x+.5,slotsY,Math.max(0,cell-1),54);
-  c.save();c.translate(x+cell/2,slotsY+27);
-  if(n>55)c.rotate(-Math.PI/2);
-  c.fillStyle='#e0e8ed';c.font='bold '+(n>65?'9':n>40?'10':'12')+'px Arial';
-  c.textAlign='center';c.textBaseline='middle';c.fillText(String(labels[i]),0,0);c.restore();
- }
- const pos=winner===null?Math.floor(n/2):labels.indexOf(winner);
- const goalX=left+(Math.max(0,pos)+.5)*cell;
- let x=300,y=39;
- if(!reduced){
-  const t=smooth(p);
-  const anchors=[[300,39],[275,97],[326,145],[261,189],[344,242],[287,296],[320,350],[goalX,424],[goalX,slotsY+15]];
-  const z=t*(anchors.length-1),k=Math.min(anchors.length-2,Math.floor(z)),a=smooth(z-k);
-  x=anchors[k][0]+(anchors[k+1][0]-anchors[k][0])*a;
-  y=anchors[k][1]+(anchors[k+1][1]-anchors[k][1])*a;
- }
- if(p>=1){x=goalX;y=slotsY+15;}
- const shade=c.createRadialGradient(x-5,y-5,1,x,y,15);
- shade.addColorStop(0,'#d9e1e7');shade.addColorStop(1,'#6a8094');
- c.beginPath();c.arc(x,y,13,0,Math.PI*2);c.fillStyle=shade;c.fill();
- if(p>=1&&winner!==null){c.textAlign='center';c.fillStyle='#e3c888';c.font='bold 20px Arial';c.fillText(String(winner)+' 番',300,27);}
+ if(p>=1){c.fillStyle='#e3c887';c.font='bold 20px Arial';c.textAlign='center';c.fillText(round.winner+' 番 / '+round.counts[round.slot]+' 個',300,33);}
 }
