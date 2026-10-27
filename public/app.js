@@ -3,6 +3,7 @@ import { drawLottery } from './lottery.js';
 import { drawRoulette, rouletteAngle } from './roulette.js';
 import { drawBallRace } from './ball-race.js';
 import { drawHorseRace } from './horse-race.js';
+import { drawPinball } from './pinball.js';
 const $ = id => document.getElementById(id);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 let duration = 8000;
@@ -38,8 +39,9 @@ $('count').addEventListener('change', () => {
  try { localStorage.setItem('classroom-draw-count', String(count)); } catch {}
 });
 let mode = 'numbers';
-try { if (['die','lottery','roulette','race','horse'].includes(localStorage.getItem('classroom-draw-mode'))) mode = localStorage.getItem('classroom-draw-mode'); } catch {}
+try { if (['die','lottery','roulette','race','horse','pinball'].includes(localStorage.getItem('classroom-draw-mode'))) mode = localStorage.getItem('classroom-draw-mode'); } catch {}
 $('mode').value = mode;
+const pinballWrap=$('pinball-wrap'),pinballCanvas=$('pinball');
 const horseWrap=$('horse-wrap'), horseCanvas=$('horse');
 const raceWrap=$('race-wrap'), raceCanvas=$('race');
 const rouletteWrap=$('roulette-wrap'), rouletteCanvas=$('roulette');
@@ -77,7 +79,7 @@ function drawDie(time = 0, selected = null) {
  }
  dc.restore();
 }
-function syncMode(){horseWrap.hidden=mode!=='horse';raceWrap.hidden=mode!=='race';rouletteWrap.hidden=mode!=='roulette';dieWrap.hidden=mode!=='die';lotteryWrap.hidden=mode!=='lottery';$('number').hidden=mode!=='numbers'&&!$('app').classList.contains('result');if(mode==='die')drawDie(0,null);if(mode==='lottery')drawLottery(lotteryCanvas,0,duration,count,null,reduced.matches);if(mode==='roulette')drawRoulette(rouletteCanvas,count,0,null);if(mode==='race')drawBallRace(raceCanvas,count,0,duration,null,true);if(mode==='horse')drawHorseRace(horseCanvas,count,0,duration,null,true);}
+function syncMode(){pinballWrap.hidden=mode!=='pinball';horseWrap.hidden=mode!=='horse';raceWrap.hidden=mode!=='race';rouletteWrap.hidden=mode!=='roulette';dieWrap.hidden=mode!=='die';lotteryWrap.hidden=mode!=='lottery';$('number').hidden=mode!=='numbers'&&!$('app').classList.contains('result');if(mode==='die')drawDie(0,null);if(mode==='lottery')drawLottery(lotteryCanvas,0,duration,count,null,reduced.matches);if(mode==='roulette')drawRoulette(rouletteCanvas,count,0,null);if(mode==='race')drawBallRace(raceCanvas,count,0,duration,null,true);if(mode==='horse')drawHorseRace(horseCanvas,count,0,duration,null,true);if(mode==='pinball')drawPinball(pinballCanvas,count,0,duration,null,true);}
 $('mode').addEventListener('change',()=>{if(running){$('mode').value=mode;return;}mode=$('mode').value;try{localStorage.setItem('classroom-draw-mode',mode);}catch{} $('app').className='';$('number').textContent='?';syncMode();});
 syncMode();
 let sound = false, context, master, running = false, started = 0, lastIndex = -1, winner, raf, raceStory='comeback';
@@ -101,7 +103,7 @@ function tone(frequency, delay = 0, duration = .045, type = 'sine') {
 }
 function finish(audible = true) {
  running = false; $('count').disabled = false; $('duration').disabled = false; $('mode').disabled = false; cancelAnimationFrame(raf);
- $('number').textContent = winner; $('app').className = 'result'; if(mode==='die'){drawDie(0,winner);dieWrap.hidden=false;$('number').hidden=false;} if(mode==='lottery'){drawLottery(lotteryCanvas,duration,duration,count,winner,true);lotteryWrap.hidden=false;$('number').hidden=false;}if(mode==='roulette'){drawRoulette(rouletteCanvas,count,rouletteAngle(duration,duration,winner,count,true),winner);rouletteWrap.hidden=false;$('number').hidden=false;} if(mode==='race'){drawBallRace(raceCanvas,count,duration,duration,winner,false,raceStory);raceWrap.hidden=false;$('number').hidden=false;} if(mode==='horse'){drawHorseRace(horseCanvas,count,duration,duration,winner,false,raceStory);horseWrap.hidden=false;$('number').hidden=false;} $('status').textContent = 'あなたの番です！';
+ $('number').textContent = winner; $('app').className = 'result'; if(mode==='die'){drawDie(0,winner);dieWrap.hidden=false;$('number').hidden=false;} if(mode==='lottery'){drawLottery(lotteryCanvas,duration,duration,count,winner,true);lotteryWrap.hidden=false;$('number').hidden=false;}if(mode==='roulette'){drawRoulette(rouletteCanvas,count,rouletteAngle(duration,duration,winner,count,true),winner);rouletteWrap.hidden=false;$('number').hidden=false;} if(mode==='race'){drawBallRace(raceCanvas,count,duration,duration,winner,false,raceStory);raceWrap.hidden=false;$('number').hidden=false;} if(mode==='horse'){drawHorseRace(horseCanvas,count,duration,duration,winner,false,raceStory);horseWrap.hidden=false;$('number').hidden=false;} if(mode==='pinball'){drawPinball(pinballCanvas,count,duration,duration,winner,false);pinballWrap.hidden=false;$('number').hidden=false;} $('status').textContent = 'あなたの番です！';
  $('caption').textContent = `${winner} 番`; $('start').disabled = false; $('start').innerHTML = 'もう一度ひく <span aria-hidden="true">↗</span>';
  $('hint').textContent = `毎回、1〜${count}番からランダムに選びます`; $('announcement').textContent = `${winner}番に決まりました。`;
  $('progress-fill').style.width = '100%';
@@ -116,6 +118,7 @@ function tick() {
  if(mode==='roulette'){if(!reduced.matches)drawRoulette(rouletteCanvas,count,rouletteAngle(elapsed,duration,winner,count),null);raf=requestAnimationFrame(tick);return;}
  if(mode==='race'){if(!reduced.matches)drawBallRace(raceCanvas,count,elapsed,duration,winner,false,raceStory);raf=requestAnimationFrame(tick);return;}
  if(mode==='horse'){if(!reduced.matches)drawHorseRace(horseCanvas,count,elapsed,duration,winner,false,raceStory);raf=requestAnimationFrame(tick);return;}
+ if(mode==='pinball'){if(!reduced.matches)drawPinball(pinballCanvas,count,elapsed,duration,winner,false);raf=requestAnimationFrame(tick);return;}
  // Keep progress visually still.
  if (!reduced.matches && frame.index !== lastIndex && elapsed - (window.__lastVisualChange || 0) >= 300) {
   lastIndex = frame.index;
@@ -138,6 +141,7 @@ $('start').addEventListener('click', () => {
  $('number').textContent = '…'; if(mode==='die'){$('number').hidden=true;dieWrap.hidden=false;drawDie(0,null);}if(mode==='lottery'){$('number').hidden=true;lotteryWrap.hidden=false;drawLottery(lotteryCanvas,0,duration,count,null,reduced.matches);}if(mode==='roulette'){$('number').hidden=true;rouletteWrap.hidden=false;drawRoulette(rouletteCanvas,count,0,null);}
  if(mode==='race'){$('number').hidden=true;raceWrap.hidden=false;drawBallRace(raceCanvas,count,0,duration,winner,reduced.matches,raceStory);}
  if(mode==='horse'){$('number').hidden=true;horseWrap.hidden=false;drawHorseRace(horseCanvas,count,0,duration,winner,reduced.matches,raceStory);}
+ if(mode==='pinball'){$('number').hidden=true;pinballWrap.hidden=false;drawPinball(pinballCanvas,count,0,duration,winner,reduced.matches);}
  tick();
 });
 $('sound').addEventListener('click', () => {
@@ -146,7 +150,7 @@ $('sound').addEventListener('click', () => {
  if (sound) unlockAudio();
  updateSound(); try { localStorage.setItem('classroom-draw-sound',sound?'on':'off'); } catch {}
 });
-reduced.addEventListener('change', () => { if (running) { $('number').textContent = '…'; if(mode==='die') drawDie(0,null);if(mode==='lottery') drawLottery(lotteryCanvas,0,duration,count,null,true);if(mode==='roulette')drawRoulette(rouletteCanvas,count,0,null);if(mode==='race')drawBallRace(raceCanvas,count,0,duration,null,true);if(mode==='horse')drawHorseRace(horseCanvas,count,0,duration,null,true); } });
+reduced.addEventListener('change', () => { if (running) { $('number').textContent = '…'; if(mode==='die') drawDie(0,null);if(mode==='lottery') drawLottery(lotteryCanvas,0,duration,count,null,true);if(mode==='roulette')drawRoulette(rouletteCanvas,count,0,null);if(mode==='race')drawBallRace(raceCanvas,count,0,duration,null,true);if(mode==='horse')drawHorseRace(horseCanvas,count,0,duration,null,true);if(mode==='pinball')drawPinball(pinballCanvas,count,0,duration,null,true); } });
 document.addEventListener('visibilitychange', () => {
  if (document.hidden) { if(master) master.gain.setValueAtTime(0,context.currentTime); cancelAnimationFrame(raf); }
  else if (running) { if (performance.now()-started>=duration) finish(false); else { if(master && sound) master.gain.setValueAtTime(.18,context.currentTime); tick(); } }
