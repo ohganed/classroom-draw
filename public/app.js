@@ -4,6 +4,7 @@ import { drawRoulette, rouletteAngle } from './roulette.js';
 import { drawBallRace } from './ball-race.js';
 import { drawHorseRace } from './horse-race.js';
 import { drawPinball } from './pinball.js';
+import { drawGalton } from './galton.js';
 const $ = id => document.getElementById(id);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 let duration = 8000;
@@ -39,7 +40,7 @@ $('count').addEventListener('change', () => {
  try { localStorage.setItem('classroom-draw-count', String(count)); } catch {}
 });
 let mode = 'numbers';
-try { if (['die','lottery','roulette','race','horse','pinball'].includes(localStorage.getItem('classroom-draw-mode'))) mode = localStorage.getItem('classroom-draw-mode'); } catch {}
+try { if (['die','lottery','roulette','race','horse','pinball','galton'].includes(localStorage.getItem('classroom-draw-mode'))) mode = localStorage.getItem('classroom-draw-mode'); } catch {}
 $('mode').value = mode;
 const pinballWrap=$('pinball-wrap'),pinballCanvas=$('pinball');
 const horseWrap=$('horse-wrap'), horseCanvas=$('horse');
