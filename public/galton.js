@@ -19,8 +19,9 @@ export function drawGalton(canvas,round,elapsed=0,duration=8000,reduced=false){
  const n=round.labels.length,p=Math.min(1,elapsed/duration);
  c.clearRect(0,0,600,530);c.fillStyle='#182a3f';c.fillRect(20,12,560,506);
  const left=30,width=540,cell=width/n;
- for(let row=0;row<18;row++)for(let j=0;j<=row+2;j++){
-  const x=300+(j-(row+2)/2)*Math.min(24,500/(row+2)),y=50+row*21;
+ for(let row=0;row<n-1;row++)for(let j=0;j<=row;j++){
+  if(n>65&&row%2)continue;
+  const x=300+(j-row/2)*cell,y=45+row*355/(n-1);
   c.fillStyle='#8193a6';c.beginPath();c.arc(x,y,2,0,Math.PI*2);c.fill();
  }
  const visible=Math.floor(round.drops.length*Math.max(0,(p-.1)/.9)),bins=Array(n).fill(0);
@@ -37,7 +38,7 @@ export function drawGalton(canvas,round,elapsed=0,duration=8000,reduced=false){
  // Draw each ball on its OWN pre-sampled left/right route; outcome matches its path.
  // A ball travels through count-1 pegs (binomial walk) and enters exactly its sampled slot.
  if(!reduced&&p<1){
-  const total=round.drops.length, launch=p*(total+18);
+  const total=round.drops.length, launch=p*(total+24);
   for(let j=Math.max(0,Math.floor(launch)-23);j<Math.min(total,Math.ceil(launch));j++){
    const age=(launch-j)/24;
    if(age<0||age>=1)continue;
