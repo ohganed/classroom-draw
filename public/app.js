@@ -34,7 +34,7 @@ $('count').addEventListener('change', () => {
  if (!Number.isInteger(value) || value < 1 || value > 99) {
   $('count').value = count; $('hint').textContent = '人数は1〜99の整数で入力してください'; return;
  }
- count = value; updateCount();
+ count = value; updateCount();shuffleGalton();syncMode();
  $('app').className = ''; $('number').textContent = '?'; $('status').textContent = '次の主役は、だれだろう。';
  $('hint').textContent = `タップすると、${duration / 1000}秒で決まります`; $('announcement').textContent = `${count}人に設定しました。`;
  try { localStorage.setItem('classroom-draw-count', String(count)); } catch {}
@@ -140,7 +140,7 @@ $('start').addEventListener('click', () => {
  unlockAudio();
  // Silence any remaining fanfare before a new round.
  if (master) { master.gain.setValueAtTime(0,context.currentTime); const previous = master; master = context.createGain(); master.gain.value=.18; master.connect(context.destination); setTimeout(()=>previous.disconnect(),1200); }
- running = true; $('count').disabled = true; $('duration').disabled = true; $('mode').disabled = true; winner = randomNumber(undefined, count); raceStory=['front','close','comeback'][randomNumber(undefined,3)-1]; started = performance.now(); lastIndex = -1; window.__lastVisualChange = -300;
+ running = true; $('count').disabled = true; $('duration').disabled = true; $('mode').disabled = true; winner = randomNumber(undefined, count); shuffleGalton(); raceStory=['front','close','comeback'][randomNumber(undefined,3)-1]; started = performance.now(); lastIndex = -1; window.__lastVisualChange = -300;
  $('app').className = 'running'; $('start').disabled = true; $('start').textContent = '抽選中…'; $('status').textContent = 'だれの番かな…';
  $('caption').textContent = 'あと少し、お楽しみに'; $('hint').textContent = `${duration / 1000}秒で番号が決まります`; $('announcement').textContent = `抽選中です。${duration / 1000}秒で決まります。`;
  $('number').textContent = '…'; if(mode==='die'){$('number').hidden=true;dieWrap.hidden=false;drawDie(0,null);}if(mode==='lottery'){$('number').hidden=true;lotteryWrap.hidden=false;drawLottery(lotteryCanvas,0,duration,count,null,reduced.matches);}if(mode==='roulette'){$('number').hidden=true;rouletteWrap.hidden=false;drawRoulette(rouletteCanvas,count,0,null);}
