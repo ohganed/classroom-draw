@@ -148,6 +148,7 @@ $('start').addEventListener('click', () => {
  if(mode==='race'){$('number').hidden=true;raceWrap.hidden=false;drawBallRace(raceCanvas,count,0,duration,winner,reduced.matches,raceStory);}
  if(mode==='horse'){$('number').hidden=true;horseWrap.hidden=false;drawHorseRace(horseCanvas,count,0,duration,winner,reduced.matches,raceStory);}
  if(mode==='pinball'){$('number').hidden=true;pinballWrap.hidden=false;drawPinball(pinballCanvas,count,0,duration,winner,reduced.matches);}
+ if(mode==='galton'){galtonWrap.hidden=false;$('number').hidden=true;}
  tick();
 });
 $('sound').addEventListener('click', () => {
