@@ -25,3 +25,11 @@ header{flex-wrap:wrap}.tools{flex-wrap:wrap;align-items:center}.count-label{disp
 
 /* Low contrast numerical cycling on a fixed dark background */
 .running #number{color:#39465a!important}
+
+#die-wrap{width:min(54vw,43dvh,440px);aspect-ratio:1;z-index:1;flex-shrink:1}
+#die-wrap[hidden],#number[hidden]{display:none!important}
+#die{width:100%;height:100%;display:block}
+.result #die-wrap{width:min(32vw,26dvh,250px)}
+.result #number{font-size:min(36vw,37dvh);color:#ffd57a}
+#mode{font:inherit;min-height:48px;background:#101c30;color:#fff9ec;border:1px solid #536078;border-radius:12px;padding:6px}
+@media(prefers-reduced-motion:reduce){#die-wrap{animation:none!important}}
