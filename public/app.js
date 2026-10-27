@@ -45,7 +45,7 @@ $('mode').value = mode;
 const galtonWrap=$('galton-wrap'),galtonCanvas=$('galton');
 let galtonLabels=[];let galtonRound=null;
 function shuffleGalton(){galtonLabels=Array.from({length:count},(_,i)=>i+1);for(let i=count-1;i>0;i--){const j=randomNumber(undefined,i+1)-1;const v=galtonLabels[i];galtonLabels[i]=galtonLabels[j];galtonLabels[j]=v;}}
-shuffleGalton();
+shuffleGalton();galtonRound=makeGaltonRound(count,n=>randomNumber(undefined,n));
 const pinballWrap=$('pinball-wrap'),pinballCanvas=$('pinball');
 const horseWrap=$('horse-wrap'), horseCanvas=$('horse');
 const raceWrap=$('race-wrap'), raceCanvas=$('race');
