@@ -4,7 +4,7 @@ export function drawBallRace(canvas, count=40, elapsed=0, duration=8000, winner=
  const ctx=canvas.getContext('2d');if(!ctx)return;
  const W=600,H=450;ctx.clearRect(0,0,W,H);
  const progress=Math.max(0,Math.min(1,elapsed/duration));
- const lanes=Math.min(count,40);
+ const lanes=count;
  const top=42, bottom=405, laneH=(bottom-top)/lanes;
  const finishX=535, startX=62;
  ctx.fillStyle='#1b2c41';ctx.fillRect(40,top-14,finishX-22,bottom-top+30);
@@ -20,12 +20,12 @@ export function drawBallRace(canvas, count=40, elapsed=0, duration=8000, winner=
   const travel= reduced ? 0 : progress;
   const fraction=win ? travel : travel*(.73+.20*((i*7)%11)/10);
   const x=startX+(finishX-startX-11)*Math.min(1,fraction);
-  const r=Math.max(4,Math.min(9,laneH*.43));
+  const r=Math.max(1.5,Math.min(9,laneH*.43));
   ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);
-  ctx.fillStyle=win?'#d7bf82':i%2?'#8498ad':'#6e829a';ctx.fill();
+  ctx.fillStyle=win && progress>=1?'#d7bf82':i%2?'#8498ad':'#6e829a';ctx.fill();
   ctx.strokeStyle='#b6c3cf';ctx.lineWidth=.7;ctx.stroke();
   // For high counts numbers are labelled in lane header instead of unreadably small marble.
-  ctx.fillStyle='#cad6e2';ctx.font='bold 10px Arial';ctx.textAlign='right';ctx.textBaseline='middle';ctx.fillText(String(n),35,y);
+  ctx.fillStyle='#cad6e2';ctx.font='bold '+(lanes>50?7:10)+'px Arial';ctx.textAlign='right';ctx.textBaseline='middle';ctx.fillText(String(n),35,y);
  }
  if(winner!==null){ctx.fillStyle='#e0c484';ctx.font='bold 25px Arial';ctx.textAlign='center';ctx.fillText(winner+' 番 ゴール！',W/2,441);}
 }
