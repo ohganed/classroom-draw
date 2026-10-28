@@ -1,3 +1,4 @@
+import { drawRaceCamera } from './race-camera.js';
 // Low-flash dramatic race: several apparent leaders, late comeback by the uniformly selected winner.
 // Animation is illustrative; the app selects the winner independently with crypto randomness.
 const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};
@@ -11,7 +12,7 @@ export function drawBallRace(canvas,count=40,elapsed=0,duration=8000,winner=null
  for(let i=0;i<=count;i++){let y=top+i*lh;ctx.beginPath();ctx.moveTo(40,y);ctx.lineTo(finish+16,y);ctx.stroke();}
  ctx.fillStyle='#b6a274';ctx.fillRect(finish,top-14,4,bottom-top+30);
  ctx.fillStyle='#d0dbe6';ctx.font='bold 17px Arial';ctx.textAlign='center';ctx.fillText('GOAL',finish-22,23);
- const candidate=winner??1;
+ const candidate=winner??1,positions=[];
  // Scenario is chosen once per draw; deterministic rendering prevents flicker.
  const rivalA=(candidate%count)+1,rivalB=((candidate+Math.floor(count/2))%count)+1;
  for(let i=0;i<count;i++){
@@ -40,11 +41,12 @@ export function drawBallRace(canvas,count=40,elapsed=0,duration=8000,winner=null
   fraction=Math.max(0,Math.min(n===candidate?1:.975,fraction));
   if(end&&n===candidate)fraction=1;
   if(reduced&&!end)fraction=0;
-  const x=start+travel*fraction,r=Math.max(1.5,Math.min(9,lh*.43));
+  const x=start+travel*fraction;positions.push({n,x,y});const r=Math.max(1.5,Math.min(9,lh*.43));
   ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);
   ctx.fillStyle=end&&n===candidate?'#d7bf82':i%2?'#8498ad':'#6e829a';ctx.fill();
   ctx.strokeStyle='#b6c3cf';ctx.lineWidth=.7;ctx.stroke();
   ctx.fillStyle='#cad6e2';ctx.font='bold '+(count>50?7:10)+'px Arial';ctx.textAlign='right';ctx.textBaseline='middle';ctx.fillText(String(n),35,y);
  }
+ if(!reduced&&!end)drawRaceCamera(canvas,positions,p,'ball');
  if(end){ctx.fillStyle='#e0c484';ctx.font='bold 25px Arial';ctx.textAlign='center';ctx.fillText(candidate+' 番 ゴール！',W/2,441);}
 }
