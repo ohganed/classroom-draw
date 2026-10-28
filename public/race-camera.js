@@ -7,6 +7,9 @@ export function drawRaceCamera(canvas,positions,progress,kind='ball'){
  if(!c)return;
  const ranked=positions.slice().sort((a,b)=>b.x-a.x);
  const leaders=ranked.slice(0,Math.min(5,ranked.length));
+ // Select by proximity to the lead, but keep the close-up lanes in bib-number order.
+ // Never place the fastest racer in the top lane just because they are leading.
+ const displayed=leaders.slice().sort((a,b)=>a.n-b.n);
  const reveal=smooth((progress-.60)/.12),top=68+(1-reveal)*285,h=305;
  const first=leaders[0].x,third=leaders[Math.min(2,leaders.length-1)].x;
  const fifth=leaders[leaders.length-1].x;
@@ -28,14 +31,14 @@ export function drawRaceCamera(canvas,positions,progress,kind='ball'){
   c.strokeStyle='#d7c28e';c.lineWidth=3;c.beginPath();c.moveTo(sx(finish),top+41);c.lineTo(sx(finish),top+271);c.stroke();
  }
  const laneH=44;
- for(let i=0;i<leaders.length;i++){
-  const e=leaders[i],ly=top+65+i*laneH;
+ for(let i=0;i<displayed.length;i++){
+  const e=displayed[i],ly=top+65+i*laneH;
   c.strokeStyle='#42576b';c.lineWidth=1;c.beginPath();c.moveTo(60,ly+20);c.lineTo(542,ly+20);c.stroke();
   c.fillStyle='#dee6ed';c.font='bold 16px Arial';c.textAlign='right';c.textBaseline='middle';c.fillText(String(e.n),90,ly);
   const bx=sx(e.x);
   if(kind==='horse'){
    c.save();c.translate(bx,ly);c.scale(1.5,1.5);
-   c.fillStyle=i===0?'#d8c28d':'#9eb3c5';
+   c.fillStyle=e.n%3===0?'#b8a38c':e.n%3===1?'#91a4b5':'#a7b2b9';
    c.beginPath();c.ellipse(0,0,12,6,0,0,Math.PI*2);c.fill();
    c.beginPath();c.moveTo(6,-3);c.lineTo(11,-13);c.lineTo(17,-10);c.lineTo(15,0);c.closePath();c.fill();
    c.fillRect(-8,4,3,11);c.fillRect(6,4,3,11);
@@ -51,6 +54,6 @@ export function drawRaceCamera(canvas,positions,progress,kind='ball'){
  c.fillStyle='#d7c28e';c.font='bold 17px Arial';c.textAlign='left';
  c.fillText(progress>.82?'ゴール前・接戦カメラ':'先頭集団を追跡',63,top+29);
  c.fillStyle='#adbfcd';c.font='12px Arial';
- c.fillText('先頭との差を実際の位置関係で表示',64,top+289);
+ c.fillText('番号順に表示・横位置は実際の差',64,top+289);
  c.restore();
 }
