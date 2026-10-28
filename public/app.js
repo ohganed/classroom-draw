@@ -4,6 +4,7 @@ import { drawRoulette, rouletteAngle } from './roulette.js';
 import { drawBallRace } from './ball-race.js';
 import { drawHorseRace } from './horse-race.js';
 import { drawPinball } from './pinball.js';
+import { drawDie3D } from './die-3d.js';
 import { drawGalton, makeGaltonRound } from './galton.js';
 const $ = id => document.getElementById(id);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
@@ -53,7 +54,7 @@ const rouletteWrap=$('roulette-wrap'), rouletteCanvas=$('roulette');
 const lotteryWrap=$('lottery-wrap'), lotteryCanvas=$('lottery');
 const dieWrap = $('die-wrap'), die = $('die'), dc = die.getContext('2d');
 // 40 facets in five belts of eight; a deliberately stylized, not precision, d40.
-function drawDie(time = 0, selected = null) {
+function drawDieLegacy(time = 0, selected = null) {
  const w=480, cx=240, cy=240, rad=162;
  dc.clearRect(0,0,w,w);
  const tilt = selected === null ? Math.sin(time*.0014)*.18 : 0;
@@ -84,6 +85,7 @@ function drawDie(time = 0, selected = null) {
  }
  dc.restore();
 }
+function drawDie(time=0,selected=null){drawDie3D(die,time,duration,selected,reduced.matches);}
 function syncMode(){galtonWrap.hidden=mode!=='galton';pinballWrap.hidden=mode!=='pinball';horseWrap.hidden=mode!=='horse';raceWrap.hidden=mode!=='race';rouletteWrap.hidden=mode!=='roulette';dieWrap.hidden=mode!=='die';lotteryWrap.hidden=mode!=='lottery';$('number').hidden=mode!=='numbers'&&!$('app').classList.contains('result');if(mode==='die')drawDie(0,null);if(mode==='lottery')drawLottery(lotteryCanvas,0,duration,count,null,reduced.matches);if(mode==='roulette')drawRoulette(rouletteCanvas,count,0,null);if(mode==='race')drawBallRace(raceCanvas,count,0,duration,null,true);if(mode==='horse')drawHorseRace(horseCanvas,count,0,duration,null,true);if(mode==='pinball')drawPinball(pinballCanvas,count,0,duration,null,true);if(mode==='galton')drawGalton(galtonCanvas,galtonRound,0,duration,true);}
 $('mode').addEventListener('change',()=>{if(running){$('mode').value=mode;return;}mode=$('mode').value;if(mode==='galton'&&!galtonRound)galtonRound=makeGaltonRound(count,n=>randomNumber(undefined,n));try{localStorage.setItem('classroom-draw-mode',mode);}catch{} $('app').className='';$('number').textContent='?';syncMode();});
 syncMode();
