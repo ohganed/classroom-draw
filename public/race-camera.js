@@ -6,13 +6,16 @@ export function drawRaceCamera(canvas,positions,progress,kind='ball'){
  const c=canvas.getContext('2d');
  if(!c)return;
  const ranked=positions.slice().sort((a,b)=>b.x-a.x);
- const leaders=ranked.slice(0,Math.min(5,ranked.length));
+ const frontPack=ranked.slice(0,Math.min(5,ranked.length));
+ // Camera subjects are chosen by proximity to the lead, but the visible lanes
+ // stay in student-number order. Never make the first row equal first place.
+ const leaders=frontPack.slice().sort((a,b)=>a.n-b.n);
  // Select by proximity to the lead, but keep the close-up lanes in bib-number order.
  // Never place the fastest racer in the top lane just because they are leading.
  const displayed=leaders.slice().sort((a,b)=>a.n-b.n);
  const reveal=smooth((progress-.60)/.12),top=68+(1-reveal)*285,h=305;
- const first=leaders[0].x,third=leaders[Math.min(2,leaders.length-1)].x;
- const fifth=leaders[leaders.length-1].x;
+ const first=frontPack[0].x,third=frontPack[Math.min(2,frontPack.length-1)].x;
+ const fifth=frontPack[frontPack.length-1].x;
  // Focus on the actual leading group, not the leading horse fixed to the right edge.
  const mid=(first+third)/2;
  const packSpan=first-fifth;
@@ -45,7 +48,7 @@ export function drawRaceCamera(canvas,positions,progress,kind='ball'){
    c.restore();
   }else{
    c.beginPath();c.arc(bx,ly,11,0,Math.PI*2);
-   c.fillStyle=i===0?'#d8c28d':'#9eb3c5';c.fill();
+   c.fillStyle='#9eb3c5';c.fill();
    c.strokeStyle='#e3eaf0';c.lineWidth=1;c.stroke();
   }
  }
