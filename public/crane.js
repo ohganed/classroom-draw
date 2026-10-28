@@ -28,6 +28,14 @@ export function drawCrane(canvas,round,elapsed=0,duration=8000,reduced=false){
  const p=clamp(elapsed/duration,0,1),done=p>=1;
  c.clearRect(0,0,600,470);
  c.fillStyle='#162a40';c.fillRect(20,12,560,443);
+ // Visible cabinet, prize-chute and glass panels even before the draw.
+ c.fillStyle='#415a73';c.fillRect(20,12,16,443);c.fillRect(564,12,16,443);
+ c.fillStyle='#5d7891';c.fillRect(20,12,560,14);
+ c.fillStyle='#e3c88a';c.fillRect(428,77,122,6);
+ c.fillStyle='#233b52';c.fillRect(428,83,122,133);
+ c.strokeStyle='#bdcbd5';c.lineWidth=3;c.strokeRect(428,83,122,133);
+ c.fillStyle='#425d75';c.fillRect(442,169,92,29);
+ c.fillStyle='#e4d5ab';c.font='bold 13px Arial';c.textAlign='center';c.fillText('GET!',488,189);
  c.fillStyle='#263c53';c.fillRect(33,29,534,34);
  c.fillStyle='#324b61';c.fillRect(34,414,532,28);
  c.fillStyle='#263c53';c.fillRect(36,240,528,170);
@@ -36,7 +44,7 @@ export function drawCrane(canvas,round,elapsed=0,duration=8000,reduced=false){
  c.fillStyle='#647f94';c.fillRect(40,396,520,13);
  c.fillStyle='#d4c08e';c.font='bold 15px Arial';c.textAlign='left';c.fillText('CAPSULE CATCH',47,51);
  c.fillStyle='#b1c1ce';c.font='12px Arial';c.fillText('PRIZE',462,51);
- if(!round){c.fillStyle='#b7c7d5';c.textAlign='center';c.font='bold 18px Arial';c.fillText('クレーンゲーム抽選',300,175);return;}
+ if(!round){c.fillStyle='#b7c7d5';c.textAlign='center';c.font='bold 18px Arial';c.fillText('クレーンゲーム抽選',300,175);for(let i=0;i<22;i++)capsule(c,73+(i%11)*42,355-Math.floor(i/11)*34,i+1,i%3,14);return;}
  // Capsules are stable in the bin, including the winner until the final grasp.
  for(const b of round.balls){
   const hide=done&&b.number===round.winner;
