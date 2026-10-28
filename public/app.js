@@ -34,7 +34,7 @@ $('count').addEventListener('change', () => {
  if (!Number.isInteger(value) || value < 1 || value > 99) {
   $('count').value = count; $('hint').textContent = '人数は1〜99の整数で入力してください'; return;
  }
- count = value; updateCount();shuffleGalton();galtonRound=makeGaltonRound(count,n=>randomNumber(undefined,n));syncMode();
+ count = value; updateCount();shuffleGalton();if(mode==='galton')galtonRound=makeGaltonRound(count,n=>randomNumber(undefined,n));syncMode();
  $('app').className = ''; $('number').textContent = '?'; $('status').textContent = '次の主役は、だれだろう。';
  $('hint').textContent = `タップすると、${duration / 1000}秒で決まります`; $('announcement').textContent = `${count}人に設定しました。`;
  try { localStorage.setItem('classroom-draw-count', String(count)); } catch {}
@@ -45,7 +45,7 @@ $('mode').value = mode;
 const galtonWrap=$('galton-wrap'),galtonCanvas=$('galton');
 let galtonLabels=[];let galtonRound=null;
 function shuffleGalton(){galtonLabels=Array.from({length:count},(_,i)=>i+1);for(let i=count-1;i>0;i--){const j=randomNumber(undefined,i+1)-1;const v=galtonLabels[i];galtonLabels[i]=galtonLabels[j];galtonLabels[j]=v;}}
-shuffleGalton();galtonRound=makeGaltonRound(count,n=>randomNumber(undefined,n));
+shuffleGalton();
 const pinballWrap=$('pinball-wrap'),pinballCanvas=$('pinball');
 const horseWrap=$('horse-wrap'), horseCanvas=$('horse');
 const raceWrap=$('race-wrap'), raceCanvas=$('race');
@@ -85,7 +85,7 @@ function drawDie(time = 0, selected = null) {
  dc.restore();
 }
 function syncMode(){galtonWrap.hidden=mode!=='galton';pinballWrap.hidden=mode!=='pinball';horseWrap.hidden=mode!=='horse';raceWrap.hidden=mode!=='race';rouletteWrap.hidden=mode!=='roulette';dieWrap.hidden=mode!=='die';lotteryWrap.hidden=mode!=='lottery';$('number').hidden=mode!=='numbers'&&!$('app').classList.contains('result');if(mode==='die')drawDie(0,null);if(mode==='lottery')drawLottery(lotteryCanvas,0,duration,count,null,reduced.matches);if(mode==='roulette')drawRoulette(rouletteCanvas,count,0,null);if(mode==='race')drawBallRace(raceCanvas,count,0,duration,null,true);if(mode==='horse')drawHorseRace(horseCanvas,count,0,duration,null,true);if(mode==='pinball')drawPinball(pinballCanvas,count,0,duration,null,true);if(mode==='galton')drawGalton(galtonCanvas,galtonRound,0,duration,true);}
-$('mode').addEventListener('change',()=>{if(running){$('mode').value=mode;return;}mode=$('mode').value;try{localStorage.setItem('classroom-draw-mode',mode);}catch{} $('app').className='';$('number').textContent='?';syncMode();});
+$('mode').addEventListener('change',()=>{if(running){$('mode').value=mode;return;}mode=$('mode').value;if(mode==='galton'&&!galtonRound)galtonRound=makeGaltonRound(count,n=>randomNumber(undefined,n));try{localStorage.setItem('classroom-draw-mode',mode);}catch{} $('app').className='';$('number').textContent='?';syncMode();});
 syncMode();
 let sound = false, context, master, running = false, started = 0, lastIndex = -1, winner, raf, raceStory='comeback',pinballSeed=1;
 try { sound = localStorage.getItem('classroom-draw-sound') === 'on'; } catch {}
@@ -141,7 +141,7 @@ $('start').addEventListener('click', () => {
  unlockAudio();
  // Silence any remaining fanfare before a new round.
  if (master) { master.gain.setValueAtTime(0,context.currentTime); const previous = master; master = context.createGain(); master.gain.value=.18; master.connect(context.destination); setTimeout(()=>previous.disconnect(),1200); }
- running = true; $('count').disabled = true; $('duration').disabled = true; $('mode').disabled = true; winner = randomNumber(undefined, count); pinballSeed=randomNumber(undefined,2147483647); shuffleGalton(); galtonRound=makeGaltonRound(count,n=>randomNumber(undefined,n)); if(mode==='galton')winner=galtonRound.winner; raceStory=['front','close','comeback'][randomNumber(undefined,3)-1]; started = performance.now(); lastIndex = -1; window.__lastVisualChange = -300;
+ running = true; $('count').disabled = true; $('duration').disabled = true; $('mode').disabled = true; winner = randomNumber(undefined, count); pinballSeed=randomNumber(undefined,2147483647); if(mode==='galton'){galtonRound=makeGaltonRound(count,n=>randomNumber(undefined,n));winner=galtonRound.winner;} raceStory=['front','close','comeback'][randomNumber(undefined,3)-1]; started = performance.now(); lastIndex = -1; window.__lastVisualChange = -300;
  $('app').className = 'running'; $('start').disabled = true; $('start').textContent = '抽選中…'; $('status').textContent = 'だれの番かな…';
  $('caption').textContent = 'あと少し、お楽しみに'; $('hint').textContent = `${duration / 1000}秒で番号が決まります`; $('announcement').textContent = `抽選中です。${duration / 1000}秒で決まります。`;
  $('number').textContent = '…'; if(mode==='die'){$('number').hidden=true;dieWrap.hidden=false;drawDie(0,null);}if(mode==='lottery'){$('number').hidden=true;lotteryWrap.hidden=false;drawLottery(lotteryCanvas,0,duration,count,null,reduced.matches);}if(mode==='roulette'){$('number').hidden=true;rouletteWrap.hidden=false;drawRoulette(rouletteCanvas,count,0,null);}
