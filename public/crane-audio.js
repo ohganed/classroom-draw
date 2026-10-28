@@ -1,7 +1,7 @@
 // Gentle Web Audio cues synchronized to the crane's timeline.
 // All oscillators stop by themselves. Uses the app's master volume and mute.
 export function scheduleCraneSounds(ctx,master,round,duration){
- if(!ctx||!master||ctx.state!=='running'||!round)return;
+ if(!ctx||!master||!round)return;
  const start=ctx.currentTime, segment=duration/1000/(round.misses+1);
  const created=[];
  function cue(offset,length,frequency,endFrequency,kind='sine',volume=.15){
@@ -19,18 +19,19 @@ export function scheduleCraneSounds(ctx,master,round,duration){
  for(let i=0;i<=round.misses;i++){
   const at=i*segment;
   // Horizontal servo: soft dual-tone rolling motor.
-  cue(at+.025*segment,.16*segment,145,165,'triangle',.085);
+  cue(at+.015*segment,.16*segment,145,165,'triangle',.085);
   cue(at+.025*segment,.16*segment,292,312,'sine',.035);
   // Lowering mechanism: motor frequency falls slowly.
-  cue(at+.19*segment,.25*segment,190,105,'triangle',.105);
+  cue(at+.18*segment,.21*segment,190,105,'triangle',.105);
   // Gripping capsule: a short tactile click and two soft confirmation notes.
-  cue(at+.455*segment,.075,510,295,'square',.045);
-  cue(at+.49*segment,.085,600,475,'sine',.075);
+  cue(at+.41*segment,.075,510,295,'square',.045);
+  cue(at+.445*segment,.085,600,475,'sine',.075);
   // Rising mechanism: motor frequency increases.
-  cue(at+.54*segment,.25*segment,110,205,'triangle',.105);
+  cue(at+.49*segment,.16*segment,110,205,'triangle',.105);
+  cue(at+.66*segment,.22*segment,155,177,'triangle',.095);
   if(i<round.misses){
    // Capsule slips; quiet descending plop.
-   cue(at+.85*segment,.13,360,135,'sine',.09);
+   cue(at+(.75+i*.035)*segment,.13,360,135,'sine',.09);
   }else{
    // Successful retrieval, restrained two-note chime.
    cue(at+.86*segment,.16,523,523,'sine',.10);
