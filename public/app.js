@@ -8,6 +8,7 @@ import { drawDie3D } from './die-3d.js';
 import { drawGalton, makeGaltonRound } from './galton.js';
 import { drawMaze, makeMazeRound } from './maze.js';
 import { drawCrane, makeCraneRound } from './crane.js';
+import { scheduleCraneSounds } from './crane-audio.js';
 const $ = id => document.getElementById(id);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 let duration = 8000;
@@ -160,7 +161,7 @@ $('start').addEventListener('click', () => {
  if(mode==='pinball'){$('number').hidden=true;pinballWrap.hidden=false;drawPinball(pinballCanvas,count,0,duration,winner,reduced.matches,pinballSeed);}
  if(mode==='galton'){galtonWrap.hidden=false;$('number').hidden=true;drawGalton(galtonCanvas,galtonRound,0,duration,reduced.matches);}
  if(mode==='maze'){mazeWrap.hidden=false;$('number').hidden=true;drawMaze(mazeCanvas,mazeRound,0,duration,reduced.matches);}
- if(mode==='crane'){craneWrap.hidden=false;$('number').hidden=true;drawCrane(craneCanvas,craneRound,0,duration,reduced.matches);}
+ if(mode==='crane'){craneWrap.hidden=false;$('number').hidden=true;drawCrane(craneCanvas,craneRound,0,duration,reduced.matches);if(sound&&context&&context.state==='running')scheduleCraneSounds(context,master,craneRound,duration);}
  tick();
 });
 $('sound').addEventListener('click', () => {
