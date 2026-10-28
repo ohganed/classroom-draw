@@ -1,5 +1,5 @@
 const PREFIX = `classroom-draw:${self.registration.scope}:`;
-const CACHE = PREFIX + 'v32';
+const CACHE = PREFIX + 'v33';
 const ASSETS = ['./','./index.html','./style.css','./app.js','./draw.js','./lottery.js','./roulette.js','./ball-race.js','./race-camera.js','./horse-race.js','./pinball.js','./die-3d.js','./maze.js','./crane.js','./crane-audio.js','./galton.js','./manifest.webmanifest','./icons/icon.svg','./icons/icon-192.png','./icons/icon-512.png','./icons/apple-touch-icon.png'];
 self.addEventListener('install', event => {
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));
