@@ -29,16 +29,19 @@ export function makeMazeRound(count,winner,seed){
  const racers=nums.map((number,i)=>{
   const win=number===winner;
   // Nonwinners take detours and never cross the exit before the selected winner.
-  const detours=Math.floor(rand()*3)+2,route=[0];
-  for(let j=0;j<detours;j++){
-   const start=main[Math.floor(rand()*Math.max(1,main.length-2))];
-   const until=main.indexOf(start);
-   if(route.length===1)route.push(...main.slice(1,until+1));
-   const options=[...Array(grid.length).keys()].filter(v=>v!==start);
-   const side=options[Math.floor(rand()*options.length)];
-   route.push(...path(start,side).slice(1),...path(side,start).slice(1));
+  const route=[0];
+  let cursor=0;
+  const stops=win?[]:shuffle(main.slice(2,-2),rand).slice(0,2);
+  const stopSet=new Set(stops);
+  for(let m=1;m<main.length;m++){
+   const here=main[m];route.push(here);cursor=here;
+   if(stopSet.has(here)){
+    const options=[...Array(grid.length).keys()].filter(v=>v!==here&&v!==target);
+    const side=options[Math.floor(rand()*options.length)];
+    route.push(...path(here,side).slice(1));
+    route.push(...path(side,here).slice(1));
+   }
   }
-  route.push(...main.slice(1));
   return {number,route:win?main:route,delay:win?.04:rand()*.2,limit:win?1:.74+rand()*.17};
  });
  return {grid,racers,winner};
