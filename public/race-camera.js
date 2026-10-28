@@ -1,27 +1,38 @@
-// TV-style tracking camera: zooms into the front pack without changing race results.
-// Gentle stable movements; no zoom pulses, flashing or camera shake.
+// Smooth race broadcast camera. Positions are the source of truth; this never changes results.
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const smooth=t=>{t=clamp(t,0,1);return t*t*(3-2*t);};
 export function drawRaceCamera(canvas,positions,progress,kind='ball'){
- if(progress<.60||!positions.length)return;
- const c=canvas.getContext('2d');if(!c)return;
+ if(progress<.60||positions.length===0)return;
+ const c=canvas.getContext('2d');
+ if(!c)return;
  const ranked=positions.slice().sort((a,b)=>b.x-a.x);
  const leaders=ranked.slice(0,Math.min(5,ranked.length));
- const zoom=Math.min(1,(progress-.60)/.13);
- const y=68+(1-zoom)*285,h=305;
+ const reveal=smooth((progress-.60)/.12),top=68+(1-reveal)*285,h=305;
+ const first=leaders[0].x,third=leaders[Math.min(2,leaders.length-1)].x;
+ const fifth=leaders[leaders.length-1].x;
+ // Focus on the actual leading group, not the leading horse fixed to the right edge.
+ const mid=(first+third)/2;
+ const packSpan=first-fifth;
+ const scale=clamp(345/(packSpan+38),1.35,3.25);
+ // Keep the goal line in view as it approaches, without shifting the racers artificially.
+ const finish=kind==='horse'?541:535;
+ const closeGoal=smooth((progress-.82)/.15);
+ const center=mid*(1-.25*closeGoal)+(first+finish)/2*(.25*closeGoal);
+ const sx=x=>300+(x-center)*scale;
  c.save();
- c.globalAlpha=Math.min(1,zoom);
- c.fillStyle='#132338';c.fillRect(44,y,512,h);
- c.strokeStyle='#9aafc2';c.lineWidth=2;c.strokeRect(44,y,512,h);
- c.fillStyle='#d7c28e';c.font='bold 17px Arial';c.textAlign='left';c.textBaseline='alphabetic';
- c.fillText(progress>.82?'ゴール前・接戦カメラ':'先頭集団を追跡',63,y+31);
- const camera=leaders[0].x;
- const scale=3.2;
+ c.globalAlpha=reveal;
+ c.fillStyle='#132338';c.fillRect(44,top,512,h);
+ c.strokeStyle='#9aafc2';c.lineWidth=2;c.strokeRect(44,top,512,h);
+ c.beginPath();c.rect(46,top+40,508,h-45);c.clip();
+ if(sx(finish)>110&&sx(finish)<552){
+  c.strokeStyle='#d7c28e';c.lineWidth=3;c.beginPath();c.moveTo(sx(finish),top+41);c.lineTo(sx(finish),top+271);c.stroke();
+ }
  const laneH=44;
  for(let i=0;i<leaders.length;i++){
-  const e=leaders[i],ly=y+66+i*laneH;
-  c.strokeStyle='#4c647a';c.lineWidth=1;c.beginPath();c.moveTo(109,ly+laneH/2);c.lineTo(538,ly+laneH/2);c.stroke();
-  c.fillStyle='#dee6ed';c.font='bold 16px Arial';c.textAlign='right';c.textBaseline='middle';c.fillText(String(e.n),97,ly);
-  // The leading racer is near the right edge, the others trail by their actual gap.
-  const bx=Math.max(125,Math.min(516,497+(e.x-camera)*scale));
+  const e=leaders[i],ly=top+65+i*laneH;
+  c.strokeStyle='#42576b';c.lineWidth=1;c.beginPath();c.moveTo(60,ly+20);c.lineTo(542,ly+20);c.stroke();
+  c.fillStyle='#dee6ed';c.font='bold 16px Arial';c.textAlign='right';c.textBaseline='middle';c.fillText(String(e.n),90,ly);
+  const bx=sx(e.x);
   if(kind==='horse'){
    c.save();c.translate(bx,ly);c.scale(1.5,1.5);
    c.fillStyle=i===0?'#d8c28d':'#9eb3c5';
@@ -30,11 +41,16 @@ export function drawRaceCamera(canvas,positions,progress,kind='ball'){
    c.fillRect(-8,4,3,11);c.fillRect(6,4,3,11);
    c.restore();
   }else{
-   c.beginPath();c.arc(bx,ly,11,0,Math.PI*2);c.fillStyle=i===0?'#d8c28d':'#9eb3c5';c.fill();
+   c.beginPath();c.arc(bx,ly,11,0,Math.PI*2);
+   c.fillStyle=i===0?'#d8c28d':'#9eb3c5';c.fill();
    c.strokeStyle='#e3eaf0';c.lineWidth=1;c.stroke();
   }
  }
- c.font='12px Arial';c.fillStyle='#adbfcd';c.textAlign='left';c.textBaseline='alphabetic';
- c.fillText('先頭 '+leaders[0].n+' 番  |  差を拡大表示',64,y+286);
+ c.restore();
+ c.save();c.globalAlpha=reveal;
+ c.fillStyle='#d7c28e';c.font='bold 17px Arial';c.textAlign='left';
+ c.fillText(progress>.82?'ゴール前・接戦カメラ':'先頭集団を追跡',63,top+29);
+ c.fillStyle='#adbfcd';c.font='12px Arial';
+ c.fillText('先頭との差を実際の位置関係で表示',64,top+289);
  c.restore();
 }
