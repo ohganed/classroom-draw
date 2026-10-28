@@ -86,3 +86,6 @@ header{flex-wrap:wrap}.tools{flex-wrap:wrap;align-items:center}.count-label{disp
 /* Maze: landscape diagram scaled for iPhone and iPad. */
 #maze-wrap{width:min(92vw,60dvh,600px);aspect-ratio:60/47;flex-shrink:1;z-index:1}#maze-wrap[hidden]{display:none!important}#maze{display:block;width:100%;height:100%}.result #maze-wrap{width:min(63vw,38dvh,390px)}
 @media(max-width:600px){#maze-wrap{width:min(94vw,48dvh)}.result #maze-wrap{width:min(75vw,31dvh)}}
+
+#crane-wrap{width:min(92vw,56dvh,600px);aspect-ratio:60/47;z-index:1;flex-shrink:1}#crane-wrap[hidden]{display:none!important}#crane{display:block;width:100%;height:100%}.result #crane-wrap{width:min(65vw,35dvh,390px)}
+@media(max-width:600px){#crane-wrap{width:min(94vw,46dvh)}.result #crane-wrap{width:min(74vw,28dvh)}}
