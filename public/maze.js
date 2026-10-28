@@ -51,7 +51,7 @@ export function drawMaze(canvas,round,elapsed=0,duration=8000,reduced=false){
  const c=canvas.getContext('2d');if(!c)return;
  const p=Math.max(0,Math.min(1,elapsed/duration)),done=p>=1;
  c.clearRect(0,0,600,470);c.fillStyle='#17293e';c.fillRect(24,14,550,445);
- c.strokeStyle='#6b8299';c.lineWidth=2;c.beginPath();
+ c.strokeStyle='#b3c4d4';c.lineWidth=3;c.beginPath();
  for(let i=0;i<round.grid.length;i++){
   const x=X+(i%COLS)*CELL,y=Y+Math.floor(i/COLS)*CELL,w=round.grid[i];
   if(w[0]){c.moveTo(x,y);c.lineTo(x+CELL,y);}
