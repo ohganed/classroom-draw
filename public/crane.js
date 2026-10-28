@@ -51,27 +51,35 @@ export function drawCrane(canvas,round,elapsed=0,duration=8000,reduced=false){
   if(!hide)capsule(c,b.x,b.y,b.number,b.shade,14,1);
  }
  const attempts=round.misses+1,section=p*attempts,attempt=Math.min(attempts-1,Math.floor(section)),q=done?1:section-attempt;
- const final=attempt===attempts-1;
- const number=final?round.winner:round.fake[attempt];
- const ball=round.balls[number-1];
- const approach=ease(q/.18),lower=ease((q-.18)/.26),lift=ease((q-.52)/.27);
- const armX=290+(ball.x-290)*approach;
- const armY=86+(ball.y-115)*lower*(1-lift);
- const caught=q>.47&&q<.85,release= !final&&q>=.82;
- // Misses are allowed; the final attempt always collects the uniformly selected capsule.
+ const final=attempt===attempts-1,number=final?round.winner:round.fake[attempt],ball=round.balls[number-1];
+ // Each attempt: approach -> lower -> grip -> lift -> travel toward prize chute.
+ const horizontal=ease(q/.17),down=ease((q-.17)/.21),up=ease((q-.45)/.19);
+ const travel=ease((q-.65)/.27);
+ const armX=290+(ball.x-290)*horizontal+(472-ball.x)*travel;
+ const armY=82+(ball.y-140)*down*(1-up);
+ const gripping=q>=.40&&q<.96;
+ // Failed attempts drop the capsule midway through the horizontal journey.
+ const dropAt=final?1:.75+attempt*.035,hasDropped=!final&&q>=dropAt;
+ const carrying=gripping&&!hasDropped&&(!final||q<.96);
+ const dropX=ball.x+(472-ball.x)*ease((dropAt-.65)/.27);
+ const dropY=82+53;
+ // Hide the original capsule while it is held; this prevents two copies.
+ if(carrying){
+  c.fillStyle='#1a3449';c.beginPath();c.arc(ball.x,ball.y,16,0,2*Math.PI);c.fill();
+ }
  c.strokeStyle='#c1cdd5';c.lineWidth=5;c.beginPath();c.moveTo(armX,62);c.lineTo(armX,armY);c.stroke();
  c.fillStyle='#9aaebd';c.fillRect(armX-25,armY-6,50,16);
- const opening=caught?8:23;
+ const opening=gripping&&!hasDropped?9:23;
  c.strokeStyle='#d4dde3';c.lineWidth=5;c.lineCap='round';
  c.beginPath();c.moveTo(armX-16,armY+10);c.lineTo(armX-opening,armY+36);c.lineTo(armX-opening+6,armY+48);
  c.moveTo(armX+16,armY+10);c.lineTo(armX+opening,armY+36);c.lineTo(armX+opening-6,armY+48);c.stroke();
- if(caught){
-  capsule(c,armX,armY+53,number,ball.shade,14,1);
+ if(carrying)capsule(c,armX,armY+53,number,ball.shade,14);
+ if(hasDropped){
+  const t=clamp((q-dropAt)/(1-dropAt),0,1);
+  const y=Math.min(379,dropY+440*t*t);
+  capsule(c,dropX+14*t,y,number,ball.shade,14);
  }
- if(release){
-  const falling=clamp((q-.82)/.18,0,1);
-  capsule(c,armX+(falling*18),armY+53+falling*falling*125,number,ball.shade,14,1-falling*.5);
- }
+ if(final&&q>=.96&&!done)capsule(c,473,154,number,ball.shade,20);
  if(done){
   // Keep the winning capsule clearly displayed inside the collection tray.
   c.fillStyle='#334b62';c.fillRect(402,90,143,120);
