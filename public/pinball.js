@@ -13,7 +13,7 @@ function trajectory(count,winner,duration,seed=1){
  let state=(seed>>>0)||1;
  const rand=()=>{state=(Math.imul(state,1664525)+1013904223)>>>0;return state/4294967296;};
  const frames=[];let x=280+rand()*35,y=37,vx=95+rand()*190,vy=12;
- const dt=1/120,steps=Math.ceil(duration/1000/dt);
+ const dt=1/60,steps=Math.ceil(duration/1000/dt);
  // Gravity, drag and normal impulse from immovable bumpers; constant simulation step.
  for(let k=0;k<=steps;k++){
   frames.push([x,y]);
@@ -34,6 +34,7 @@ function trajectory(count,winner,duration,seed=1){
   if(x>550){x=550;vx=-Math.abs(vx)*(.76+rand()*.25);vy+=(rand()-.5)*60;}
   if(y<35){y=35;vy=Math.abs(vy)*.78;}
   if(t<=.79){
+   if(Math.hypot(vx,vy)<65){vx+=(rand()-.5)*170;vy-=160;}
    for(const [bx,by] of BUMPS){
     const dx=x-bx,dy=y-by,dist=Math.hypot(dx,dy),minimum=33;
     if(dist<minimum){
@@ -43,7 +44,7 @@ function trajectory(count,winner,duration,seed=1){
      if(vn<0){const boost=1.0+rand()*.65;vx-=(1+.84)*vn*nx*boost;vy-=(1+.84)*vn*ny*boost;vx+=(rand()-.5)*90;vy+=(rand()-.5)*55;}
     }
    }
-   if(y>380){y=380;vy=-Math.abs(vy)*(.65+rand()*.28);vx+=(rand()-.5)*130;}
+   if(y>380){y=380;vy=-(260+rand()*145);vx+=(rand()-.5)*180;}
   }else{
    // Once inside the collection chute, constrain vertical motion.
    const limit=goalY-16;
