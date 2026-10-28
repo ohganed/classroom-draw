@@ -1,10 +1,10 @@
-import { drawRaceCamera } from './race-camera.js';
+import { drawRaceCamera, raceProgress } from './race-camera.js';
 // Quiet horse-racing visualization. Winner and scenario are chosen independently in app.js.
 // No flashing, strobes, or background color changes.
 const ease=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t)};
 export function drawHorseRace(canvas,count=40,elapsed=0,duration=8000,winner=null,reduced=false,story='front'){
  const c=canvas.getContext('2d');if(!c)return;
- const p=Math.max(0,Math.min(1,elapsed/duration)),done=winner!==null&&p>=1;
+ const p=raceProgress(elapsed,duration),done=winner!==null&&p>=1;
  const x0=56,x1=541,y0=40,y1=407,h=(y1-y0)/count,dist=x1-x0-20;
  const positions=[];
  const target=winner??1,rival=(target%count)+1,rival2=((target+Math.floor(count/2))%count)+1;

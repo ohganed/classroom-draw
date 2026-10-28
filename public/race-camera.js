@@ -1,6 +1,15 @@
 // Smooth race broadcast camera. Positions are the source of truth; this never changes results.
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const smooth=t=>{t=clamp(t,0,1);return t*t*(3-2*t);};
+// Re-time every racer together: brisk opening, smooth slowdown, unchanged deadline.
+export function raceProgress(elapsed,duration){
+ const t=Math.max(0,Math.min(1,elapsed/duration));
+ if(t<=.4)return 1.2*t;
+ if(t>=.6)return 1-.8*(1-t);
+ const u=(t-.4)/.2;
+ // Integral of speed 1.2 - 0.4 * smoothstep(u).
+ return .48+1.2*(t-.4)-.08*(u*u*u-.5*u*u*u*u);
+}
 export function drawRaceCamera(canvas,positions,progress,kind='ball'){
  if(progress<.60||positions.length===0)return;
  const c=canvas.getContext('2d');

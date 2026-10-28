@@ -1,11 +1,11 @@
-import { drawRaceCamera } from './race-camera.js';
+import { drawRaceCamera, raceProgress } from './race-camera.js';
 // Low-flash dramatic race: several apparent leaders, late comeback by the uniformly selected winner.
 // Animation is illustrative; the app selects the winner independently with crypto randomness.
 const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};
 export function drawBallRace(canvas,count=40,elapsed=0,duration=8000,winner=null,reduced=false,story='comeback'){
  const ctx=canvas.getContext('2d');if(!ctx)return;
  const W=600,H=450;ctx.clearRect(0,0,W,H);
- const p=Math.max(0,Math.min(1,elapsed/duration)),end=winner!==null&&p>=1;
+ const p=raceProgress(elapsed,duration),end=winner!==null&&p>=1;
  const top=42,bottom=405,lh=(bottom-top)/count,finish=535,start=62,travel=finish-start-11;
  ctx.fillStyle='#1b2c41';ctx.fillRect(40,top-14,finish-22,bottom-top+30);
  ctx.strokeStyle='#536a82';ctx.lineWidth=1;
