@@ -27,20 +27,32 @@ function position(b,p,winner){
  if(b.n===winner){const t=ease((p-.77)/.23);x+=(300-x)*t;y+=(235-y)*t;}
  return {x,y};
 }
-function drawToddler(c,x,y,r,n,sit,step){
- c.save();c.translate(x,y);c.scale(r,r);
- c.fillStyle='#e3b89d';c.beginPath();c.arc(0,-13,12,0,Math.PI*2);c.fill();
- c.fillStyle='#283b4a';c.beginPath();c.arc(-4,-14,1.4,0,7);c.arc(4,-14,1.4,0,7);c.fill();
- c.strokeStyle='#7d5650';c.lineWidth=1;c.beginPath();c.arc(0,-8,3,.2,2.9);c.stroke();
+function drawToddler(c,x,y,r,n,sit,phase,heading,done){
+ c.save();c.translate(x,y);
+ // Face left or right according to horizontal travel, without spinning the number.
+ const face=Math.cos(heading)<-.2?-1:1;
+ const bob=sit?0:Math.abs(Math.sin(phase))*2.2*r;
+ c.translate(0,-bob);c.scale(r,r);
+ if(!sit)c.rotate(Math.sin(phase)*.07);
+ const swing=sit?0:Math.sin(phase)*7;
+ c.fillStyle='#e4b9a0';c.beginPath();c.arc(0,-18,13,0,Math.PI*2);c.fill();
+ c.fillStyle='#354452';c.beginPath();c.arc(-4*face,-19,1.4,0,Math.PI*2);c.arc(4*face,-19,1.4,0,Math.PI*2);c.fill();
+ c.strokeStyle='#926c65';c.lineWidth=1;c.beginPath();c.arc(0,-12,3,.2,2.9);c.stroke();
  c.fillStyle=['#a5c8c7','#e3b4ad','#c7c2e0','#e6d29b'][n%4];
- c.beginPath();c.roundRect(-12,-1,24,22,8);c.fill();
- c.strokeStyle='#e3b89d';c.lineWidth=4;c.beginPath();
- c.moveTo(-11,6);c.lineTo(-17,sit?16:step?13:4);
- c.moveTo(11,6);c.lineTo(17,sit?16:step?4:13);
- c.moveTo(-6,20);c.lineTo(-9,sit?21:step?29:24);
- c.moveTo(6,20);c.lineTo(9,sit?21:step?24:29);c.stroke();
- c.fillStyle='#233444';c.font='bold 13px Arial';c.textAlign='center';c.textBaseline='middle';c.fillText(String(n),0,10);
+ c.beginPath();c.roundRect(-15,-3,30,28,8);c.fill();
+ c.strokeStyle='#e4b9a0';c.lineWidth=4;c.lineCap='round';c.beginPath();
+ c.moveTo(-14,6);c.lineTo(-20,9+swing);
+ c.moveTo(14,6);c.lineTo(20,9-swing);
+ c.moveTo(-7,23);c.lineTo(-10,31-swing);
+ c.moveTo(7,23);c.lineTo(10,31+swing);c.stroke();
+ // High-contrast number plate is readable independently of clothing color.
+ c.fillStyle=done?'#f5dc9b':'#f0f5f7';c.beginPath();c.roundRect(-15,0,30,24,5);c.fill();
+ c.fillStyle='#13293c';c.font='900 21px Arial';c.textAlign='center';c.textBaseline='middle';c.fillText(String(n),0,12);
  c.restore();
+}
+function headingAt(b,p,winner){
+ const a=position(b,clamp(p-.006,0,1),winner),z=position(b,clamp(p+.006,0,1),winner);
+ return Math.atan2(z.y-a.y,z.x-a.x);
 }
 export function drawBabyRace(canvas,round,elapsed=0,duration=8000,reduced=false){
  const c=canvas.getContext('2d');if(!c)return;
@@ -56,8 +68,9 @@ export function drawBabyRace(canvas,round,elapsed=0,duration=8000,reduced=false)
  if(round)for(const b of round.babies){
   const {x,y}=reduced&&!done?b.nodes[0]:position(b,p,round.winner);
   const sit=!reduced&&b.sit&&p>=b.pause&&p<b.pause+.065;
-  const scale=round.count>65?.51:round.count>36?.64:.82;
-  drawToddler(c,x,y,scale,b.n,sit,Math.floor(p*30+b.phase)%2===0);
+  const scale=round.count>65?.87:round.count>36?1.1:round.count>15?1.5:2.1;
+  const heading=reduced?0:headingAt(b,p,round.winner);
+  drawToddler(c,x,y,scale,b.n,sit,elapsed/170+b.phase,heading,done&&b.n===round.winner);
  }
  c.fillStyle='#e8e0c9';c.font='bold 15px Arial';c.textAlign='center';
  c.fillText(done?round.winner+' 番がゴール！':p<.3?'よちよち出発…':p<.68?'あっちへ、こっちへ…': '誰かゴールへ来るかな？',300,445);
