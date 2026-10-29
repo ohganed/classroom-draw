@@ -52,13 +52,46 @@ export function drawMachine(canvas,round,elapsed=0,duration=8000,reduced=false){
   return a[1]+(b[1]-a[1])*v;
  };
  const travel=round&&!reduced?shape(p):p;
- const segments=path.length-1,q=clamp(travel*segments,0,segments),i=Math.min(segments-1,Math.floor(q)),u=ease(q-i);
- let x=path[i][0]+(path[i+1][0]-path[i][0])*u;
- let y=path[i][1]+(path[i+1][1]-path[i][1])*u;
- if(round&&!reduced&&!done)y-=Math.sin(u*Math.PI)*round.bounce*12;
- if(!round||reduced&&!done){x=68;y=65;}
- if(done){x=525;y=391;}
- c.beginPath();c.arc(x,y,13,0,Math.PI*2);c.fillStyle='#bdcfde';c.fill();c.strokeStyle='#eef3f7';c.lineWidth=2;c.stroke();
- if(done&&round){c.fillStyle='#1c3041';c.font='bold 13px Arial';c.fillText(String(round.winner),x,y);c.fillStyle='#efd49c';c.font='bold 19px Arial';c.fillText(round.winner+' 番に決定！',300,438);}
- else{c.fillStyle='#d9e3ea';c.font='bold 16px Arial';c.fillText('巨大からくり装置',295,34);if(round&&p>.34&&!reduced){c.fillStyle='#e2c996';c.font='bold 14px Arial';c.fillText(p<.49?'止まる？':p<.73?'戻された！':p<.88?'追い上げ！':'どのゲートへ？',310,79);}}
+ // All numbered balls are visible from the beginning; no anonymous substitute.
+ // We show the complete population inside a numbered staging chamber.
+ const n=round?.count??40;
+ const cols=n>72?11:n>42?10:8,rows=Math.ceil(n/cols);
+ const spacingX=470/cols,spacingY=127/rows;
+ const radius=clamp(Math.min(spacingX*.34,spacingY*.38),5.5,11);
+ c.fillStyle='#233c50';c.fillRect(52,46,500,146);
+ c.strokeStyle='#8ca8b8';c.lineWidth=2;c.strokeRect(52,46,500,146);
+ c.fillStyle='#e6d3a6';c.font='bold 12px Arial';c.textAlign='left';c.fillText('参加する玉：'+n+' 個（全番号表示）',60,59);
+ // Numbered entrants circulate gently in the chamber, including the eventual winner.
+ // After the mid-point, other balls remain visible in the collecting bays.
+ const active=ease((p-.12)/.67);
+ for(let k=1;k<=n;k++){
+  const index=k-1,col=index%cols,row=Math.floor(index/cols);
+  const homeX=65+(col+.5)*spacingX,homeY=64+(row+.5)*spacingY;
+  const offset=round&&!reduced?Math.sin(p*19+k*2.3)*Math.min(3.5,radius*.36)*Math.sin(Math.PI*clamp(p/.75,0,1)):0;
+  let bx=homeX+offset,by=homeY;
+  if(k===round?.winner){
+   // The selected numbered ball comes out of the chamber and follows the contraption.
+   const leave=ease((p-.12)/.19);
+   if(leave>0){
+    const segments=path.length-1,q=clamp(travel*segments,0,segments);
+    const i=Math.min(segments-1,Math.floor(q)),u=ease(q-i);
+    const tx=path[i][0]+(path[i+1][0]-path[i][0])*u;
+    const ty=path[i][1]+(path[i+1][1]-path[i][1])*u-(round&&!reduced&&!done?Math.sin(u*Math.PI)*round.bounce*12:0);
+    bx=homeX+(tx-homeX)*leave;by=homeY+(ty-homeY)*leave;
+   }
+   if(done){bx=525;by=391;}
+  }else if(p>.56){
+   // Keep losing balls present and numbered in the chamber instead of vanishing.
+   bx+=Math.sin(k*1.72+p*9)*2.5*(1-active);
+  }
+  c.beginPath();c.arc(bx,by,radius,0,Math.PI*2);
+  c.fillStyle=k===round?.winner&&done?'#e9c985':'#b7ccdc';c.fill();
+  c.strokeStyle='#e8f0f5';c.lineWidth=1;c.stroke();
+  c.fillStyle='#172e40';c.textAlign='center';c.textBaseline='middle';
+  c.font='bold '+(radius<7?8:radius<9?9:11)+'px Arial';
+  c.fillText(String(k),bx,by+.4);
+ }
+ if(done&&round){c.fillStyle='#efd49c';c.font='bold 19px Arial';c.textAlign='center';c.fillText(round.winner+' 番に決定！',300,438);}
+ else{c.fillStyle='#d9e3ea';c.font='bold 16px Arial';c.textAlign='center';c.fillText('巨大からくり装置',300,28);}
+
 }
