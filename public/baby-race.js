@@ -5,16 +5,22 @@ const ease=t=>{t=clamp(t,0,1);return t*t*(3-2*t)};
 export function makeBabyRound(count,winner,seed){
  let s=(seed>>>0)||1;const rand=()=>((s=(Math.imul(s,1664525)+1013904223)>>>0)/4294967296);
  const babies=Array.from({length:count},(_,i)=>{
-  const n=i+1,side=i%4;
-  const x=side===0?40:side===1?560:50+rand()*500;
-  const y=side===2?68:side===3?395:80+rand()*295;
+  const n=i+1;
+  // Every child shares the same bottom-left starting point.
+  const x=78,y=376;
   const nodes=[{x,y}];let px=x,py=y;
+  // A gentle diagonal tendency, mixed with real detours and backtracking.
+  // Only the animation is guided; the draw has already chosen the winner.
   for(let j=0;j<15;j++){
-   const angle=rand()*Math.PI*2,dist=22+rand()*65;
-   px=clamp(px+Math.cos(angle)*dist,35,565);
-   py=clamp(py+Math.sin(angle)*dist,68,400);
-   // Non-winners can approach the goal but don't enter it before the announcement.
-   if(n!==winner&&Math.hypot(px-300,py-235)<52){px=clamp(px+90,35,565);py=clamp(py-75,68,400);}
+   const angle=rand()*Math.PI*2;
+   const step=23+rand()*48;
+   const driftX=17+rand()*15,driftY=-11-rand()*12;
+   px=clamp(px+Math.cos(angle)*step+driftX,53,544);
+   py=clamp(py+Math.sin(angle)*step+driftY,100,375);
+   // All other babies are free to wander near the goal, not enter its circle.
+   if(n!==winner&&Math.hypot(px-507,py-111)<52){
+    px=clamp(px-38,53,544);py=clamp(py+52,100,375);
+   }
    nodes.push({x:px,y:py});
   }
   return {n,nodes,sit:rand()<.42,pause:.15+rand()*.63,phase:rand()*6.28};
@@ -24,7 +30,7 @@ export function makeBabyRound(count,winner,seed){
 function position(b,p,winner){
  const travel=clamp(p*15,0,15),i=Math.min(14,Math.floor(travel)),u=ease(travel-i);
  const a=b.nodes[i],z=b.nodes[i+1];let x=a.x+(z.x-a.x)*u,y=a.y+(z.y-a.y)*u;
- if(b.n===winner){const t=ease((p-.77)/.23);x+=(300-x)*t;y+=(235-y)*t;}
+ if(b.n===winner){const t=ease((p-.77)/.23);x+=(507-x)*t;y+=(111-y)*t;}
  return {x,y};
 }
 function drawToddler(c,x,y,r,n,sit,phase,heading,done){
@@ -62,9 +68,10 @@ export function drawBabyRace(canvas,round,elapsed=0,duration=8000,reduced=false)
  c.strokeStyle='#a9b8b8';c.lineWidth=3;c.strokeRect(25,54,550,369);
  // Quiet playroom decor and a fixed, softly colored goal.
  c.fillStyle='#58767b';for(let j=0;j<6;j++){c.fillRect(57+j*87,67,17,17);c.fillRect(68+j*84,390,13,13);}
- c.beginPath();c.arc(300,235,36,0,Math.PI*2);c.fillStyle='#466d6a';c.fill();c.strokeStyle='#dfd2a5';c.lineWidth=3;c.stroke();
- c.fillStyle='#f0dfa9';c.font='bold 13px Arial';c.textAlign='center';c.textBaseline='middle';c.fillText('こっち？',300,235);
+ c.beginPath();c.arc(507,111,35,0,Math.PI*2);c.fillStyle='#466d6a';c.fill();c.strokeStyle='#dfd2a5';c.lineWidth=3;c.stroke();
+ c.fillStyle='#f0dfa9';c.font='bold 13px Arial';c.textAlign='center';c.textBaseline='middle';c.fillText('こっち？',507,111);
  c.font='bold 19px Arial';c.fillText('赤ちゃんこっちモード',300,31);
+ c.font='bold 12px Arial';c.fillText('スタート',79,405);
  if(round)for(const b of round.babies){
   const {x,y}=reduced&&!done?b.nodes[0]:position(b,p,round.winner);
   const sit=!reduced&&b.sit&&p>=b.pause&&p<b.pause+.065;
