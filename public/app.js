@@ -10,6 +10,7 @@ import { drawGalton, makeGaltonRound } from './galton.js';
 import { drawMaze, makeMazeRound } from './maze.js';
 import { drawCrane, makeCraneRound } from './crane.js';
 import { scheduleCraneSounds } from './crane-audio.js';
+import { drawMachine, makeMachineRound, MACHINE_EVENTS } from './machine.js';
 const $ = id => document.getElementById(id);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 let duration = 8000;
@@ -39,14 +40,15 @@ $('count').addEventListener('change', () => {
  if (!Number.isInteger(value) || value < 1 || value > 99) {
   $('count').value = count; $('hint').textContent = '人数は1〜99の整数で入力してください'; return;
  }
- count = value; updateCount();shuffleGalton();mazeRound=null;craneRound=null;if(mode==='crane')craneRound=makeCraneRound(count,randomNumber(undefined,count),crypto.getRandomValues(new Uint32Array(1))[0]);if(mode==='galton')galtonRound=makeGaltonRound(count,n=>randomNumber(undefined,n));syncMode();
+ count = value; updateCount();shuffleGalton();mazeRound=null;craneRound=null;machineRound=null;if(mode==='machine')machineRound=makeMachineRound(count,randomNumber(undefined,count),crypto.getRandomValues(new Uint32Array(1))[0]);if(mode==='crane')craneRound=makeCraneRound(count,randomNumber(undefined,count),crypto.getRandomValues(new Uint32Array(1))[0]);if(mode==='galton')galtonRound=makeGaltonRound(count,n=>randomNumber(undefined,n));syncMode();
  $('app').className = ''; $('number').textContent = '?'; $('status').textContent = '次の主役は、だれだろう。';
  $('hint').textContent = `タップすると、${duration / 1000}秒で決まります`; $('announcement').textContent = `${count}人に設定しました。`;
  try { localStorage.setItem('classroom-draw-count', String(count)); } catch {}
 });
 let mode = 'numbers';
-try { if (['die','lottery','roulette','race','horse','pinball','galton','maze','crane'].includes(localStorage.getItem('classroom-draw-mode'))) mode = localStorage.getItem('classroom-draw-mode'); } catch {}
+try { if (['die','lottery','roulette','race','horse','pinball','galton','maze','crane','machine'].includes(localStorage.getItem('classroom-draw-mode'))) mode = localStorage.getItem('classroom-draw-mode'); } catch {}
 $('mode').value = mode;
+const machineWrap=$('machine-wrap'),machineCanvas=$('machine');let machineRound=null,machineEventIndex=0;
 const craneWrap=$('crane-wrap'),craneCanvas=$('crane');let craneRound=null;
 const mazeWrap=$('maze-wrap'),mazeCanvas=$('maze');let mazeRound=null;
 const galtonWrap=$('galton-wrap'),galtonCanvas=$('galton');
@@ -92,10 +94,11 @@ function drawDieLegacy(time = 0, selected = null) {
  dc.restore();
 }
 function drawDie(time=0,selected=null){drawDie3D(die,time,duration,selected,reduced.matches);}
-function syncMode(){craneWrap.hidden=mode!=='crane';mazeWrap.hidden=mode!=='maze';galtonWrap.hidden=mode!=='galton';pinballWrap.hidden=mode!=='pinball';horseWrap.hidden=mode!=='horse';raceWrap.hidden=mode!=='race';rouletteWrap.hidden=mode!=='roulette';dieWrap.hidden=mode!=='die';lotteryWrap.hidden=mode!=='lottery';$('number').hidden=mode!=='numbers'&&!$('app').classList.contains('result');if(mode==='die')drawDie(0,null);if(mode==='lottery')drawLottery(lotteryCanvas,0,duration,count,null,reduced.matches);if(mode==='roulette')drawRoulette(rouletteCanvas,count,0,null);if(mode==='race')drawBallRace(raceCanvas,count,0,duration,null,true);if(mode==='horse')drawHorseRace(horseCanvas,count,0,duration,null,true);if(mode==='pinball')drawPinball(pinballCanvas,count,0,duration,null,true);if(mode==='galton')drawGalton(galtonCanvas,galtonRound,0,duration,true);if(mode==='maze')drawMaze(mazeCanvas,mazeRound,0,duration,true);if(mode==='crane')drawCrane(craneCanvas,craneRound,0,duration,true);}
-$('mode').addEventListener('change',()=>{if(running){$('mode').value=mode;return;}mode=$('mode').value;if(mode==='crane'&&!craneRound)craneRound=makeCraneRound(count,randomNumber(undefined,count),crypto.getRandomValues(new Uint32Array(1))[0]);if(mode==='maze'&&!mazeRound)mazeRound=makeMazeRound(count,randomNumber(undefined,count),crypto.getRandomValues(new Uint32Array(1))[0]);if(mode==='galton'&&!galtonRound)galtonRound=makeGaltonRound(count,n=>randomNumber(undefined,n));try{localStorage.setItem('classroom-draw-mode',mode);}catch{} $('app').className='';$('number').textContent='?';syncMode();});
+function syncMode(){machineWrap.hidden=mode!=='machine';craneWrap.hidden=mode!=='crane';mazeWrap.hidden=mode!=='maze';galtonWrap.hidden=mode!=='galton';pinballWrap.hidden=mode!=='pinball';horseWrap.hidden=mode!=='horse';raceWrap.hidden=mode!=='race';rouletteWrap.hidden=mode!=='roulette';dieWrap.hidden=mode!=='die';lotteryWrap.hidden=mode!=='lottery';$('number').hidden=mode!=='numbers'&&!$('app').classList.contains('result');if(mode==='die')drawDie(0,null);if(mode==='lottery')drawLottery(lotteryCanvas,0,duration,count,null,reduced.matches);if(mode==='roulette')drawRoulette(rouletteCanvas,count,0,null);if(mode==='race')drawBallRace(raceCanvas,count,0,duration,null,true);if(mode==='horse')drawHorseRace(horseCanvas,count,0,duration,null,true);if(mode==='pinball')drawPinball(pinballCanvas,count,0,duration,null,true);if(mode==='galton')drawGalton(galtonCanvas,galtonRound,0,duration,true);if(mode==='maze')drawMaze(mazeCanvas,mazeRound,0,duration,true);if(mode==='crane')drawCrane(craneCanvas,craneRound,0,duration,true);if(mode==='machine')drawMachine(machineCanvas,machineRound,0,duration,true);}
+$('mode').addEventListener('change',()=>{if(running){$('mode').value=mode;return;}mode=$('mode').value;if(mode==='machine'&&!machineRound)machineRound=makeMachineRound(count,randomNumber(undefined,count),crypto.getRandomValues(new Uint32Array(1))[0]);if(mode==='crane'&&!craneRound)craneRound=makeCraneRound(count,randomNumber(undefined,count),crypto.getRandomValues(new Uint32Array(1))[0]);if(mode==='maze'&&!mazeRound)mazeRound=makeMazeRound(count,randomNumber(undefined,count),crypto.getRandomValues(new Uint32Array(1))[0]);if(mode==='galton'&&!galtonRound)galtonRound=makeGaltonRound(count,n=>randomNumber(undefined,n));try{localStorage.setItem('classroom-draw-mode',mode);}catch{} $('app').className='';$('number').textContent='?';syncMode();});
 if(mode==='maze'&&!mazeRound)mazeRound=makeMazeRound(count,randomNumber(undefined,count),crypto.getRandomValues(new Uint32Array(1))[0]);
 if(mode==='crane'&&!craneRound)craneRound=makeCraneRound(count,randomNumber(undefined,count),crypto.getRandomValues(new Uint32Array(1))[0]);
+if(mode==='machine'&&!machineRound)machineRound=makeMachineRound(count,randomNumber(undefined,count),crypto.getRandomValues(new Uint32Array(1))[0]);
 syncMode();
 let sound = false, context, master, running = false, started = 0, lastIndex = -1, winner, raf, raceStory='comeback',pinballSeed=1;
 const raceModes=new Set(['race','horse','maze']);
@@ -120,7 +123,7 @@ function tone(frequency, delay = 0, duration = .045, type = 'sine') {
 }
 function finish(audible = true) {
  running = false;syncRaceLayout(); $('count').disabled = false; $('duration').disabled = false; $('mode').disabled = false; cancelAnimationFrame(raf);
- $('number').textContent = winner; $('app').className = 'result'; if(mode==='die'){drawDie(duration,winner);dieWrap.hidden=false;$('number').hidden=false;} if(mode==='lottery'){drawLottery(lotteryCanvas,duration,duration,count,winner,true);lotteryWrap.hidden=false;$('number').hidden=false;}if(mode==='roulette'){drawRoulette(rouletteCanvas,count,rouletteAngle(duration,duration,winner,count,true),winner);rouletteWrap.hidden=false;$('number').hidden=false;} if(mode==='race'){drawBallRace(raceCanvas,count,duration,duration,winner,false,raceStory);raceWrap.hidden=false;$('number').hidden=false;} if(mode==='horse'){drawHorseRace(horseCanvas,count,duration,duration,winner,false,raceStory);horseWrap.hidden=false;$('number').hidden=false;} if(mode==='pinball'){drawPinball(pinballCanvas,count,duration,duration,winner,false,pinballSeed);pinballWrap.hidden=false;$('number').hidden=false;} if(mode==='galton'){drawGalton(galtonCanvas,galtonRound,duration,duration,false);galtonWrap.hidden=false;$('number').hidden=false;}if(mode==='maze'){drawMaze(mazeCanvas,mazeRound,duration,duration,false);mazeWrap.hidden=false;$('number').hidden=false;}if(mode==='crane'){drawCrane(craneCanvas,craneRound,duration,duration,false);craneWrap.hidden=false;$('number').hidden=false;} $('status').textContent = 'あなたの番です！';
+ $('number').textContent = winner; $('app').className = 'result'; if(mode==='die'){drawDie(duration,winner);dieWrap.hidden=false;$('number').hidden=false;} if(mode==='lottery'){drawLottery(lotteryCanvas,duration,duration,count,winner,true);lotteryWrap.hidden=false;$('number').hidden=false;}if(mode==='roulette'){drawRoulette(rouletteCanvas,count,rouletteAngle(duration,duration,winner,count,true),winner);rouletteWrap.hidden=false;$('number').hidden=false;} if(mode==='race'){drawBallRace(raceCanvas,count,duration,duration,winner,false,raceStory);raceWrap.hidden=false;$('number').hidden=false;} if(mode==='horse'){drawHorseRace(horseCanvas,count,duration,duration,winner,false,raceStory);horseWrap.hidden=false;$('number').hidden=false;} if(mode==='pinball'){drawPinball(pinballCanvas,count,duration,duration,winner,false,pinballSeed);pinballWrap.hidden=false;$('number').hidden=false;} if(mode==='galton'){drawGalton(galtonCanvas,galtonRound,duration,duration,false);galtonWrap.hidden=false;$('number').hidden=false;}if(mode==='maze'){drawMaze(mazeCanvas,mazeRound,duration,duration,false);mazeWrap.hidden=false;$('number').hidden=false;}if(mode==='crane'){drawCrane(craneCanvas,craneRound,duration,duration,false);craneWrap.hidden=false;$('number').hidden=false;}if(mode==='machine'){drawMachine(machineCanvas,machineRound,duration,duration,false);machineWrap.hidden=false;$('number').hidden=false;} $('status').textContent = 'あなたの番です！';
  $('caption').textContent = `${winner} 番`; $('start').disabled = false; $('start').innerHTML = 'もう一度ひく <span aria-hidden="true">↗</span>';
  $('hint').textContent = `毎回、1〜${count}番からランダムに選びます`; $('announcement').textContent = `${winner}番に決まりました。`;
  $('progress-fill').style.width = '100%';
@@ -149,6 +152,14 @@ function tick() {
  if(mode==='galton'){if(!reduced.matches)drawGalton(galtonCanvas,galtonRound,elapsed,duration,false);raf=requestAnimationFrame(tick);return;}
  if(mode==='maze'){if(!reduced.matches)drawMaze(mazeCanvas,mazeRound,elapsed,duration,false);raf=requestAnimationFrame(tick);return;}
  if(mode==='crane'){if(!reduced.matches)drawCrane(craneCanvas,craneRound,elapsed,duration,false);raf=requestAnimationFrame(tick);return;}
+ if(mode==='machine'){
+  if(!reduced.matches)drawMachine(machineCanvas,machineRound,elapsed,duration,false);
+  while(machineEventIndex<MACHINE_EVENTS.length&&elapsed>=MACHINE_EVENTS[machineEventIndex].t*duration){
+   const j=machineEventIndex++;
+   if(sound&&!document.hidden&&context&&context.state==='running'&&elapsed-MACHINE_EVENTS[j].t*duration<110){tone([260,390,230,330,510,440][j],0,.085,'sine');}
+  }
+  raf=requestAnimationFrame(tick);return;
+ }
  // Keep progress visually still.
  if (!reduced.matches && frame.index !== lastIndex && elapsed - (window.__lastVisualChange || 0) >= 300) {
   lastIndex = frame.index;
@@ -165,7 +176,7 @@ $('start').addEventListener('click', () => {
  unlockAudio();
  // Silence any remaining fanfare before a new round.
  if (master) { master.gain.setValueAtTime(0,context.currentTime); const previous = master; master = context.createGain(); master.gain.value=.18; master.connect(context.destination); setTimeout(()=>previous.disconnect(),1200); }
- running = true;syncRaceLayout(); $('count').disabled = true; $('duration').disabled = true; $('mode').disabled = true; winner = randomNumber(undefined, count);if(mode==='crane')craneRound=makeCraneRound(count,winner,crypto.getRandomValues(new Uint32Array(1))[0]);if(mode==='maze')mazeRound=makeMazeRound(count,winner,crypto.getRandomValues(new Uint32Array(1))[0]); pinballSeed=crypto.getRandomValues(new Uint32Array(1))[0];if(mode==='pinball'){pinballEvents=getPinballCollisions(count,duration,winner,pinballSeed);pinballEventIndex=0;lastPinballSound=-1000;} if(mode==='galton'){galtonRound=makeGaltonRound(count,n=>randomNumber(undefined,n));winner=galtonRound.winner;} raceStory=['front','close','comeback'][randomNumber(undefined,3)-1]; started = performance.now(); lastIndex = -1; window.__lastVisualChange = -300;
+ running = true;syncRaceLayout(); $('count').disabled = true; $('duration').disabled = true; $('mode').disabled = true; winner = randomNumber(undefined, count);if(mode==='machine'){machineRound=makeMachineRound(count,winner,crypto.getRandomValues(new Uint32Array(1))[0]);machineEventIndex=0;}if(mode==='crane')craneRound=makeCraneRound(count,winner,crypto.getRandomValues(new Uint32Array(1))[0]);if(mode==='maze')mazeRound=makeMazeRound(count,winner,crypto.getRandomValues(new Uint32Array(1))[0]); pinballSeed=crypto.getRandomValues(new Uint32Array(1))[0];if(mode==='pinball'){pinballEvents=getPinballCollisions(count,duration,winner,pinballSeed);pinballEventIndex=0;lastPinballSound=-1000;} if(mode==='galton'){galtonRound=makeGaltonRound(count,n=>randomNumber(undefined,n));winner=galtonRound.winner;} raceStory=['front','close','comeback'][randomNumber(undefined,3)-1]; started = performance.now(); lastIndex = -1; window.__lastVisualChange = -300;
  $('app').className = 'running'; $('start').disabled = true; $('start').textContent = '抽選中…'; $('status').textContent = 'だれの番かな…';
  $('caption').textContent = 'あと少し、お楽しみに'; $('hint').textContent = `${duration / 1000}秒で番号が決まります`; $('announcement').textContent = `抽選中です。${duration / 1000}秒で決まります。`;
  $('number').textContent = '…'; if(mode==='die'){$('number').hidden=true;dieWrap.hidden=false;drawDie(0,null);}if(mode==='lottery'){$('number').hidden=true;lotteryWrap.hidden=false;drawLottery(lotteryCanvas,0,duration,count,null,reduced.matches);}if(mode==='roulette'){$('number').hidden=true;rouletteWrap.hidden=false;drawRoulette(rouletteCanvas,count,0,null);}
@@ -174,6 +185,7 @@ $('start').addEventListener('click', () => {
  if(mode==='pinball'){$('number').hidden=true;pinballWrap.hidden=false;drawPinball(pinballCanvas,count,0,duration,winner,reduced.matches,pinballSeed);}
  if(mode==='galton'){galtonWrap.hidden=false;$('number').hidden=true;drawGalton(galtonCanvas,galtonRound,0,duration,reduced.matches);}
  if(mode==='maze'){mazeWrap.hidden=false;$('number').hidden=true;drawMaze(mazeCanvas,mazeRound,0,duration,reduced.matches);}
+ if(mode==='machine'){machineWrap.hidden=false;$('number').hidden=true;drawMachine(machineCanvas,machineRound,0,duration,reduced.matches);}
  if(mode==='crane'){craneWrap.hidden=false;$('number').hidden=true;drawCrane(craneCanvas,craneRound,0,duration,reduced.matches);if(sound&&context){const audioContext=context,audioMaster=master,audioRound=craneRound;const play=()=>{if(sound&&running&&mode==='crane'&&context===audioContext&&master===audioMaster&&audioContext.state==='running')scheduleCraneSounds(audioContext,audioMaster,audioRound,duration);};if(audioContext.state==='running')play();else audioContext.resume().then(play).catch(()=>{});}}
  tick();
 });
@@ -183,7 +195,7 @@ $('sound').addEventListener('click', () => {
  if (sound) unlockAudio();
  updateSound(); try { localStorage.setItem('classroom-draw-sound',sound?'on':'off'); } catch {}
 });
-reduced.addEventListener('change', () => { if (running) { $('number').textContent = '…'; if(mode==='die') drawDie(0,null);if(mode==='lottery') drawLottery(lotteryCanvas,0,duration,count,null,true);if(mode==='roulette')drawRoulette(rouletteCanvas,count,0,null);if(mode==='race')drawBallRace(raceCanvas,count,0,duration,null,true);if(mode==='horse')drawHorseRace(horseCanvas,count,0,duration,null,true);if(mode==='pinball')drawPinball(pinballCanvas,count,0,duration,null,true);if(mode==='galton')drawGalton(galtonCanvas,galtonRound,0,duration,true);if(mode==='maze')drawMaze(mazeCanvas,mazeRound,0,duration,true);if(mode==='crane')drawCrane(craneCanvas,craneRound,0,duration,true); } });
+reduced.addEventListener('change', () => { if (running) { $('number').textContent = '…'; if(mode==='die') drawDie(0,null);if(mode==='lottery') drawLottery(lotteryCanvas,0,duration,count,null,true);if(mode==='roulette')drawRoulette(rouletteCanvas,count,0,null);if(mode==='race')drawBallRace(raceCanvas,count,0,duration,null,true);if(mode==='horse')drawHorseRace(horseCanvas,count,0,duration,null,true);if(mode==='pinball')drawPinball(pinballCanvas,count,0,duration,null,true);if(mode==='galton')drawGalton(galtonCanvas,galtonRound,0,duration,true);if(mode==='maze')drawMaze(mazeCanvas,mazeRound,0,duration,true);if(mode==='crane')drawCrane(craneCanvas,craneRound,0,duration,true);if(mode==='machine')drawMachine(machineCanvas,machineRound,0,duration,true); } });
 document.addEventListener('visibilitychange', () => {
  if (document.hidden) { if(master) master.gain.setValueAtTime(0,context.currentTime); cancelAnimationFrame(raf); }
  else if (running) { if (performance.now()-started>=duration) finish(false); else { if(master && sound) master.gain.setValueAtTime(.18,context.currentTime); tick(); } }
