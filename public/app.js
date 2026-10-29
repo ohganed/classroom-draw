@@ -10,7 +10,7 @@ import { drawGalton, makeGaltonRound } from './galton.js';
 import { drawMaze, makeMazeRound } from './maze.js';
 import { drawCrane, makeCraneRound } from './crane.js';
 import { scheduleCraneSounds } from './crane-audio.js';
-import { drawMachine, makeMachineRound, MACHINE_EVENTS } from './machine.js';
+import { drawMachine, makeMachineRound, MACHINE_EVENTS } from './machine.js?v=43';
 const $ = id => document.getElementById(id);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 let duration = 8000;
