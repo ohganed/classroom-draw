@@ -64,26 +64,40 @@ export function drawMachine(canvas,round,elapsed=0,duration=8000,reduced=false){
  // Numbered entrants circulate gently in the chamber, including the eventual winner.
  // After the mid-point, other balls remain visible in the collecting bays.
  const active=ease((p-.12)/.67);
+ // Visible collection tray; non-selected balls also travel and settle here.
+ c.fillStyle='#294557';c.fillRect(46,397,424,38);
+ c.strokeStyle='#8da5b4';c.lineWidth=2;c.strokeRect(46,397,424,38);
  for(let k=1;k<=n;k++){
   const index=k-1,col=index%cols,row=Math.floor(index/cols);
   const homeX=65+(col+.5)*spacingX,homeY=64+(row+.5)*spacingY;
   const offset=round&&!reduced?Math.sin(p*19+k*2.3)*Math.min(3.5,radius*.36)*Math.sin(Math.PI*clamp(p/.75,0,1)):0;
   let bx=homeX+offset,by=homeY;
-  if(k===round?.winner){
-   // The selected numbered ball comes out of the chamber and follows the contraption.
-   const leave=ease((p-.12)/.19);
-   if(leave>0){
-    const segments=path.length-1,q=clamp(travel*segments,0,segments);
-    const i=Math.min(segments-1,Math.floor(q)),u=ease(q-i);
-    const tx=path[i][0]+(path[i+1][0]-path[i][0])*u;
-    const ty=path[i][1]+(path[i+1][1]-path[i][1])*u-(round&&!reduced&&!done?Math.sin(u*Math.PI)*round.bounce*12:0);
-    bx=homeX+(tx-homeX)*leave;by=homeY+(ty-homeY)*leave;
+  const isWinner=k===round?.winner;
+  const depart=isWinner?.11:.04+((k*17)%13)*.008;
+  const exit=isWinner?1:.60+((k*7)%19)*.009;
+  const phase=clamp((p-depart)/Math.max(.1,exit-depart),0,1);
+  if(phase>0){
+   // Every ball follows the same visible machinery at its own speed.
+   // Losing balls roll into the lower collection tray, rather than disappearing.
+   const moving=isWinner?travel:phase*.86;
+   const q=clamp(moving*(path.length-1),0,path.length-1);
+   const j=Math.min(path.length-2,Math.floor(q)),u=ease(q-j);
+   let tx=path[j][0]+(path[j+1][0]-path[j][0])*u;
+   let ty=path[j][1]+(path[j+1][1]-path[j][1])*u;
+   if(!isWinner){
+    const slot=k-(k>round.winner?1:0)-1;
+    const trayX=58+(slot%Math.min(n,33))*12;
+    const trayY=410+Math.floor(slot/33)*13;
+    const settle=ease((phase-.76)/.24);
+    tx=tx+(trayX-tx)*settle;
+    ty=ty+(trayY-ty)*settle;
    }
-   if(done){bx=525;by=391;}
-  }else if(p>.56){
-   // Keep losing balls present and numbered in the chamber instead of vanishing.
-   bx+=Math.sin(k*1.72+p*9)*2.5*(1-active);
+   const blend=ease(phase*8);
+   bx=homeX+(tx-homeX)*blend;
+   by=homeY+(ty-homeY)*blend;
   }
+  if(isWinner&&done){bx=525;by=391;}
+
   c.beginPath();c.arc(bx,by,radius,0,Math.PI*2);
   c.fillStyle=k===round?.winner&&done?'#e9c985':'#b7ccdc';c.fill();
   c.strokeStyle='#e8f0f5';c.lineWidth=1;c.stroke();
