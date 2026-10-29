@@ -10,8 +10,10 @@ export function makeCraneRound(count,winner,seed){
   const col=i%11,row=Math.floor(i/11),x=61+col*43+(r()-.5)*9,y=360-row*32+(r()-.5)*12;
   balls.push({number:i+1,x,y,shade:Math.floor(r()*3)});
  }
- const misses=1+Math.floor(r()*2);
- const fake=Array.from({length:misses},()=>1+Math.floor(r()*count)).map(n=>n===winner?(n%count)+1:n);
+ // Uniformly choose 1-5 total attempts (only one when there is one capsule).
+ const attempts=count===1?1:1+Math.floor(r()*5);
+ const misses=attempts-1;
+ const fake=Array.from({length:misses},()=>{const index=Math.floor(r()*(count-1));return 1+index+(index>=winner-1?1:0);});
  return {balls,winner,misses,fake,offset:r()*24-12};
 }
 function capsule(c,x,y,n,shade=0,r=16,alpha=1){
@@ -88,6 +90,6 @@ export function drawCrane(canvas,round,elapsed=0,duration=8000,reduced=false){
   c.font='bold 19px Arial';c.textAlign='center';c.fillStyle='#ead3a0';c.fillText(round.winner+' 番をGET!',300,450);
  }else{
   c.font='bold 15px Arial';c.fillStyle='#e2cfaa';c.textAlign='center';
-  c.fillText(reduced?'カプセル抽選中':final?'最後のチャレンジ！':'もう一度チャレンジ！',300,450);
+  c.fillText(reduced?'カプセル抽選中':(attempt+1)+' / '+attempts+' 回目 '+(final?'ラストチャレンジ！':'チャレンジ中'),300,450);
  }
 }
