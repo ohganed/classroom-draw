@@ -12,7 +12,7 @@ function trajectory(count,winner,duration,seed=1){
  const goalX=40+(col+.5)*sw,goalY=403+(row+.5)*sh;
  let state=(seed>>>0)||1;
  const rand=()=>{state=(Math.imul(state,1664525)+1013904223)>>>0;return state/4294967296;};
- const frames=[];let x=280+rand()*35,y=37,vx=95+rand()*190,vy=12;
+ const frames=[],collisions=[];let x=280+rand()*35,y=37,vx=95+rand()*190,vy=12;
  const dt=1/60,steps=Math.ceil(duration/1000/dt);
  // Gravity, drag and normal impulse from immovable bumpers; constant simulation step.
  for(let k=0;k<=steps;k++){
@@ -30,8 +30,8 @@ function trajectory(count,winner,duration,seed=1){
    vx*=.999;vy*=.999;
   }
   x+=vx*dt;y+=vy*dt;
-  if(x<50){x=50;vx=Math.abs(vx)*(.76+rand()*.25);vy+=(rand()-.5)*60;}
-  if(x>550){x=550;vx=-Math.abs(vx)*(.76+rand()*.25);vy+=(rand()-.5)*60;}
+  if(x<50){if(Math.abs(vx)>95)collisions.push({ms:k*dt*1000,type:'wall',strength:Math.abs(vx)});x=50;vx=Math.abs(vx)*(.76+rand()*.25);vy+=(rand()-.5)*60;}
+  if(x>550){if(Math.abs(vx)>95)collisions.push({ms:k*dt*1000,type:'wall',strength:Math.abs(vx)});x=550;vx=-Math.abs(vx)*(.76+rand()*.25);vy+=(rand()-.5)*60;}
   if(y<35){y=35;vy=Math.abs(vy)*.78;}
   if(t<=.79){
    if(Math.hypot(vx,vy)<65){vx+=(rand()-.5)*170;vy-=160;}
@@ -41,10 +41,10 @@ function trajectory(count,winner,duration,seed=1){
      const nx=dist>1e-6?dx/dist:1,ny=dist>1e-6?dy/dist:0;
      x=bx+nx*minimum;y=by+ny*minimum;
      const vn=vx*nx+vy*ny;
-     if(vn<0){const boost=1.0+rand()*.65;vx-=(1+.84)*vn*nx*boost;vy-=(1+.84)*vn*ny*boost;vx+=(rand()-.5)*90;vy+=(rand()-.5)*55;}
+     if(vn< -70){collisions.push({ms:k*dt*1000,type:'bumper',strength:-vn});const boost=1.0+rand()*.65;vx-=(1+.84)*vn*nx*boost;vy-=(1+.84)*vn*ny*boost;vx+=(rand()-.5)*90;vy+=(rand()-.5)*55;}
     }
    }
-   if(y>380){y=380;vy=-(260+rand()*145);vx+=(rand()-.5)*180;}
+   if(y>380){if(vy>90)collisions.push({ms:k*dt*1000,type:'floor',strength:vy});y=380;vy=-(260+rand()*145);vx+=(rand()-.5)*180;}
   }else{
    // Once inside the collection chute, constrain vertical motion.
    const limit=goalY-16;
@@ -55,7 +55,7 @@ function trajectory(count,winner,duration,seed=1){
  // Smooth final entry into the pocket across the last 8% of frames.
  const from=Math.floor(frames.length*.92),anchor=frames[from];
  for(let i=from;i<frames.length;i++){const u=(i-from)/(frames.length-1-from);const q=u*u*(3-2*u);frames[i]=[anchor[0]+(goalX-anchor[0])*q,anchor[1]+(goalY-anchor[1])*q];}
- const result={frames,goalX,goalY,columns,rows,sw,sh};
+ const result={frames,collisions,goalX,goalY,columns,rows,sw,sh};
  cache.set(key,result);if(cache.size>8)cache.delete(cache.keys().next().value);
  return result;
 }
@@ -88,4 +88,8 @@ export function drawPinball(canvas,count=40,elapsed=0,duration=8000,winner=null,
  g.beginPath();g.arc(x,y,12,0,Math.PI*2);g.fillStyle=grad;g.fill();
  g.strokeStyle='#b8c8d6';g.lineWidth=1.5;g.stroke();
  if(p>=1&&winner!==null){g.fillStyle='#d7be80';g.font='bold 20px Arial';g.fillText(winner+' 番に決定',300,391);}
+}
+
+export function getPinballCollisions(count,duration,winner,seed){
+ return trajectory(count,winner,duration,seed).collisions;
 }
