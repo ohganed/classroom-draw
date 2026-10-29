@@ -10,7 +10,11 @@ export const MACHINE_EVENTS=[
 export function makeMachineRound(count,winner,seed){
  let s=(seed>>>0)||1;
  const rand=()=>((s=(Math.imul(s,1664525)+1013904223)>>>0)/4294967296);
- return {winner,count,seed,bounce:rand()*.7+.4,gear:rand()*6.28,branch:rand()>.5,hesitation:rand()*.04,reverse:rand()*.08};
+ const pool=Array.from({length:count},(_,i)=>i+1).filter(n=>n!==winner);
+ for(let i=pool.length-1;i>0;i--){const j=Math.floor(rand()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
+ const survivors=[winner,...pool.slice(0,Math.max(0,Math.round(count/4)-1))];
+ const survivorSet=new Set(survivors);
+ return {winner,count,seed,bounce:rand()*.7+.4,gear:rand()*6.28,branch:rand()>.5,survivors,survivorSet};
 }
 export function drawMachine(canvas,round,elapsed=0,duration=8000,reduced=false){
  const c=canvas.getContext('2d');if(!c)return;
@@ -61,43 +65,61 @@ export function drawMachine(canvas,round,elapsed=0,duration=8000,reduced=false){
  c.fillStyle='#233c50';c.fillRect(52,46,500,146);
  c.strokeStyle='#8ca8b8';c.lineWidth=2;c.strokeRect(52,46,500,146);
  c.fillStyle='#e6d3a6';c.font='bold 12px Arial';c.textAlign='left';c.fillText('参加する玉：'+n+' 個（全番号表示）',60,59);
- // Numbered entrants circulate gently in the chamber, including the eventual winner.
- // After the mid-point, other balls remain visible in the collecting bays.
- const active=ease((p-.12)/.67);
- // Visible collection tray; non-selected balls also travel and settle here.
- c.fillStyle='#294557';c.fillRect(46,397,424,38);
- c.strokeStyle='#8da5b4';c.lineWidth=2;c.strokeRect(46,397,424,38);
+ // All balls roll towards the gear; roughly 3/4 are thrown aside at contact.
+ // Number and trajectory remain linked throughout. The predetermined unbiased
+ // winner belongs to a randomly populated surviving quarter.
+ const survivors=round?.survivors??[],survivorSet=round?.survivorSet??new Set();
+ const losers=Array.from({length:n},(_,i)=>i+1).filter(k=>!survivorSet.has(k));
+ c.fillStyle='#294557';c.fillRect(35,395,223,40);c.fillRect(272,395,198,40);
+ c.strokeStyle='#8da5b4';c.lineWidth=2;c.strokeRect(35,395,223,40);c.strokeRect(272,395,198,40);
+ c.fillStyle='#d9e3ea';c.font='bold 11px Arial';c.textAlign='center';c.fillText('歯車で脱落',145,389);c.fillText('通過した玉',367,389);
+ const point=(t)=>{
+  const z=clamp(t,0,1)*(path.length-1),i=Math.min(path.length-2,Math.floor(z)),u=ease(z-i);
+  return [path[i][0]+(path[i+1][0]-path[i][0])*u,path[i][1]+(path[i+1][1]-path[i][1])*u];
+ };
  for(let k=1;k<=n;k++){
   const index=k-1,col=index%cols,row=Math.floor(index/cols);
   const homeX=65+(col+.5)*spacingX,homeY=64+(row+.5)*spacingY;
-  const offset=round&&!reduced?Math.sin(p*19+k*2.3)*Math.min(3.5,radius*.36)*Math.sin(Math.PI*clamp(p/.75,0,1)):0;
-  let bx=homeX+offset,by=homeY;
-  const isWinner=k===round?.winner;
-  const depart=isWinner?.11:.04+((k*17)%13)*.008;
-  const exit=isWinner?1:.60+((k*7)%19)*.009;
-  const phase=clamp((p-depart)/Math.max(.1,exit-depart),0,1);
-  if(phase>0){
-   // Every ball follows the same visible machinery at its own speed.
-   // Losing balls roll into the lower collection tray, rather than disappearing.
-   const moving=isWinner?travel:phase*.86;
-   const q=clamp(moving*(path.length-1),0,path.length-1);
-   const j=Math.min(path.length-2,Math.floor(q)),u=ease(q-j);
-   let tx=path[j][0]+(path[j+1][0]-path[j][0])*u;
-   let ty=path[j][1]+(path[j+1][1]-path[j][1])*u;
-   if(!isWinner){
-    const slot=k-(k>round.winner?1:0)-1;
-    const trayX=58+(slot%Math.min(n,33))*12;
-    const trayY=410+Math.floor(slot/33)*13;
-    const settle=ease((phase-.76)/.24);
-    tx=tx+(trayX-tx)*settle;
-    ty=ty+(trayY-ty)*settle;
+  let bx=homeX,by=homeY;
+  if(round&&!reduced){
+   const start=.035+((k*13)%17)*.005;
+   const gearTime=.34+((k*7)%17)*.008;
+   const approach=clamp((p-start)/(gearTime-start),0,1);
+   const gearPoint=point(.46);
+   const entry=point(.46*approach);
+   const departBlend=ease(approach*5);
+   bx=homeX+(entry[0]-homeX)*departBlend;
+   by=homeY+(entry[1]-homeY)*departBlend;
+   if(p>gearTime){
+    const t=clamp((p-gearTime)/(1-gearTime),0,1);
+    if(!survivorSet.has(k)){
+     // Clear sideways kick at the gear, followed by a fall into the exit tray.
+     const rank=losers.indexOf(k);
+     const lane=(rank%2===0?-1:1);
+     const kick=ease(clamp(t/.23,0,1));
+     const trayX=45+(rank%16)*12.5,trayY=407+Math.floor(rank/16)*11;
+     const settle=ease((t-.22)/.48);
+     bx=gearPoint[0]+lane*(38+rank%5*9)*kick;
+     by=gearPoint[1]-(25+rank%4*8)*Math.sin(Math.PI*clamp(t/.6,0,1))+90*kick;
+     bx+=(trayX-bx)*settle;by+=(trayY-by)*settle;
+    }else{
+     // Survivors pass the gear and race onward. The others park before
+     // the final gate, leaving the chosen ball to finish at the deadline.
+     const isWinner=k===round.winner;
+     const run=ease(t),q=.46+.54*(isWinner?run:Math.min(.85,run*.96));
+     const target=point(q);
+     bx=gearPoint[0]+(target[0]-gearPoint[0])*ease(t*5);
+     by=gearPoint[1]+(target[1]-gearPoint[1])*ease(t*5);
+     if(!isWinner){
+      const rank=survivors.filter(v=>v!==round.winner).indexOf(k);
+      const settle=ease((t-.75)/.25);
+      const tx=285+(rank%12)*14,ty=407+Math.floor(rank/12)*12;
+      bx+=(tx-bx)*settle;by+=(ty-by)*settle;
+     }
+    }
    }
-   const blend=ease(phase*8);
-   bx=homeX+(tx-homeX)*blend;
-   by=homeY+(ty-homeY)*blend;
   }
-  if(isWinner&&done){bx=525;by=391;}
-
+  if(k===round?.winner&&done){bx=525;by=391;}
   c.beginPath();c.arc(bx,by,radius,0,Math.PI*2);
   c.fillStyle=k===round?.winner&&done?'#e9c985':'#b7ccdc';c.fill();
   c.strokeStyle='#e8f0f5';c.lineWidth=1;c.stroke();
@@ -105,6 +127,9 @@ export function drawMachine(canvas,round,elapsed=0,duration=8000,reduced=false){
   c.font='bold '+(radius<7?8:radius<9?9:11)+'px Arial';
   c.fillText(String(k),bx,by+.4);
  }
+ c.fillStyle='#e5d1a0';c.textAlign='center';c.font='bold 14px Arial';
+ if(round&&!done&&p>.38)c.fillText(p<.63?'歯車で次々とはじかれる！':'残った '+survivors.length+' 個がゴールを目指す',310,79);
+
  if(done&&round){c.fillStyle='#efd49c';c.font='bold 19px Arial';c.textAlign='center';c.fillText(round.winner+' 番に決定！',300,438);}
  else{c.fillStyle='#d9e3ea';c.font='bold 16px Arial';c.textAlign='center';c.fillText('巨大からくり装置',300,28);}
 
