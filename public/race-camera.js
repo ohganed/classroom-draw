@@ -39,6 +39,31 @@ export function drawRaceCamera(canvas,positions,progress,kind='ball'){
  c.fillStyle='#132338';c.fillRect(44,top,512,h);
  c.strokeStyle='#9aafc2';c.lineWidth=2;c.strokeRect(44,top,512,h);
  c.beginPath();c.rect(46,top+40,508,h-45);c.clip();
+ // Parallax scenery: steady right-to-left motion behind the racers.
+ // Only position changes; no flashes, brightness pulses or camera shake.
+ const time=progress;
+ const scenery=(speed,spacing,opacity,draw)=>{
+  c.save();c.globalAlpha=reveal*opacity;
+  const offset=(time*speed)%spacing;
+  for(let x=46-offset-spacing;x<570;x+=spacing)draw(x);
+  c.restore();
+ };
+ // Distant tree line moves slower than the fence and nearby spectators.
+ scenery(1650,145,.46,x=>{
+  c.fillStyle='#426a65';c.fillRect(x+25,top+62,7,42);
+  c.beginPath();c.moveTo(x+28,top+44);c.lineTo(x+5,top+80);c.lineTo(x+51,top+80);c.closePath();c.fill();
+ });
+ scenery(2650,110,.45,x=>{
+  c.fillStyle='#738b81';c.fillRect(x,top+264,62,5);
+  c.fillStyle='#718a73';
+  for(let j=0;j<4;j++){c.beginPath();c.ellipse(x+j*15,top+268,9,8,0,0,Math.PI*2);c.fill();}
+ });
+ scenery(2150,180,.38,x=>{
+  c.fillStyle='#8ea1af';c.beginPath();c.arc(x+20,top+113,9,0,Math.PI*2);c.fill();
+  c.fillStyle='#617c94';c.fillRect(x+13,top+124,15,28);
+ });
+ // Faint ground stripes add speed cues, without moving the lane markers.
+ scenery(3400,90,.3,x=>{c.strokeStyle='#9aaab1';c.lineWidth=2;c.beginPath();c.moveTo(x,top+260);c.lineTo(x+22,top+260);c.stroke();});
  if(sx(finish)>110&&sx(finish)<552){
   c.strokeStyle='#d7c28e';c.lineWidth=3;c.beginPath();c.moveTo(sx(finish),top+41);c.lineTo(sx(finish),top+271);c.stroke();
  }
