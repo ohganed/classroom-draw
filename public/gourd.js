@@ -22,6 +22,16 @@ function pony(c,n,x,y,size=1,tilt=0){
  c.fillStyle='#24303c';c.beginPath();c.arc(21,-17,2,0,7);c.fill();
  c.fillStyle='#fff4d5';c.fillRect(-15,-2,27,17);c.fillStyle='#24394c';c.font='900 15px Arial';c.textAlign='center';c.textBaseline='middle';c.fillText(n,-1,6);c.restore();
 }
+function shogiPiece(c,n,x,y,scale=1,tilt=0){
+ c.save();c.translate(x,y);c.rotate(tilt);c.scale(scale,scale);
+ // Traditional five-sided shogi tile, with a clear lucky-number mark.
+ c.fillStyle='#88633e';c.beginPath();c.moveTo(0,-42);c.lineTo(30,-25);c.lineTo(25,39);c.lineTo(-25,39);c.lineTo(-30,-25);c.closePath();c.fill();
+ c.fillStyle='#e6c78c';c.beginPath();c.moveTo(0,-37);c.lineTo(25,-22);c.lineTo(21,34);c.lineTo(-21,34);c.lineTo(-25,-22);c.closePath();c.fill();
+ c.fillStyle='#2d2824';c.textAlign='center';c.textBaseline='middle';c.font='bold 24px serif';c.fillText('王将',0,-10);
+ c.fillStyle='#fff7df';c.beginPath();c.roundRect(-18,10,36,22,4);c.fill();
+ c.fillStyle='#21394a';c.font='900 21px Arial';c.fillText(String(n),0,21);
+ c.restore();
+}
 export function drawGourd(canvas,round,elapsed=0,duration=10000,reduced=false){
  const c=canvas.getContext('2d');if(!c)return;const t=cl(elapsed/duration),done=t>=1;
  c.fillStyle='#f3ead6';c.fillRect(0,0,600,480);
@@ -34,12 +44,16 @@ export function drawGourd(canvas,round,elapsed=0,duration=10000,reduced=false){
   const released=t>=b.release,age=released?cl((t-b.release)/.11):0;
   if(!released)waiting++;
   gourd(c,b.n,b.x,b.y,!reduced&&!released?Math.sin(t*29+b.phase)*.15:0);
-  if(released&&age<1){
+  if(b.n!==round.winner&&released&&age<1){
    const x=b.x+b.side*95*age,y=b.y-55*Math.sin(age*Math.PI)+90*age*age;
    pony(c,b.n,x,y,.75,b.side*age*.3);
   }
  }
- if(t>.85){const u=ease((t-.85)/.15);pony(c,round.winner,300,255-80*(1-u),.65+1.75*u,0);}
+ if(t>.85){
+  const u=ease((t-.85)/.15),b=round.gourds[round.winner-1];
+  const x=b.x+(300-b.x)*u,y=b.y-65*Math.sin(u*Math.PI)+(260-b.y)*u;
+  shogiPiece(c,round.winner,x,y,.24+1.35*u,(1-u)*.18);
+ }
  c.fillStyle='#34503a';c.font='bold 17px Arial';
- c.fillText(done?round.winner+'番の馬が飛び出した！':'びっくり！ 瓢箪から馬が！ 残り '+waiting+' 個',300,460);
+ c.fillText(done?round.winner+'番の「王将」が出た！ 当選！':'馬か、それとも将棋の駒か？ 残り '+waiting+' 個',300,460);
 }
