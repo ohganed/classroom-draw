@@ -1,4 +1,5 @@
 import { drawRaceCamera, raceProgress } from './race-camera.js';
+import { drawRaceLeaderboard } from './race-leaderboard.js?v=61';
 // Quiet horse-racing visualization. Winner and scenario are chosen independently in app.js.
 // No flashing, strobes, or background color changes.
 const ease=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t)};
@@ -44,5 +45,6 @@ export function drawHorseRace(canvas,count=40,elapsed=0,duration=8000,winner=nul
  c.fillStyle='#d3bc7d';c.fillRect(x1,29,4,389);
  c.fillStyle='#d9e4e9';c.textAlign='center';c.font='bold 18px Arial';c.fillText('GOAL',x1-18,23);
  if(!reduced&&!done)drawRaceCamera(canvas,positions,p,'horse');
+ if(winner!==null)drawRaceLeaderboard(canvas,positions,done);
  if(done){c.fillStyle='#e3cb87';c.font='bold 25px Arial';c.fillText(target+' 番 ゴール！',300,443);}
 }
