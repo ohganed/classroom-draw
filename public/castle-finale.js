@@ -38,13 +38,32 @@ export function drawCastle(canvas,round,elapsed=0,duration=14000,reduced=false){
  if(!round)return;
  let across=0;
  for(const b of round.heroes){
-  const phase=t-b.delay,approach=cl(phase/.55);
+  const phase=t-b.delay;
   const sx=39+(b.n%8)*4,sy=370+(b.n%5)*5;
-  let x=sx+(330-sx)*sm(approach),y=sy;
-  if(b.route===1){y=sy+(278-sy)*sm(cl(phase/.28));}
-  if(b.route===2){const u=cl(phase/.30);y=sy+(168-sy)*sm(u);x+=Math.sin(t*11+b.phase)*22;}
+  // A true jump has takeoff, rising arc, landing and then running on the platform.
+  const leap=(ax,ay,bx,by,u,height)=>{
+   const q=cl(u);return {x:ax+(bx-ax)*q,y:ay+(by-ay)*q-Math.sin(Math.PI*q)*height};
+  };
+  let x=sx,y=sy;
+  if(b.route===0){
+   const run=sm(cl(phase/.52));x=sx+(330-sx)*run;
+  }else if(b.route===1){
+   const platformY=230;
+   if(phase<.12)x=sx+(145-sx)*sm(phase/.12);
+   else if(phase<.29){({x,y}=leap(145,sy,211,platformY,(phase-.12)/.17,75));}
+   else {x=211+(330-211)*sm((phase-.29)/.23);y=platformY;}
+  }else {
+   const platformY=230;
+   const cloudX=u=>286+Math.sin(u*11+1)*30;
+   const cloudY=147;
+   if(phase<.10)x=sx+(135-sx)*sm(phase/.10);
+   else if(phase<.23){({x,y}=leap(135,sy,210,platformY,(phase-.10)/.13,78));}
+   else if(phase<.29){x=210+(240-210)*sm((phase-.23)/.06);y=platformY;}
+   else if(phase<.43){({x,y}=leap(240,platformY,cloudX(phase),cloudY,(phase-.29)/.14,72));}
+   else {x=cloudX(phase);y=cloudY; }
+  }
   const jump=cl((phase-.52)/.17);
-  if(phase>.52){x=330+(b.success?130:68)*jump;y=(b.route===0?370:b.route===1?278:168)-Math.sin(jump*Math.PI)*(b.success?185:65);}
+  if(phase>.52){x=330+(b.success?130:68)*jump;y=(b.route===0?370:b.route===1?230:147)-Math.sin(jump*Math.PI)*(b.success?185:65);}
   if(phase>.69){
    if(!b.success){const fall=cl((phase-.69)/.12);x=398+b.side*25*fall;y=300+160*fall;if(fall>=1)continue;}
    else{across++;const end=cl((phase-.69)/.25);x=440+(b.n===round.winner?115:97)*sm(end);y=183+sm(end)*191;if(b.n!==round.winner&&end>.72)y=374,x=492+b.rank*5;}
