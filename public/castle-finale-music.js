@@ -21,10 +21,10 @@ function beep(ctx,dest,m,t,len,kind,level){
 export function playCastleMusicStep(ctx,master,step){
  if(!ctx||ctx.state!=='running'||!master)return;
  const t=ctx.currentTime+.005,k=step%lead.length;
- beep(ctx,master,lead[k],t,.16,step%8===6?'triangle':'square',.065);
- if(step%2===0)beep(ctx,master,bass[Math.floor(step/2)%bass.length],t,.22,'triangle',.085);
- if(step%4===2)beep(ctx,master,88,t,.035,'sine',.025);
- if(step%8===7)beep(ctx,master,84,t,.045,'triangle',.03);
+ beep(ctx,master,lead[k],t,.16,step%8===6?'triangle':'square',.19);
+ if(step%2===0)beep(ctx,master,bass[Math.floor(step/2)%bass.length],t,.22,'triangle',.23);
+ if(step%4===2)beep(ctx,master,88,t,.035,'sine',.08);
+ if(step%8===7)beep(ctx,master,84,t,.045,'triangle',.095);
  // A distinct rising leap sound every two bars.
- if(step%32===0&&step>0){beep(ctx,master,84,t,.075,'sine',.05);beep(ctx,master,91,t+.08,.10,'sine',.045);}
+ if(step%32===0&&step>0){beep(ctx,master,84,t,.075,'sine',.13);beep(ctx,master,91,t+.08,.10,'sine',.12);}
 }
