@@ -46,11 +46,11 @@ export function drawCrane(canvas,round,elapsed=0,duration=8000,reduced=false){
  c.fillStyle='#647f94';c.fillRect(40,396,520,13);
  c.fillStyle='#d4c08e';c.font='bold 15px Arial';c.textAlign='left';c.fillText('CAPSULE CATCH',47,51);
  c.fillStyle='#b1c1ce';c.font='12px Arial';c.fillText('PRIZE',462,51);
- if(!round){c.fillStyle='#b7c7d5';c.textAlign='center';c.font='bold 18px Arial';c.fillText('クレーンゲーム抽選',300,175);for(let i=0;i<22;i++)capsule(c,73+(i%11)*42,355-Math.floor(i/11)*34,i+1,i%3,14);return;}
+ if(!round){c.fillStyle='#b7c7d5';c.textAlign='center';c.font='bold 18px Arial';c.fillText('クレーンゲーム抽選',300,175);for(let i=0;i<22;i++)capsule(c,73+(i%11)*42,355-Math.floor(i/11)*34,i+1,i%3,28);return;}
  // Capsules are stable in the bin, including the winner until the final grasp.
  for(const b of round.balls){
   const hide=done&&b.number===round.winner;
-  if(!hide)capsule(c,b.x,b.y,b.number,b.shade,14,1);
+  if(!hide)capsule(c,b.x,b.y,b.number,b.shade,28,1);
  }
  const attempts=round.misses+1,section=p*attempts,attempt=Math.min(attempts-1,Math.floor(section)),q=done?1:section-attempt;
  const final=attempt===attempts-1,number=final?round.winner:round.fake[attempt],ball=round.balls[number-1];
@@ -67,26 +67,26 @@ export function drawCrane(canvas,round,elapsed=0,duration=8000,reduced=false){
  const dropY=82+53;
  // Hide the original capsule while it is held; this prevents two copies.
  if(carrying){
-  c.fillStyle='#1a3449';c.beginPath();c.arc(ball.x,ball.y,16,0,2*Math.PI);c.fill();
+  c.fillStyle='#1a3449';c.beginPath();c.arc(ball.x,ball.y,30,0,2*Math.PI);c.fill();
  }
  c.strokeStyle='#c1cdd5';c.lineWidth=5;c.beginPath();c.moveTo(armX,62);c.lineTo(armX,armY);c.stroke();
  c.fillStyle='#9aaebd';c.fillRect(armX-25,armY-6,50,16);
- const opening=gripping&&!hasDropped?9:23;
+ const opening=gripping&&!hasDropped?20:38;
  c.strokeStyle='#d4dde3';c.lineWidth=5;c.lineCap='round';
  c.beginPath();c.moveTo(armX-16,armY+10);c.lineTo(armX-opening,armY+36);c.lineTo(armX-opening+6,armY+48);
  c.moveTo(armX+16,armY+10);c.lineTo(armX+opening,armY+36);c.lineTo(armX+opening-6,armY+48);c.stroke();
- if(carrying)capsule(c,armX,armY+53,number,ball.shade,14);
+ if(carrying)capsule(c,armX,armY+53,number,ball.shade,28);
  if(hasDropped){
   const t=clamp((q-dropAt)/(1-dropAt),0,1);
   const y=Math.min(379,dropY+440*t*t);
   capsule(c,dropX+14*t,y,number,ball.shade,14);
  }
- if(final&&q>=.96&&!done)capsule(c,473,154,number,ball.shade,20);
+ if(final&&q>=.96&&!done)capsule(c,473,154,number,ball.shade,36);
  if(done){
   // Keep the winning capsule clearly displayed inside the collection tray.
   c.fillStyle='#334b62';c.fillRect(402,90,143,120);
   c.strokeStyle='#aebfcc';c.lineWidth=2;c.strokeRect(402,90,143,120);
-  capsule(c,473,150,round.winner,1,34);
+  capsule(c,473,150,round.winner,1,48);
   c.font='bold 19px Arial';c.textAlign='center';c.fillStyle='#ead3a0';c.fillText(round.winner+' 番をGET!',300,450);
  }else{
   c.font='bold 15px Arial';c.fillStyle='#e2cfaa';c.textAlign='center';
