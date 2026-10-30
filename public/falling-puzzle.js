@@ -47,7 +47,7 @@ export function makeFallingRound(count,winner,seed){
    for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(board[y][x]?.id===current)pos=[x,y];
    if(!pos)continue;
    const [x,y]=pos,a=board[y][x];
-   const adjacent=[[x,y+1],[x-1,y],[x+1,y],[x,y-1]];
+   const adjacent=[[x,y+1],[x-1,y],[x+1,y],[x,y-1],[x-1,y-1],[x+1,y-1],[x-1,y+1],[x+1,y+1]];
    const other=adjacent.map(([xx,yy])=>xx>=0&&xx<W&&yy>=0&&yy<H?board[yy][xx]:null).find(v=>v&&same(a,v));
    if(!other)continue;
    const before=clone(board);
@@ -75,8 +75,8 @@ export function makeFallingRound(count,winner,seed){
    if(board[0][x])continue;
    let y=H-1;while(y>0&&board[y][x])y--;
    open.push(x);
-   const neighbours=[[x,y+1],[x-1,y],[x+1,y]];
-   if(!neighbours.some(([xx,yy])=>xx>=0&&xx<W&&yy<H&&board[yy][xx]&&same({n,color},board[yy][xx])))safe.push(x);
+   const neighbours=[[x,y+1],[x-1,y],[x+1,y],[x-1,y-1],[x+1,y-1],[x-1,y+1],[x+1,y+1]];
+   if(!neighbours.some(([xx,yy])=>xx>=0&&xx<W&&yy>=0&&yy<H&&board[yy][xx]&&same({n,color},board[yy][xx])))safe.push(x);
   }
   const pool=safe.length&&rand()<.93?safe:open;
   const col=pool.length?pool[Math.floor(rand()*pool.length)]:Math.floor(rand()*W);
@@ -141,7 +141,7 @@ export function drawFalling(canvas,round,elapsed=0,duration=40000,reduced=false)
  else if(ev.kind==='topout'){tiles(c,ev.before);const y=-40+52*ease(progress);c.fillStyle='#f7d57b';c.beginPath();c.roundRect(277,y,45,38,5);c.fill();c.fillStyle='#19283e';c.font='900 19px Arial';c.fillText(ev.n,299,y+26);}
  else tiles(c,board);
  c.fillStyle='#e6ebf7';c.font='bold 15px Arial';c.textAlign='center';
- c.fillText('同じ色の2個が接触したときだけ消去',300,448);
+ c.fillText('同じ色が縦・横・斜めで接触 → その2個だけ消去',300,448);
  const ended=sec>=round.events[round.events.length-1].start+round.events[round.events.length-1].dur;
  c.fillStyle='#f5dda5';c.font='bold 19px Arial';
  c.fillText(ended?round.winner+'番が上限突破の次の番号！':ev.kind==='clear'?'同じ条件で接触！ 消える！':ev.kind==='gravity'?'すき間へ落下！ 連鎖は続く？':ev.kind==='topout'?'積み上がった！ 次の番号が当選！':'どんどん落ちてくる！',300,473);
