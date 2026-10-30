@@ -1,4 +1,5 @@
 import { drawRaceCamera, raceProgress } from './race-camera.js';
+import { drawRaceLeaderboard } from './race-leaderboard.js?v=61';
 // Low-flash dramatic race: several apparent leaders, late comeback by the uniformly selected winner.
 // Animation is illustrative; the app selects the winner independently with crypto randomness.
 const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};
@@ -48,5 +49,6 @@ export function drawBallRace(canvas,count=40,elapsed=0,duration=8000,winner=null
   ctx.fillStyle='#cad6e2';ctx.font='bold '+(count>50?7:10)+'px Arial';ctx.textAlign='right';ctx.textBaseline='middle';ctx.fillText(String(n),35,y);
  }
  if(!reduced&&!end)drawRaceCamera(canvas,positions,p,'ball');
+ if(winner!==null)drawRaceLeaderboard(canvas,positions,end);
  if(end){ctx.fillStyle='#e0c484';ctx.font='bold 25px Arial';ctx.textAlign='center';ctx.fillText(candidate+' 番 ゴール！',W/2,441);}
 }
