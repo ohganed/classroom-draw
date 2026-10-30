@@ -38,36 +38,28 @@ export function makeFallingRound(count,winner,seed){
  const record=(kind,before,after,dur,more={})=>{events.push({kind,start:time,dur,before,after,...more});time+=dur;};
  // Only the pair that has just touched is cleared; no global sweeping of matches.
  function resolve(id){
-  for(let chain=0;chain<25;chain++){
-   let y0=-1,x0=-1;
-   for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(board[y][x]?.id===id){y0=y;x0=x;}
-   if(y0<0)break;
-   let partner=null;
-   for(const [dx,dy] of [[0,1],[-1,0],[1,0],[0,-1]]){
-    const x=x0+dx,y=y0+dy;
-    if(x>=0&&x<W&&y>=0&&y<H&&board[y][x]&&same(board[y0][x0],board[y][x])){partner=board[y][x];break;}
-   }
-   if(!partner)break;
+  // A collision removes exactly the two individual tile IDs. Never perform
+  // a board-wide match scan. Newly falling tiles can create later cascades.
+  const queue=[id];
+  for(let attempts=0;queue.length&&attempts<35;attempts++){
+   const current=queue.shift();
+   let pos=null;
+   for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(board[y][x]?.id===current)pos=[x,y];
+   if(!pos)continue;
+   const [x,y]=pos,a=board[y][x];
+   const adjacent=[[x,y+1],[x-1,y],[x+1,y],[x,y-1]];
+   const other=adjacent.map(([xx,yy])=>xx>=0&&xx<W&&yy>=0&&yy<H?board[yy][xx]:null).find(v=>v&&same(a,v));
+   if(!other)continue;
    const before=clone(board);
-   board[y0][x0]=null;
-   for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(board[y][x]?.id===partner.id)board[y][x]=null;
-   record('clear',before,clone(board),.21,{removed:[id,partner.id]});
-   const fallen=clone(board);if(gravity(board)){record('gravity',fallen,clone(board),.23);chains++;}
-   // After the two blocks disappear, only newly landed blocks may trigger another pair.
-   const moved=[];
-   for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(board[y][x]&&fallen[y][x]?.id!==board[y][x].id)moved.push(board[y][x].id);
-   for(const movedId of moved){
-    let found=null;
-    for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(board[y][x]?.id===movedId)found=[x,y];
-    if(!found)continue;
-    const [x,y]=found;let p=null;
-    for(const [dx,dy] of [[0,1],[-1,0],[1,0]]){
-     const xx=x+dx,yy=y+dy;if(xx>=0&&xx<W&&yy>=0&&yy<H&&board[yy][xx]&&same(board[y][x],board[yy][xx])){p=board[yy][xx];break;}
+   for(let yy=0;yy<H;yy++)for(let xx=0;xx<W;xx++)if(board[yy][xx]&&(board[yy][xx].id===a.id||board[yy][xx].id===other.id))board[yy][xx]=null;
+   record('clear',before,clone(board),.22,{removed:[a.id,other.id]});
+   const fallen=clone(board);
+   if(gravity(board)){
+    record('gravity',fallen,clone(board),.23);chains++;
+    for(let yy=0;yy<H;yy++)for(let xx=0;xx<W;xx++){
+     const v=board[yy][xx];if(v&&fallen[yy][xx]?.id!==v.id)queue.push(v.id);
     }
-    if(p){id=movedId;break;}
    }
-   if(id===undefined)break;
-   const still=board.some(row=>row.some(v=>v?.id===id));if(!still)break;
   }
  }
  // Shuffled full bags keep all numbers nearly equally frequent. We bias the
@@ -75,8 +67,19 @@ export function makeFallingRound(count,winner,seed){
  for(let i=0;i<1200;i++){
   const n=take();
   const heights=Array.from({length:W},(_,x)=>board.filter(row=>row[x]).length);
-  let col=Math.floor(rand()*W);
-  if(i>20&&rand()<.72){const maximum=Math.max(...heights);const candidates=heights.map((h,x)=>({h,x})).filter(v=>v.h>=maximum-1);col=candidates[Math.floor(rand()*candidates.length)].x;}
+  // Prefer an open column where the incoming tile will NOT immediately
+  // match any touching neighbour. This keeps stacks growing while preserving
+  // the exact same-color/even-even/odd-odd clear rule on genuine contact.
+  const safe=[],open=[];
+  for(let x=0;x<W;x++){
+   if(board[0][x])continue;
+   let y=H-1;while(y>0&&board[y][x])y--;
+   open.push(x);
+   const neighbours=[[x,y+1],[x-1,y],[x+1,y]];
+   if(!neighbours.some(([xx,yy])=>xx>=0&&xx<W&&yy<H&&board[yy][xx]&&same({n},board[yy][xx])))safe.push(x);
+  }
+  const pool=safe.length&&rand()<.93?safe:open;
+  const col=pool.length?pool[Math.floor(rand()*pool.length)]:Math.floor(rand()*W);
   if(board[0][col]){
    // The incoming piece has crossed the upper limit: this is the top-out.
    // The app's preselected fair number is displayed as the NEXT incoming piece.
