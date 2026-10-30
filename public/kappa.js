@@ -6,11 +6,8 @@ export function makeKappaRound(count,winner,seed){
  let s=seed>>>0||1;const r=()=>((s=(Math.imul(s,1664525)+1013904223)>>>0)/4294967296);
  const others=Array.from({length:count},(_,i)=>i+1).filter(n=>n!==winner);
  for(let i=others.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[others[i],others[j]]=[others[j],others[i]];}
- const exits=new Map(others.map((n,i)=>[n,.19+.68*(i+r()*.4)/Math.max(1,others.length)]));
- return {winner,count,kappas:Array.from({length:count},(_,i)=>({
-  n:i+1,lane:i%8,row:Math.floor(i/8),phase:r()*6.283,turn:r()>.5?1:-1,
-  fail:exits.get(i+1)??Infinity,event:Math.floor(r()*3),speed:.7+r()*.45
- }))};
+ const stages=new Map(others.map((n,i)=>[n,i<Math.ceil(others.length*.52)?1:i<Math.ceil(others.length*.89)?2:3]));
+ return {winner,count,kappas:Array.from({length:count},(_,i)=>({n:i+1,lane:i%8,row:Math.floor(i/8),phase:r()*6.283,turn:r()>.5?1:-1,stage:stages.get(i+1)??0,orbit:18+r()*27,angle:r()*6.283}))};
 }
 function kappa(c,n,x,y,rot=0,size=1){
  c.save();c.translate(x,y);c.rotate(rot);c.scale(size,size);
@@ -32,28 +29,38 @@ export function drawKappa(canvas,round,elapsed=0,duration=11000,reduced=false){
  for(let i=0;i<9;i++){const y=108+i*35;c.strokeStyle=i%2?'#70b8cd':'#8bd0df';c.lineWidth=4;c.beginPath();for(let x=0;x<=600;x+=20){const yy=y+Math.sin(x*.032+i+t*13)*6;x===0?c.moveTo(x,yy):c.lineTo(x,yy);}c.stroke();}
  // Flow is made explicit: current to the right, with two swirl zones.
  for(const [x,y] of [[90,164],[270,350],[460,186],[515,341]])arrow(c,x,y,1);
- for(const [x,y] of [[203,238],[392,301]]){c.strokeStyle='#d3eef0';c.lineWidth=3;c.beginPath();c.arc(x,y,29,t*5,t*5+Math.PI*1.6);c.stroke();c.fillStyle='#e6f2db';c.font='14px Arial';c.textAlign='center';c.fillText('うず',x,y-38);}
+ for(const [x,y] of [[205,232],[390,269]]){c.strokeStyle='#d3eef0';c.lineWidth=3;c.beginPath();c.arc(x,y,29,t*5,t*5+Math.PI*1.6);c.stroke();c.fillStyle='#e6f2db';c.font='14px Arial';c.textAlign='center';c.fillText('うず',x,y-38);}
  c.fillStyle='#f8f3ce';c.beginPath();c.ellipse(547,249,43,117,0,0,Math.PI*2);c.fill();c.fillStyle='#73aa6f';c.beginPath();c.ellipse(559,239,23,91,0,0,Math.PI*2);c.fill();
  c.fillStyle='#214a50';c.font='bold 21px Arial';c.textAlign='center';c.fillText('河童の川流れ！',300,30);
  c.font='bold 15px Arial';c.fillText('川岸',555,389);
  if(!round)return;
- let left=0;
+ let stuck1=0,stuck2=0;
+ const swirl=(b,cx,cy,time,start,end)=>{
+  const spin=b.angle+b.turn*(time-start)*70;
+  const rad=b.orbit*(1-.3*cl((time-start)/(end-start)));
+  return {x:cx+Math.cos(spin)*rad,y:cy+Math.sin(spin)*rad*.8,rot:spin};
+ };
+ const between=(a,b,u)=>({x:a.x+(b.x-a.x)*cl(u),y:a.y+(b.y-a.y)*cl(u),rot:0});
  for(const b of round.kappas){
-  const fail=t>=b.fail,age=fail?cl((t-b.fail)/.11):0;
-  if(age>=1)continue;
-  if(!fail)left++;
-  const progress=cl(t*(.78+b.speed*.15));
-  let x=35+b.lane*26+progress*330+Math.sin(t*17+b.phase)*13;
-  let y=124+b.row*53+(b.lane%3)*10+Math.cos(t*21+b.phase)*12;
-  let rot=Math.sin(t*14+b.phase)*.24;
-  if(fail){
-   // A harmless comic swirl: the kappa spins into a side-current and exits the frame.
-   x+=b.turn*130*age;y+=Math.sin(age*Math.PI*1.3)*68*age+70*age;
-   rot+=age*b.turn*7;
+  const initial={x:35+b.lane*16,y:123+b.row*54+(b.lane%3)*5};
+  const first=swirl(b,205,232,.28,.28,.43);
+  const firstEnd=swirl(b,205,232,.43,.28,.43);
+  const second=swirl(b,390,269,.56,.56,.73);
+  const secondEnd=swirl(b,390,269,.73,.56,.73);
+  let p;
+  if(t<.28)p=between(initial,first,t/.28);
+  else if(b.stage===1){p=swirl(b,205,232,t,.28,.43);stuck1++;}
+  else if(t<.43)p=swirl(b,205,232,t,.28,.43);
+  else if(t<.56)p=between(firstEnd,second,(t-.43)/.13);
+  else if(b.stage===2){p=swirl(b,390,269,t,.56,.73);stuck2++;}
+  else if(t<.73)p=swirl(b,390,269,t,.56,.73);
+  else {
+   const finish=b.stage===0?{x:538,y:245}:{x:493,y:305};
+   p=between(secondEnd,finish,cl((t-.73)/(b.stage===0?.27:.18)));
   }
-  const finish=b.n===round.winner?ease((t-.82)/.18):0;
-  x+=(538-x)*finish;y+=(250-y)*finish;
-  kappa(c,b.n,x,y,reduced?0:rot,1+finish*(done?1:0.4));
+  kappa(c,b.n,p.x,p.y,reduced?0:(p.rot||0),b.stage===0?1+ease((t-.88)/.12):1);
  }
- c.fillStyle='#24515c';c.font='bold 17px Arial';c.fillText(done?round.winner+'番の河童が川岸へ！':'流されながら泳ぐ河童　残り '+left+' 匹',300,462);
+ c.fillStyle='#24515c';c.font='bold 16px Arial';c.textAlign='center';
+ c.fillText(done?round.winner+'番の河童がゴール！':t<.28?'第１の渦が近づいてきた！':t<.56?'第１の渦から脱出できるか？':t<.73?'第２の渦に挑戦！':'渦を抜けた河童がゴールへ！',300,454);
+ c.font='bold 13px Arial';c.fillText('第１の渦：'+stuck1+'匹　　第２の渦：'+stuck2+'匹',300,474);
 }
