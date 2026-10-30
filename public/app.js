@@ -20,7 +20,7 @@ import { makeAlienRound, drawAlienDance } from './alien-dance.js?v=71';
 import { makeBowlingRound, drawBowling } from './bowling.js?v=73';
 import { makeBalloonRound, drawBalloon } from './balloon.js?v=74';
 import { makePenguinRound, drawPenguin } from './penguin.js?v=76';
-import { makePirateRound, drawPirate } from './pirate.js?v=78';
+import { makePirateRound, drawPirate } from './pirate.js?v=79';
 const $ = id => document.getElementById(id);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 let duration = 8000;
