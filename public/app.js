@@ -30,7 +30,7 @@ import { makeMonkeyRound, drawMonkey } from './monkey.js?v=88';
 import { makeDigRound, drawDig } from './dig-dog.js?v=89';
 import { makeLoveDogRound, drawLoveDog } from './love-dog.js?v=90';
 import { makeDogStickRound, drawDogStick } from './dog-stick.js?v=91';
-import { makeKappaRound, drawKappa } from './kappa.js?v=92';
+import { makeKappaRound, drawKappa } from './kappa.js?v=93';
 const $ = id => document.getElementById(id);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 let duration = 8000;
