@@ -3,13 +3,30 @@ const cl=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
 const ease=t=>{t=cl(t);return t*t*(3-2*t)};
 export function makeBowlingRound(count,winner,seed){
  let s=seed>>>0||1;const rnd=()=>((s=(Math.imul(s,1664525)+1013904223)>>>0)/4294967296);
- const losers=Array.from({length:count},(_,i)=>i+1).filter(n=>n!==winner);
- for(let i=losers.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[losers[i],losers[j]]=[losers[j],losers[i]];}
- const pins=Array.from({length:count},(_,i)=>{
- const n=i+1,col=i%10,row=Math.floor(i/10);
- return {n,x:43+col*57,y:103+row*76,fall:n===winner?Infinity:.12+.79*(losers.indexOf(n)+rnd()*.7)/Math.max(1,losers.length),angle:(rnd()>.5?1:-1)*(.7+rnd()*.6),drift:rnd()*24+13,spin:rnd()*6.28};
- });
- return {winner,pins,count};
+ const pins=Array.from({length:count},(_,i)=>{const n=i+1,col=i%10,row=Math.floor(i/10);return {n,x:43+col*57,y:103+row*76,fall:Infinity,angle:(rnd()>.5?1:-1)*(.8+rnd()*.65),drift:14+rnd()*23};});
+ const losers=pins.filter(p=>p.n!==winner);
+ for(let i=losers.length-1;i>0;i--){let j=Math.floor(rnd()*(i+1));[losers[i],losers[j]]=[losers[j],losers[i]];}
+ // Multiple independent balls with randomized, curved routes. Every fall is triggered
+ // when the corresponding ball reaches the pin, rather than by an unrelated timer.
+ const balls=[];const ballCount=Math.min(6,Math.max(1,Math.ceil(losers.length/7)));
+ for(let k=0;k<ballCount;k++){
+  const assigned=losers.filter((_,i)=>i%ballCount===k);
+  const start=.055+k*.065, end=.90+k*.007;
+  const nodes=[{x:k%2?566:34,y:80+k*56,t:start}];
+  assigned.forEach((pin,i)=>{const at=start+(end-start)*(i+1)/(assigned.length+1);
+    nodes.push({x:pin.x,y:pin.y,t:at});pin.fall=at;});
+  nodes.push({x:k%2?32:568,y:365-k*35,t:end});
+  balls.push({nodes,r:18+k%3*3,twist:rnd()*6.28});
+ }
+ return {winner,pins,count,balls};
+}
+function ballAt(ball,t){
+ const nodes=ball.nodes;if(t<nodes[0].t||t>nodes[nodes.length-1].t)return null;
+ for(let i=1;i<nodes.length;i++)if(t<=nodes[i].t){
+  const a=nodes[i-1],b=nodes[i],u=cl((t-a.t)/(b.t-a.t));
+  return {x:a.x+(b.x-a.x)*u,y:a.y+(b.y-a.y)*u};
+ }
+ return null;
 }
 function drawPin(c,p,progress,selected=false){
  const angle=p.angle*ease(progress),slide=ease(progress)*p.drift*Math.sign(p.angle);
@@ -27,8 +44,12 @@ export function drawBowling(canvas,round,elapsed=0,duration=8000,reduced=false){
  c.fillStyle='#f1ddb8';c.font='bold 20px Arial';c.textAlign='center';c.fillText('ボウリング大混乱',300,30);
  if(!round)return;
  const active=round.pins.filter(p=>p.fall>t).length;
- // Oversize rolling bowling balls sweep across the set on several independent passes.
- if(!reduced&&!done){for(let i=0;i<3;i++){let z=cl((t-i*.27)/.36);if(z>0&&z<1){let x=30+z*540,y=120+i*120+Math.sin(z*13+i)*33;c.fillStyle='#364d83';c.beginPath();c.arc(x,y,24+i*4,0,7);c.fill();c.fillStyle='#151d38';for(let k=0;k<3;k++){c.beginPath();c.arc(x-7+k*6,y-7+(k%2)*9,3,0,7);c.fill();}}}}
+ // Draw the randomly routed balls; each waypoint corresponds to a pin collision.
+ if(!reduced&&!done)for(const ball of round.balls){
+  const q=ballAt(ball,t);if(!q)continue;
+  c.fillStyle='#364d83';c.beginPath();c.arc(q.x,q.y,ball.r,0,Math.PI*2);c.fill();
+  c.fillStyle='#141d34';for(let k=0;k<3;k++){const a=k*2.1+ball.twist+t*13;c.beginPath();c.arc(q.x+Math.cos(a)*ball.r*.44,q.y+Math.sin(a)*ball.r*.44,3.5,0,Math.PI*2);c.fill();}
+ }
  for(const p of round.pins){const age=p.fall===Infinity?0:cl((t-p.fall)/.09);if(age>=1&&!done)continue;if(done&&p.n!==round.winner)continue;drawPin(c,p,age,done);}
  c.font='bold 18px Arial';c.fillStyle='#fff0c5';c.fillText(done?round.winner+' 番の勝ち！':'残り '+active+' 本！',300,465);
 }
