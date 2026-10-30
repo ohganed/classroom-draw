@@ -26,7 +26,7 @@ import { makeGhostRound, drawGhostHouse } from './ghost-house.js?v=82';
 import { makeWasherRound, drawWasher } from './washer.js?v=83';
 import { makeBotamochiRound, drawBotamochi } from './botamochi.js?v=84';
 import { makeDetourRound, drawDetour } from './detour.js?v=86';
-import { makeMonkeyRound, drawMonkey } from './monkey.js?v=87';
+import { makeMonkeyRound, drawMonkey } from './monkey.js?v=88';
 const $ = id => document.getElementById(id);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 let duration = 8000;
