@@ -1,37 +1,54 @@
-// Haste makes waste: winding trail wins, shortcuts run into dead ends.
+// Winding maze with many real branches; selection remains uniformly random in app.js.
 const cl=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const main=[[60,390],[100,360],[92,300],[160,265],[208,295],[252,245],[200,188],[126,190],[120,120],[205,99],[278,140],[339,98],[390,160],[350,228],[425,268],[485,215],[456,153],[528,110]];
+const branches=[
+ {at:1,path:[[100,360],[170,385],[236,350],[288,395],[345,376]]},
+ {at:3,path:[[160,265],[115,245],[65,260],[57,198],[92,160]]},
+ {at:5,path:[[252,245],[304,283],[360,322],[315,355],[262,340]]},
+ {at:7,path:[[126,190],[65,153],[66,91],[137,70]]},
+ {at:9,path:[[205,99],[230,55],[290,62],[314,87]]},
+ {at:11,path:[[339,98],[398,65],[453,99],[489,62]]},
+ {at:13,path:[[350,228],[306,193],[275,218],[282,287]]},
+ {at:14,path:[[425,268],[480,318],[525,289],[552,346]]},
+ {at:16,path:[[456,153],[415,115],[455,75]]}
+];
+function trace(c,pts){c.beginPath();pts.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));}
+function point(pts,p){let lengths=[],total=0;for(let i=1;i<pts.length;i++){const d=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]);lengths.push(d);total+=d;}let dist=cl(p)*total;for(let i=0;i<lengths.length;i++){if(dist<=lengths[i]||i===lengths.length-1){const z=cl(dist/lengths[i]);return {x:pts[i][0]+(pts[i+1][0]-pts[i][0])*z,y:pts[i][1]+(pts[i+1][1]-pts[i][1])*z};}dist-=lengths[i];}return {x:pts[0][0],y:pts[0][1]};}
 export function makeDetourRound(count,winner,seed){
  let s=seed>>>0||1,r=()=>((s=(Math.imul(s,1664525)+1013904223)>>>0)/4294967296);
- const arr=Array.from({length:count},(_,i)=>i+1).filter(n=>n!==winner);
- for(let i=arr.length-1;i>0;i--){let j=Math.floor(r()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}
- const rank=new Map(arr.map((n,i)=>[n,i]));
- return {winner,count,runners:Array.from({length:count},(_,i)=>({n:i+1,lane:i%10,row:Math.floor(i/10),phase:r()*6.28,detour:r()>.35,stall:.24+r()*.48,rank:rank.get(i+1)??-1}))};
+ return {winner,count,runners:Array.from({length:count},(_,i)=>({n:i+1,phase:r()*6.28,branch:Math.floor(r()*branches.length),turn:.15+r()*.58,pace:.72+r()*.3,lane:i%5}))};
 }
-const points=[[65,385],[100,330],[215,330],[215,225],[100,225],[100,130],[280,130],[280,310],[405,310],[405,155],[518,155],[540,95]];
-function route(p){const u=cl(p)*(points.length-1),i=Math.min(points.length-2,Math.floor(u)),f=u-i;return {x:points[i][0]+(points[i+1][0]-points[i][0])*f,y:points[i][1]+(points[i+1][1]-points[i][1])*f};}
 export function drawDetour(canvas,round,elapsed=0,duration=11000,reduced=false){
- const c=canvas.getContext('2d');if(!c)return;let t=cl(elapsed/duration),done=t===1;
- c.fillStyle='#e9f2dd';c.fillRect(0,0,600,480);
- c.strokeStyle='#d0dcb9';c.lineWidth=45;c.lineJoin='round';c.beginPath();points.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.stroke();
- c.strokeStyle='#b0c47e';c.lineWidth=4;c.setLineDash([13,10]);c.stroke();c.setLineDash([]);
- c.strokeStyle='#deac9e';c.lineWidth=20;c.beginPath();c.moveTo(70,385);c.lineTo(300,385);c.lineTo(300,95);c.lineTo(540,95);c.stroke();
- c.fillStyle='#fff5dc';c.fillRect(288,204,90,38);c.fillStyle='#9b3e35';c.font='bold 16px Arial';c.textAlign='center';c.fillText('行き止まり！',333,229);
- c.fillStyle='#23394f';c.font='bold 23px Arial';c.fillText('急がば回れ！',300,28);
- c.fillStyle='#31624d';c.font='bold 18px Arial';c.fillText('START',65,429);
- c.fillStyle='#ae602f';c.fillRect(519,65,42,20);c.fillStyle='#fff';c.font='bold 16px Arial';c.fillText('GOAL',540,81);
+ const c=canvas.getContext('2d');if(!c)return;const t=cl(elapsed/duration),done=t>=1;
+ c.clearRect(0,0,600,480);c.fillStyle='#e9f2dd';c.fillRect(0,0,600,480);
+ // All tracks are rendered the same way, with no highlighted shortcut.
+ for(const pts of [main,...branches.map(b=>b.path)]){
+  c.lineJoin='round';c.lineCap='round';c.strokeStyle='#77935f';c.lineWidth=31;trace(c,pts);c.stroke();
+  c.strokeStyle='#ead8a4';c.lineWidth=24;trace(c,pts);c.stroke();
+  c.strokeStyle='#c5b083';c.lineWidth=1.5;trace(c,pts);c.stroke();
+ }
+ c.fillStyle='#23394f';c.font='bold 22px Arial';c.textAlign='center';c.fillText('急がば回れ！',300,28);
+ c.fillStyle='#31624d';c.font='bold 16px Arial';c.fillText('START',60,439);
+ c.fillStyle='#ae602f';c.fillRect(503,70,62,22);c.fillStyle='#fff';c.font='bold 16px Arial';c.fillText('GOAL',534,86);
  if(!round)return;
  for(const b of round.runners){
   const win=b.n===round.winner;
-  const shortcut=!win&&!b.detour;
-  const stop=!win&&t>b.stall;
-  const runProgress=win?Math.min(1,t/.96):Math.min(.87,t*(.72+b.phase/18));
-  let pos=route(runProgress);
-  if(shortcut){const f=cl(t/.32);pos={x:65+245*f,y:385-180*f};if(t>.32){const z=cl((t-.32)/.25);pos.x=310-110*z;pos.y=205+180*z;}}
-  else if(stop){const stopPos=route(Math.min(.86,b.stall*(.72+b.phase/18)));pos={x:stopPos.x,y:stopPos.y};}
-  const jitter=reduced?0:Math.sin(t*22+b.phase)*3;
-  const x=pos.x+(b.lane-4.5)*2+jitter,y=pos.y+(b.row-1.5)*4;
-  c.fillStyle=win&&done?'#f6ba53':['#6099b5','#d793a2','#9d93c1','#78ad8a'][b.n%4];c.beginPath();c.arc(x,y,12,0,7);c.fill();
-  c.fillStyle='#fffbe9';c.font='900 13px Arial';c.textBaseline='middle';c.fillText(String(b.n),x,y);
+  let pos;
+  if(win){pos=point(main,cl(t/.975));}
+  else{
+   const br=branches[b.branch],junction=br.at/(main.length-1);
+   const along=t*b.pace;
+   if(along<junction)pos=point(main,along);
+   else {
+    const fork=point(main,junction);
+    const onward=cl((along-junction)*2.8);
+    pos=point([ [fork.x,fork.y],...br.path.slice(1)],onward);
+   }
+  }
+  const jitter=reduced?0:Math.sin(t*24+b.phase)*2;
+  const x=pos.x+jitter+(b.lane-2)*2,y=pos.y+Math.cos(t*16+b.phase)*(reduced?0:2);
+  c.fillStyle=win&&done?'#f6ba53':['#6099b5','#d793a2','#9d93c1','#78ad8a'][b.n%4];c.beginPath();c.arc(x,y,11,0,Math.PI*2);c.fill();
+  c.fillStyle='#fffbe9';c.font='900 12px Arial';c.textBaseline='middle';c.fillText(String(b.n),x,y);
  }
- c.fillStyle='#25445a';c.font='bold 17px Arial';c.fillText(done?round.winner+'番が遠回りしてゴール！':'近道は行き止まり！ 遠回りが有利？',300,461);
+ c.fillStyle='#25445a';c.font='bold 17px Arial';c.fillText(done?round.winner+'番がゴール！':'曲がりくねった道を進むのは誰？',300,461);
 }
