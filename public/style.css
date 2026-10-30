@@ -201,3 +201,5 @@ body.numbers-mode #number{font-size:min(54vw,max(24px,calc(100cqh - 90px)))}
 #monkey-wrap{width:min(96vw,calc(62dvh * 600 / 480),650px);aspect-ratio:5/4;flex-shrink:1;z-index:1}#monkey-wrap[hidden]{display:none!important}#monkey{display:block;width:100%;height:100%}.result #monkey-wrap{width:min(76vw,calc(37dvh * 600 / 480),420px)}@media(max-width:600px){#monkey-wrap{width:min(96vw,calc(47dvh * 600 / 480))}}
 
 #digdog-wrap{width:min(96vw,calc(62dvh * 600 / 480),650px);aspect-ratio:5/4;flex-shrink:1;z-index:1}#digdog-wrap[hidden]{display:none!important}#digdog{display:block;width:100%;height:100%}.result #digdog-wrap{width:min(76vw,calc(37dvh * 600 / 480),420px)}@media(max-width:600px){#digdog-wrap{width:min(96vw,calc(47dvh * 600 / 480))}}
+
+#lovedog-wrap{width:min(96vw,calc(62dvh * 600 / 480),650px);aspect-ratio:5/4;flex-shrink:1;z-index:1}#lovedog-wrap[hidden]{display:none!important}#lovedog{display:block;width:100%;height:100%}.result #lovedog-wrap{width:min(76vw,calc(37dvh * 600 / 480),420px)}@media(max-width:600px){#lovedog-wrap{width:min(96vw,calc(47dvh * 600 / 480))}}
