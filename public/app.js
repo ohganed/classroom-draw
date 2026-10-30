@@ -34,7 +34,7 @@ import { makeKappaRound, drawKappa } from './kappa.js?v=93';
 import { makeGourdRound, drawGourd } from './gourd.js?v=95';
 import { makeCatCoinRound, drawCatCoin } from './cat-coin.js?v=96';
 import { makeTortoiseHareRound, drawTortoiseHare } from './tortoise-hare.js?v=97';
-import { makeChestnutRound, drawChestnut } from './chestnut.js?v=98';
+import { makeChestnutRound, drawChestnut } from './chestnut.js?v=99';
 const $ = id => document.getElementById(id);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 let duration = 8000;
