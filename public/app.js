@@ -44,7 +44,7 @@ import { makeBrickRound, drawBrick, brickDuration } from './brick-breaker.js?v=1
 import { playBrickSound } from './brick-breaker-audio.js?v=106';
 import { makeFallingRound, drawFalling, fallingDuration } from './falling-puzzle.js?v=119';
 import { playFallingSound } from './falling-puzzle-audio.js?v=107';
-import { playCastleMusicStep } from './castle-finale-music.js?v=125';
+import { playCastleMusicStep } from './castle-finale-music.js?v=126';
 import { makeInvadersRound, drawInvaders, playInvadersSound } from './space-invaders.js?v=124';
 import { makeMazeChaseRound, drawMazeChase } from './maze-chase.js?v=123';
 import { playMazeChaseSound } from './maze-chase-audio.js?v=120';
@@ -330,7 +330,7 @@ $('start').addEventListener('click', () => {
 $('sound').addEventListener('click', () => {
  sound = !sound;
  if (!sound && master) master.gain.setValueAtTime(0,context.currentTime);
- if (sound) unlockAudio();
+ if (sound) { unlockAudio(); const test=()=>{if(sound&&context?.state==='running'){tone(659.25,0,.16,'square',.35);tone(783.99,.17,.16,'square',.35);tone(987.77,.34,.22,'triangle',.42);}};if(context?.state==='running')test();else context?.resume().then(test).catch(()=>{}); }
  updateSound(); try { localStorage.setItem('classroom-draw-sound',sound?'on':'off'); } catch {}
 });
 reduced.addEventListener('change', () => { if (running) { $('number').textContent = '…'; if(mode==='die') drawDie(0,null);if(mode==='lottery') drawLottery(lotteryCanvas,0,duration,count,null,true);if(mode==='roulette')drawRoulette(rouletteCanvas,count,0,null);if(mode==='race')drawBallRace(raceCanvas,count,0,duration,null,true);if(mode==='horse')drawHorseRace(horseCanvas,count,0,duration,null,true);if(mode==='pinball')drawPinball(pinballCanvas,count,0,duration,null,true);if(mode==='galton')drawGalton(galtonCanvas,galtonRound,0,duration,true);if(mode==='maze')drawMaze(mazeCanvas,mazeRound,0,duration,true);if(mode==='crane')drawCrane(craneCanvas,craneRound,0,duration,true);if(mode==='machine')drawMachine(machineCanvas,machineRound,0,duration,true); } });
