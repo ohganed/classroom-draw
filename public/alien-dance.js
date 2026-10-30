@@ -5,18 +5,39 @@ export function makeAlienRound(count,winner,seed){
  const losers=Array.from({length:count},(_,i)=>i+1).filter(n=>n!==winner);
  for(let i=losers.length-1;i>0;i--){const j=Math.floor(rand()*(i+1));[losers[i],losers[j]]=[losers[j],losers[i]];}
  const exits=new Map(losers.map((n,i)=>[n,0.16+0.76*(i+rand()*.5)/Math.max(1,losers.length)]));
- const aliens=Array.from({length:count},(_,i)=>({n:i+1,x:45+(i%10)*57,y:91+Math.floor(i/10)*77,phase:rand()*6.283,style:Math.floor(rand()*4),exit:exits.get(i+1)??Infinity,side:rand()>.5?1:-1}));
+ const aliens=Array.from({length:count},(_,i)=>({n:i+1,x:45+(i%10)*57,y:91+Math.floor(i/10)*77,phase:rand()*6.283,style:Math.floor(rand()*7),exit:exits.get(i+1)??Infinity,side:rand()>.5?1:-1}));
  return {count,winner,aliens};
 }
 function dancer(c,a,t,scale,depart=0){
- const w=Math.sin(t*(a.style%2?17:23)+a.phase),v=Math.cos(t*19+a.phase);
- c.save();c.translate(a.x+depart*a.side*160+w*5,a.y+Math.abs(w)*-5);c.rotate(w*.12);c.scale(scale,scale);
+ const beat=t*26+a.phase, w=Math.sin(beat),v=Math.cos(beat),kind=a.style;
+ const freeze=kind===5&&Math.sin(t*8+a.phase)>.3;
+ const sway=freeze?0:w;
+ const hop=kind===1?Math.max(0,w)*17:kind===4?Math.max(0,Math.sin(beat*.6))*13:Math.abs(sway)*5;
+ const twist=kind===2?sway*.5:kind===3?Math.sin(beat*.5)*.42:sway*.15;
+ const slide=kind===0?sway*9:kind===6?Math.sin(beat*.47)*15:sway*4;
+ c.save();c.translate(a.x+depart*a.side*160+slide,a.y-hop);
+ c.rotate(twist);if(kind===3)c.scale(Math.sin(beat*.38)>0?1:-1,1);
+ c.scale(scale,scale);
  c.strokeStyle='#96c9be';c.lineWidth=4;c.lineCap='round';
- c.beginPath();c.moveTo(-8,13);c.lineTo(-11+w*4,22);c.moveTo(8,13);c.lineTo(11-w*4,22);c.moveTo(-12,-1);c.lineTo(-22-w*4,-9+v*5);c.moveTo(12,-1);c.lineTo(22+w*4,-9-v*5);c.stroke();
- c.fillStyle=['#9cdbb4','#b6b0ed','#f0c58d','#8bd2d9'][a.n%4];c.beginPath();c.ellipse(0,0,16,17,0,0,7);c.fill();
+ c.beginPath();
+ const kick=kind===4?Math.max(0,sway)*16:0;
+ c.moveTo(-8,13);c.lineTo(-13-kick,24);
+ c.moveTo(8,13);c.lineTo(11+kick,24);
+ c.moveTo(-12,-1);c.lineTo(-23-(kind===6?Math.sin(beat*.5)*13:sway*9),-12+v*7);
+ c.moveTo(12,-1);c.lineTo(23+(kind===6?Math.cos(beat*.5)*13:sway*9),-12-v*7);
+ c.stroke();
+ c.fillStyle=['#9cdbb4','#b6b0ed','#f0c58d','#8bd2d9'][a.n%4];
+ c.beginPath();c.ellipse(0,0,16+(kind===0?Math.abs(w)*4:0),17,0,0,7);c.fill();
  c.beginPath();c.ellipse(0,-17,13,12,0,0,7);c.fill();
- for(let e of [-6,6]){c.fillStyle='#fff';c.beginPath();c.ellipse(e,-19,5,6,0,0,7);c.fill();c.fillStyle='#163047';c.beginPath();c.arc(e+w,-19,2.1,0,7);c.fill();}
- c.fillStyle='#fff9df';c.beginPath();c.roundRect(-14,-6,28,19,5);c.fill();c.fillStyle='#162b40';c.font='900 16px Arial';c.textAlign='center';c.textBaseline='middle';c.fillText(String(a.n),0,3);c.restore();
+ for(let e of [-6,6]){
+  c.fillStyle='#fff';c.beginPath();c.ellipse(e,-19,5,6,0,0,7);c.fill();
+  c.fillStyle='#163047';c.beginPath();c.arc(e+sway*1.5,-19,2.1,0,7);c.fill();
+ }
+ // Each number remains upright and readable even during exaggerated movements.
+ c.save();c.rotate(-twist);
+ c.fillStyle='#fff9df';c.beginPath();c.roundRect(-15,-6,30,20,5);c.fill();
+ c.fillStyle='#162b40';c.font='900 17px Arial';c.textAlign='center';c.textBaseline='middle';c.fillText(String(a.n),0,4);c.restore();
+ c.restore();
 }
 export function drawAlienDance(canvas,round,elapsed=0,duration=10000,reduced=false){
  const c=canvas.getContext('2d');if(!c)return;const p=clamp(elapsed/duration),done=p>=1;
