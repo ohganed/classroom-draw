@@ -22,7 +22,7 @@ function capsule(c,x,y,n,shade=0,r=16,alpha=1){
  c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill();
  c.strokeStyle='#e0e8ed';c.lineWidth=1.3;c.stroke();
  c.beginPath();c.moveTo(x-r+3,y+3);c.lineTo(x+r-3,y+3);c.strokeStyle='#54677b';c.stroke();
- c.fillStyle='#172738';c.font='bold '+(r<13?9:12)+'px Arial';c.textAlign='center';c.textBaseline='middle';c.fillText(String(n),x,y-3);
+ c.fillStyle='#172738';c.font='bold '+Math.round(Math.min(r*1.15,36))+'px Arial';c.textAlign='center';c.textBaseline='middle';c.fillText(String(n),x,y-3);
  c.restore();
 }
 export function drawCrane(canvas,round,elapsed=0,duration=8000,reduced=false){
