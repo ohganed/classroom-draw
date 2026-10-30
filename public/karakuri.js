@@ -44,41 +44,54 @@ export function drawKarakuri(canvas,round,elapsed=0,duration=8000,reduced=false)
  c.fillStyle='#d1bb8e';c.font='bold 13px Arial';c.fillText('① 歯車ゲート',135,190);c.fillText('② 揺れる橋',145,295);
  c.fillText('決勝・逆転レール',300,396);c.fillText('GOAL',516,453);
  if(!round)return;
- const n=round.count;let stage=p<.27?0:p<.51?1:p<.75?2:3;
- let survivors=stage===0?n:stage===1?round.first.length:round.final.length;
+ const n=round.count,stage=p<.27?0:p<.51?1:p<.75?2:3;
+ const visible=stage===0?round.members:stage===1?round.members.filter(b=>b.stage>=1):round.members.filter(b=>b.stage===2);
+ const survivors=stage===0?n:stage===1?round.first.length:round.final.length;
  c.textAlign='right';c.fillStyle='#f0d69e';c.font='bold 17px Arial';c.fillText('残り '+survivors+' 個',559,76);
- if(reduced&&!done){stage=0;}
- // Visible balls follow four phases; rejected balls exit their respective gate.
- for(const b of round.members){
-  if(stage>=1&&b.stage===0)continue;
-  if(stage>=2&&b.stage===1)continue;
+ // Each phase is a contiguous part of the *painted* track.
+ const routes=[
+  [[300,133],[300,151],[80,151],[80,210],[517,210]],
+  [[517,210],[517,256],[88,256],[88,318],[510,318]],
+  [[510,318],[510,363],[93,363]],
+  [[93,363],[93,427],[492,427]]
+ ];
+ const routePoint=(points,u)=>{
+  let total=0;const distances=[];
+  for(let k=1;k<points.length;k++){const d=Math.hypot(points[k][0]-points[k-1][0],points[k][1]-points[k-1][1]);distances.push(d);total+=d;}
+  let remaining=clamp(u)*total;
+  for(let k=0;k<distances.length;k++){
+   if(remaining<=distances[k]||k===distances.length-1){
+    const a=points[k],b=points[k+1],t=clamp(remaining/distances[k]);
+    return {x:mix(a[0],b[0],t),y:mix(a[1],b[1],t)};
+   }
+   remaining-=distances[k];
+  }
+  return {x:points[0][0],y:points[0][1]};
+ };
+ // Draw physical movement along the continuous rails, not separately interpolated x/y.
+ // Variable speed produces overtakes. The winner emerges from behind only at the final turn.
+ for(const b of visible){
   if(done&&b.n!==round.winner)continue;
   let x,y,r;
-  if(stage===0){
-   const progress=smooth(p/.27),scatter=b.slot/n;
-   x=43+(b.slot%12)*46;
-   y=88+Math.floor(b.slot/12)*14;
-   x=mix(x,80+435*scatter,progress);y=mix(y,210+Math.sin(scatter*12+b.phase)*11,progress);
-   r=n>60?7:n>30?9:12;
-  }else if(stage===1){
-   const k=round.first.indexOf(b.n),t=smooth((p-.27)/.24);
-   x=mix(75+430*k/Math.max(1,round.first.length-1),510-415*k/Math.max(1,round.first.length-1),t);
-   y=mix(218,256,t)+Math.sin(p*24+b.phase)*3;r=round.first.length>30?10:13;
-  }else if(stage===2){
-   const k=round.final.indexOf(b.n),t=smooth((p-.51)/.24);
-   x=mix(95+405*k/Math.max(1,round.final.length-1),490-390*k/Math.max(1,round.final.length-1),t);
-   y=mix(323,363,t)+Math.sin(p*21+b.phase)*4;r=round.final.length>20?14:19;
+  if(done){x=492;y=427;r=30;}
+  else if(stage===0){
+   const q=clamp(p/.27),start=b.slot/Math.max(1,n);
+   const travel=clamp(q*(1.17+.13*b.speed)-start*.26);
+   // Tank releases each ball onto the first rail in quick succession.
+   const pt=routePoint(routes[0],travel);x=pt.x;y=pt.y;r=n>60?7:n>30?9:12;
   }else{
-   const k=round.final.indexOf(b.n),q=clamp((p-.75)/.25),u=k/Math.max(1,round.final.length-1);
-   // Apparent leader changes twice, final winner only overtakes very late.
-   const wave=Math.sin((q*2.5+u)*Math.PI*2)*65*(1-q);
-   x=105+u*320+wave+q*35+Math.sin(b.phase+q*17)*5;
-   if(b.n===round.winner)x=mix(x,518,smooth((q-.68)/.32));
-   else x=mix(x,Math.min(470,x),smooth((q-.65)/.35));
-   y=427+Math.sin(q*12+b.phase)*3;
-   r=round.final.length>20?15:round.final.length>10?19:24;
+   const q=stage===1?clamp((p-.27)/.24):stage===2?clamp((p-.51)/.24):clamp((p-.75)/.25);
+   const rank=visible.findIndex(v=>v.n===b.n);
+   const spread=rank/Math.max(1,visible.length-1);
+   let travel=clamp(q*(1.13+.13*b.speed)-spread*(stage===1?.17:.24)+Math.sin(q*10+b.phase)*.022);
+   if(stage===3){
+    // False leader slows at the last bend; winner surges only near the finish.
+    if(b.n===round.winner)travel=clamp(travel*.76+smooth((q-.66)/.34)*.24);
+    else travel=Math.min(.92,travel-.19*smooth((q-.55)/.45)*(1-b.jitter*.5));
+   }
+   const pt=routePoint(routes[stage],travel);x=pt.x;y=pt.y;
+   r=stage===1?(visible.length>30?10:13):stage===2?(visible.length>20?14:19):(visible.length>20?15:visible.length>10?19:24);
   }
-  if(done){x=518;y=427;r=30;}
   ball(c,x,y,r,b.n,done);
  }
  if(done){c.fillStyle='#f5dfa1';c.textAlign='center';c.font='bold 22px Arial';c.fillText(round.winner+' 番がゴール！',300,465);}
