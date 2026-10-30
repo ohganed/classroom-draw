@@ -5,7 +5,7 @@ const ease=x=>{x=clamp(x);return x*x*(3-2*x)};
 const COLORS=['#ed847c','#72b9e2','#efc56e','#92cb8f','#bd9fe9','#77d2c8'];
 const W=5,H=8;
 const colOf=n=>(n-1)%COLORS.length;
-const same=(a,b)=>colOf(a.n)===colOf(b.n);
+const same=(a,b)=>a.color===b.color;
 const clone=b=>b.map(row=>row.map(v=>v?{...v}:null));
 function pairs(board){
  const out=new Set();
@@ -65,7 +65,7 @@ export function makeFallingRound(count,winner,seed){
  // Shuffled full bags keep all numbers nearly equally frequent. We bias the
  // falling column towards taller stacks, allowing a genuine top-out.
  for(let i=0;i<1200;i++){
-  const n=take();
+  const n=take(),color=Math.floor(rand()*COLORS.length);
   const heights=Array.from({length:W},(_,x)=>board.filter(row=>row[x]).length);
   // Prefer an open column where the incoming tile will NOT immediately
   // match any touching neighbour. This keeps stacks growing while preserving
@@ -76,7 +76,7 @@ export function makeFallingRound(count,winner,seed){
    let y=H-1;while(y>0&&board[y][x])y--;
    open.push(x);
    const neighbours=[[x,y+1],[x-1,y],[x+1,y]];
-   if(!neighbours.some(([xx,yy])=>xx>=0&&xx<W&&yy<H&&board[yy][xx]&&same({n},board[yy][xx])))safe.push(x);
+   if(!neighbours.some(([xx,yy])=>xx>=0&&xx<W&&yy<H&&board[yy][xx]&&same({n,color},board[yy][xx])))safe.push(x);
   }
   const pool=safe.length&&rand()<.93?safe:open;
   const col=pool.length?pool[Math.floor(rand()*pool.length)]:Math.floor(rand()*W);
@@ -88,8 +88,8 @@ export function makeFallingRound(count,winner,seed){
   }
   let row=H-1;while(row>0&&board[row][col])row--;
   const before=clone(board),id=nextId++;
-  board[row][col]={n,id};
-  record('drop',before,clone(board),.26,{n,col,row});
+  board[row][col]={n,id,color};
+  record('drop',before,clone(board),.26,{n,color,col,row});
   drops++;resolve(id);
  }
  if(!topout)record('topout',clone(board),clone(board),.8,{n:winner,col:2});
@@ -109,7 +109,7 @@ function tiles(c,board,alpha=1,progress=1,kind='',before=null){
    let prev=-1;for(let z=0;z<H;z++)if(before[z][x]?.id===item.id)prev=z;
    if(prev>=0)py=(70+prev*43)+(ty-(70+prev*43))*ease(progress);
   }
-  c.save();c.globalAlpha=alpha;c.fillStyle=COLORS[colOf(item.n)];
+  c.save();c.globalAlpha=alpha;c.fillStyle=COLORS[item.color??colOf(item.n)];
   c.beginPath();c.roundRect(px,py,45,38,5);c.fill();
   c.strokeStyle='#f7f1dc';c.lineWidth=1.5;c.stroke();
   c.fillStyle='#15273f';c.textAlign='center';c.textBaseline='middle';c.font='900 17px Arial';c.fillText(item.n,px+22.5,py+19);
