@@ -62,37 +62,46 @@ export function makeFallingRound(count,winner,seed){
    }
   }
  }
- // Shuffled full bags keep all numbers nearly equally frequent. We bias the
- // falling column towards taller stacks, allowing a genuine top-out.
- for(let i=0;i<1200;i++){
-  const n=take(),color=Math.floor(rand()*COLORS.length);
-  const heights=Array.from({length:W},(_,x)=>board.filter(row=>row[x]).length);
-  // Prefer an open column where the incoming tile will NOT immediately
-  // match any touching neighbour. This keeps stacks growing while preserving
-  // the exact same-color/even-even/odd-odd clear rule on genuine contact.
-  const safe=[],open=[];
-  for(let x=0;x<W;x++){
-   if(board[0][x])continue;
-   let y=H-1;while(y>0&&board[y][x])y--;
-   open.push(x);
-   const neighbours=[[x,y+1],[x-1,y],[x+1,y],[x-1,y-1],[x+1,y-1],[x-1,y+1],[x+1,y+1]];
-   if(!neighbours.some(([xx,yy])=>xx>=0&&xx<W&&yy>=0&&yy<H&&board[yy][xx]&&same({n,color},board[yy][xx])))safe.push(x);
-  }
-  const pool=safe.length&&rand()<.93?safe:open;
-  const col=pool.length?pool[Math.floor(rand()*pool.length)]:Math.floor(rand()*W);
-  if(board[0][col]){
-   // The incoming piece has crossed the upper limit: this is the top-out.
-   // The app's preselected fair number is displayed as the NEXT incoming piece.
-   record('topout',clone(board),clone(board),.8,{n:winner,col});
-   topout=true;break;
-  }
+ // Normal rounds, followed by a guaranteed stacking finale. All numbered
+ // drops come from balanced shuffled bags; colors remain separate from numbers.
+ // At overtime we choose the least-conflicting color for the target column,
+ // so the stack reaches the ceiling instead of endlessly clearing.
+ const place=(n,color,col)=>{
+  if(board[0][col])return false;
   let row=H-1;while(row>0&&board[row][col])row--;
   const before=clone(board),id=nextId++;
   board[row][col]={n,id,color};
-  record('drop',before,clone(board),.26,{n,color,col,row});
-  drops++;resolve(id);
+  record('drop',before,clone(board),.19,{n,color,col,row});
+  drops++;resolve(id);return true;
+ };
+ for(let i=0;i<48;i++){
+  const n=take(),color=Math.floor(rand()*COLORS.length);
+  const open=Array.from({length:W},(_,x)=>x).filter(x=>!board[0][x]);
+  if(!open.length)break;
+  const col=open[Math.floor(rand()*open.length)];
+  place(n,color,col);
  }
- if(!topout)record('topout',clone(board),clone(board),.8,{n:winner,col:2});
+ // Final stage: deliberately aim at the tallest column. A color selected to
+ // avoid matching neighboring blocks is still independent of the number.
+ // This stage does not remove/overwrite existing tiles.
+ const heights=Array.from({length:W},(_,x)=>board.filter(row=>row[x]).length);
+ const target=heights.indexOf(Math.max(...heights));
+ for(let k=0;k<H+8&&!board[0][target];k++){
+  const n=take();
+  let row=H-1;while(row>0&&board[row][target])row--;
+  const options=Array.from({length:COLORS.length},(_,i)=>i).map(color=>{
+   let risk=0;for(const dx of [-1,0,1])for(const dy of [-1,0,1]){
+    if(!dx&&!dy)continue;
+    const x=target+dx,y=row+dy;
+    if(x>=0&&x<W&&y>=0&&y<H&&board[y][x]?.color===color)risk++;
+   }
+   return {color,risk};
+  }).sort((a,b)=>a.risk-b.risk);
+  place(n,options[0].color,target);
+ }
+ // The next number appears over the top of the completed stack.
+ record('topout',clone(board),clone(board),.8,{n:winner,col:target});
+ topout=!!board[0][target];
  return {winner,count,events,seconds:time+1.5,drops,chains,topout};
 }
 export const fallingDuration=round=>Math.ceil((round?.seconds??40)*1000);
