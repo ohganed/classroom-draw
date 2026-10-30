@@ -47,7 +47,7 @@ export function makeFallingRound(count,winner,seed){
    if(!belowLocked)break;
    const before=clone(board);
    for(const tile of board[y])tile.locked=true;
-   record('lock',before,clone(board),.32,{row:y});
+   record('lock',before,clone(board),.12,{row:y});
   }
  }
  // Only the pair that has just touched is cleared; no global sweeping of matches.
@@ -66,10 +66,10 @@ export function makeFallingRound(count,winner,seed){
    if(!other)continue;
    const before=clone(board);
    for(let yy=0;yy<H;yy++)for(let xx=0;xx<W;xx++)if(board[yy][xx]&&(board[yy][xx].id===a.id||board[yy][xx].id===other.id))board[yy][xx]=null;
-   record('clear',before,clone(board),.22,{removed:[a.id,other.id]});
+   record('clear',before,clone(board),.09,{removed:[a.id,other.id]});
    const fallen=clone(board);
    if(gravity(board)){
-    record('gravity',fallen,clone(board),.23);chains++;
+    record('gravity',fallen,clone(board),.085);chains++;
     lockCompletedRows();
     for(let yy=0;yy<H;yy++)for(let xx=0;xx<W;xx++){
      const v=board[yy][xx];if(v&&fallen[yy][xx]?.id!==v.id)queue.push(v.id);
@@ -86,7 +86,7 @@ export function makeFallingRound(count,winner,seed){
   let row=H-1;while(row>0&&board[row][col])row--;
   const before=clone(board),id=nextId++;
   board[row][col]={n,id,color};
-  record('drop',before,clone(board),.19,{n,color,col,row});
+  record('drop',before,clone(board),.085,{n,color,col,row});
   drops++;lockCompletedRows();resolve(id);lockCompletedRows();return true;
  };
  for(let i=0;i<48;i++){
@@ -115,9 +115,9 @@ export function makeFallingRound(count,winner,seed){
   place(n,options[0].color,target);
  }
  // The next number appears over the top of the completed stack.
- record('topout',clone(board),clone(board),.8,{n:winner,col:target});
+ record('topout',clone(board),clone(board),.45,{n:winner,col:target});
  topout=!!board[0][target];
- return {winner,count,events,seconds:time+1.5,drops,chains,topout};
+ return {winner,count,events,seconds:time+.8,drops,chains,topout};
 }
 export const fallingDuration=round=>Math.ceil((round?.seconds??40)*1000);
 function tiles(c,board,alpha=1,progress=1,kind='',before=null){
