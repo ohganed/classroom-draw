@@ -177,3 +177,5 @@ body.numbers-mode #number{font-size:min(54vw,max(24px,calc(100cqh - 90px)))}
 #trolley-wrap{width:min(96vw,calc(62dvh * 600 / 480),650px);aspect-ratio:5/4;flex-shrink:1;z-index:1}#trolley-wrap[hidden]{display:none!important}#trolley{display:block;width:100%;height:100%}.result #trolley-wrap{width:min(76vw,calc(37dvh * 600 / 480),420px)}@media(max-width:600px){#trolley-wrap{width:min(96vw,calc(47dvh * 600 / 480))}}
 
 #frog-wrap{width:min(96vw,calc(62dvh * 600 / 480),650px);aspect-ratio:5/4;flex-shrink:1;z-index:1}#frog-wrap[hidden]{display:none!important}#frog{display:block;width:100%;height:100%}.result #frog-wrap{width:min(76vw,calc(37dvh * 600 / 480),420px)}@media(max-width:600px){#frog-wrap{width:min(96vw,calc(47dvh * 600 / 480))}}
+
+#alien-wrap{width:min(96vw,calc(62dvh * 600 / 480),650px);aspect-ratio:5/4;flex-shrink:1;z-index:1}#alien-wrap[hidden]{display:none!important}#alien{display:block;width:100%;height:100%}.result #alien-wrap{width:min(76vw,calc(37dvh * 600 / 480),420px)}@media(max-width:600px){#alien-wrap{width:min(96vw,calc(47dvh * 600 / 480))}}
