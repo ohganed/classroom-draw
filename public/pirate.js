@@ -6,7 +6,7 @@ export function makePirateRound(count,winner,seed){
  const others=Array.from({length:count},(_,i)=>i+1).filter(n=>n!==winner);
  for(let i=others.length-1;i>0;i--){let j=Math.floor(rand()*(i+1));[others[i],others[j]]=[others[j],others[i]];}
  const exits=new Map(others.map((n,i)=>[n,.16+.76*(i+.5*rand())/Math.max(1,others.length)]));
- return {count,winner,ships:Array.from({length:count},(_,i)=>({n:i+1,x:46+(i%10)*56,y:90+Math.floor(i/10)*78,phase:rand()*6.28,drift:(rand()-.5)*90,exit:exits.get(i+1)??Infinity,side:rand()>.5?1:-1}))};
+ return {count,winner,ships:Array.from({length:count},(_,i)=>({n:i+1,x:35+(i%8)*16,y:100+Math.floor(i/8)*60,phase:rand()*6.28,drift:(rand()-.5)*90,exit:exits.get(i+1)??Infinity,side:rand()>.5?1:-1}))};
 }
 function ship(c,b,x,y,scale,tilt,champion=false){
  c.save();c.translate(x,y);c.rotate(tilt);c.scale(scale,scale);
@@ -27,8 +27,10 @@ export function drawPirate(canvas,round,elapsed=0,duration=10000,reduced=false){
  let remaining=0;
  for(const b of round.ships){
   const out=t>=b.exit;if(out&&t>b.exit+.075)continue;if(!out)remaining++;
-  let x=b.x+smooth(t)*b.drift+Math.sin(t*16+b.phase)*11;
-  let y=b.y+Math.sin(t*21+b.phase)*8;
+  // Every surviving ship sails continuously toward the island on the right.
+  const progress=cl(t*(b.n===round.winner?1:0.72)+Math.sin(t*8+b.phase)*.012);
+  let x=b.x+(b.n===round.winner?524:472-b.x)*smooth(progress)+Math.sin(t*16+b.phase)*6;
+  let y=b.y+(250-b.y)*smooth(progress)+Math.sin(t*21+b.phase)*8;
   if(out){let z=cl((t-b.exit)/.075);x+=b.side*z*200;y+=z*90;}
   let angle=out?b.side*cl((t-b.exit)/.075)*1.3:Math.sin(t*17+b.phase)*.24;
   const arrival=b.n===round.winner?smooth((t-.78)/.22):0;
