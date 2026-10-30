@@ -1,8 +1,8 @@
 import { randomNumber, buildSchedule, frameAt } from './draw.js';
 import { drawLottery } from './lottery.js';
 import { drawRoulette, rouletteAngle } from './roulette.js';
-import { drawBallRace } from './ball-race.js';
-import { drawHorseRace } from './horse-race.js';
+import { drawBallRace } from './ball-race.js?v=61';
+import { drawHorseRace } from './horse-race.js?v=61';
 import { drawPinball, getPinballCollisions } from './pinball.js';
 import { playPinballBounce } from './pinball-audio.js';
 import { drawDie3D } from './die-3d.js';
