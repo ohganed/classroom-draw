@@ -37,11 +37,18 @@ export function makeFallingRound(count,winner,seed){
  const take=()=>{if(!bag.length)fresh();return bag.pop();};
  const record=(kind,before,after,dur,more={})=>{events.push({kind,start:time,dur,before,after,...more});time+=dur;};
  // A completed bottom row becomes permanent gray foundation tiles.
- function lockBottom(){
-  if(!board[H-1].every(Boolean)||board[H-1].every(v=>v.locked))return;
-  const before=clone(board);
-  for(const tile of board[H-1])tile.locked=true;
-  record('lock',before,clone(board),.32);
+ function lockCompletedRows(){
+  // Grow a permanent gray foundation upward, one completed row at a time.
+  // A row can lock only when all rows below it are already gray.
+  for(let y=H-1;y>=0;y--){
+   if(!board[y].every(Boolean))break;
+   if(board[y].every(v=>v.locked))continue;
+   const belowLocked=y===H-1||board[y+1].every(v=>v?.locked);
+   if(!belowLocked)break;
+   const before=clone(board);
+   for(const tile of board[y])tile.locked=true;
+   record('lock',before,clone(board),.32,{row:y});
+  }
  }
  // Only the pair that has just touched is cleared; no global sweeping of matches.
  function resolve(id){
@@ -63,7 +70,7 @@ export function makeFallingRound(count,winner,seed){
    const fallen=clone(board);
    if(gravity(board)){
     record('gravity',fallen,clone(board),.23);chains++;
-    lockBottom();
+    lockCompletedRows();
     for(let yy=0;yy<H;yy++)for(let xx=0;xx<W;xx++){
      const v=board[yy][xx];if(v&&fallen[yy][xx]?.id!==v.id)queue.push(v.id);
     }
@@ -80,7 +87,7 @@ export function makeFallingRound(count,winner,seed){
   const before=clone(board),id=nextId++;
   board[row][col]={n,id,color};
   record('drop',before,clone(board),.19,{n,color,col,row});
-  drops++;lockBottom();resolve(id);lockBottom();return true;
+  drops++;lockCompletedRows();resolve(id);lockCompletedRows();return true;
  };
  for(let i=0;i<48;i++){
   const n=take(),color=Math.floor(rand()*COLORS.length);
