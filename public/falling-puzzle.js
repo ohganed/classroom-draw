@@ -126,7 +126,15 @@ export function drawFalling(canvas,round,elapsed=0,duration=40000,reduced=false)
  const progress=clamp((sec-ev.start)/ev.dur);
  const board=progress>=1?ev.after:ev.before;
  if(ev.kind==='drop'||ev.kind==='final'||ev.kind==='gravity')tiles(c,ev.after,1,progress,ev.kind,ev.before);
- else if(ev.kind==='clear'){tiles(c,ev.before,1-progress); }
+ else if(ev.kind==='clear'){
+  // Preserve all untouched blocks at full opacity. Fade only the actual two
+  // removed IDs; otherwise the whole board appears to vanish on each match.
+  const removed=new Set(ev.removed||[]);
+  const survivors=ev.before.map(row=>row.map(item=>item&&!removed.has(item.id)?item:null));
+  const matched=ev.before.map(row=>row.map(item=>item&&removed.has(item.id)?item:null));
+  tiles(c,survivors);
+  tiles(c,matched,1-progress);
+ }
  else if(ev.kind==='topout'){tiles(c,ev.before);const y=-40+52*ease(progress);c.fillStyle='#f7d57b';c.beginPath();c.roundRect(277,y,45,38,5);c.fill();c.fillStyle='#19283e';c.font='900 19px Arial';c.fillText(ev.n,299,y+26);}
  else tiles(c,board);
  c.fillStyle='#e6ebf7';c.font='bold 15px Arial';c.textAlign='center';
