@@ -14,7 +14,7 @@ for(const [name,engine] of [['chromium',chromium],['webkit',webkit]]){
  // Deterministic snapshots cover each completed elimination and the final field.
  for(const [p,expected] of [[0,40],[.45,20],[.75,10],[1,10]]){
   const result=await page.evaluate(async({p})=>{
-   const {makeRobotRound,drawRobotRace}=await import('./robot-race.js?v=51');
+   const {makeRobotRound,drawRobotRace}=await import('./robot-race.js?v=53');
    const round=makeRobotRound(40,17,123);
    const canvas=document.querySelector('#robot');
    document.querySelector('#app').className='running';document.querySelector('#number').hidden=true;
@@ -23,8 +23,8 @@ for(const [name,engine] of [['chromium',chromium],['webkit',webkit]]){
    drawRobotRace(canvas,round,p*8000,8000,false);ctx.fillText=fill;
    return {count:new Set(labels).size,plates:labels.length};
   },{p});
-  assert.equal(result.count,expected);assert.equal(result.plates,expected*(p>=.58?2:1));
-  if(p===.75)await page.screenshot({path:`../robot-${name}.png`});
+  assert.equal(result.count,expected);assert.equal(result.plates,expected*(p>=.3?2:1));
+  if(p===.45)await page.screenshot({path:`../robot-first-half-${name}.png`});
  }
  for(const [width,height] of [[320,568],[390,844],[844,390],[1024,768]]){
   await page.setViewportSize({width,height});

@@ -19,3 +19,7 @@ The numbers-mode grid now fits the viewport, and its number scales to the remain
 - `node tests/robot-browser.mjs`: passes in Chromium and WebKit.
 - `npm test`: 8/8 pass; `node --check public/app.js` and `git diff --check` pass.
 - PWA cache and entry version: v52. Physical iPhone hardware was not tested.
+
+## v53 — number plates after the first obstacle (2026-10-30)
+
+Trailing number plates now appear for surviving robots from the first halving (40 → 20), and remain after the second (20 → 10). Elimination, winner selection and sizing are unchanged. Updated browser assertion failed before the fix (20 labels instead of 40 at the first-half snapshot), then passed in Chromium and WebKit. Both also passed replay, responsive sizes, reduced motion, offline replay and JavaScript error checks. First-half screenshot inspected. `npm test`: 8/8 pass; syntax and diff checks pass. PWA cache and entry/module versions are v53.

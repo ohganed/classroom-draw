@@ -11,7 +11,7 @@ import { drawMaze, makeMazeRound } from './maze.js';
 import { drawCrane, makeCraneRound } from './crane.js?v=46';
 import { scheduleCraneSounds } from './crane-audio.js';
 import { drawMachine, makeMachineRound, MACHINE_EVENTS } from './machine.js?v=43';
-import { drawRobotRace, makeRobotRound } from './robot-race.js?v=51';
+import { drawRobotRace, makeRobotRound } from './robot-race.js?v=53';
 import { drawBabyRace, makeBabyRound } from './baby-race.js?v=50';
 const $ = id => document.getElementById(id);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');

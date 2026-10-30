@@ -73,7 +73,7 @@ export function drawRobotRace(canvas,round,elapsed=0,duration=8000,reduced=false
    const frac=eliminated?(stage===1?.30:.60):progress(bot,p,round);
    const x=left+frac*travel;
    c.save();c.globalAlpha=eliminated?1-transition:1;
-   robot(c,x,y,scale,bot.n,eliminated&&!reduced?-transition*.8:0,!reduced&&!done&&Math.sin(p*35+bot.phase)>0,done&&bot.n===round.winner,stage===2&&!eliminated);
+   robot(c,x,y,scale,bot.n,eliminated&&!reduced?-transition*.8:0,!reduced&&!done&&Math.sin(p*35+bot.phase)>0,done&&bot.n===round.winner,stage>=1&&!eliminated);
    c.restore();
   }
  }
