@@ -1,73 +1,115 @@
-// 色が同じ2個が隣り合うと両方消える、多数落下型の抽選。
-// 1〜countを全員4回ずつ出し、当選者のみ5回。差は1個のみ。
-// 当選者はapp.jsが一様乱数で決定するため番号による優劣はない。
-const cl=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
-const ease=x=>{x=cl(x);return x*x*(3-2*x)};
-const palette=['#f18b7f','#72badf','#f0c267','#9bc986','#b99ae6','#8ed2c5','#e6a9c7','#d2bb8d'];
-const color=n=>palette[(n-1)%palette.length];
-export function makeFallingRound(count,winner,seed){
- let s=seed>>>0||1,r=()=>((s=(Math.imul(s,1664525)+1013904223)>>>0)/4294967296);
- const bags=[];for(let n=1;n<=count;n++)for(let k=0;k<2;k++)bags.push(n);
- for(let i=bags.length-1;i>0;i--){let j=Math.floor(r()*(i+1));[bags[i],bags[j]]=[bags[j],bags[i]];}
- const events=[];let time=.15,id=0;
- // Each entry is a pair of same-color numbered blocks dropping on the stack.
- // Contact is explicitly followed by a two-block clear.
- for(const n of bags){
-  const col=Math.floor(r()*10),start=time;
-  events.push({kind:'drop',n,id:id++,col,start,dur:.22,level:0});
-  events.push({kind:'drop',n,id:id++,col,start:start+.11,dur:.22,level:1});
-  events.push({kind:'clear',n,col,start:start+.37,dur:.18});
-  time+=.405;
- }
- // One extra copy of the uniformly chosen number remains.
- const col=4+Math.floor(r()*2);
- events.push({kind:'drop',n:winner,id:id++,col,start:time+.08,dur:.48,level:0});
- return {winner,count,events,seconds:time+2.1,total:count*4+1};
-}
-export const fallingDuration=round=>Math.ceil((round?.seconds??20)*1000);
-function tile(c,x,y,n,alpha=1,scale=1){
- c.save();c.globalAlpha=alpha;c.translate(x+22,y+22);c.scale(scale,scale);
- c.fillStyle=color(n);c.beginPath();c.roundRect(-20,-20,40,40,6);c.fill();
- c.strokeStyle='#fff4de';c.lineWidth=2;c.stroke();
- c.fillStyle='#152c44';c.font='900 17px Arial';c.textAlign='center';c.textBaseline='middle';c.fillText(n,0,1);c.restore();
-}
-export function drawFalling(canvas,round,elapsed=0,duration=18000,reduced=false){
- const c=canvas.getContext('2d');if(!c)return;
- const sec=cl(elapsed/1000,0,round?.seconds??20);
- c.fillStyle='#101e37';c.fillRect(0,0,600,480);
- c.fillStyle='#f5e6b9';c.textAlign='center';c.font='bold 22px Arial';c.fillText('落ちものパズル・色がそろうと消える！',300,34);
- c.fillStyle='#233a55';c.beginPath();c.roundRect(38,55,524,363,11);c.fill();
- for(let i=0;i<10;i++){c.strokeStyle='#37516a';c.strokeRect(52+i*49,75,46,323);}
- if(!round)return;
- const active=new Map();let clearing=false,fallen=0;
- for(const ev of round.events){
-  if(sec<ev.start)break;
-  if(ev.kind==='drop'){active.set(ev.id,ev);fallen++;}
-  else if(ev.kind==='clear'){
-   const pair=[...active].filter(([,d])=>d.n===ev.n&&d.col===ev.col);
-   // Prior identical values may have already cleared; only the currently
-   // active matching pair participates.
-   if(sec>=ev.start+ev.dur){for(const [key] of pair)active.delete(key);}
-   else clearing=true;
+// Five-column cascade puzzle. Every visible clear is produced by actual adjacency.
+// Random number stream is balanced by shuffled full bags; app independently picks winner.
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const ease=x=>{x=clamp(x);return x*x*(3-2*x)};
+const COLORS=['#ed847c','#72b9e2','#efc56e','#92cb8f','#bd9fe9','#77d2c8'];
+const W=5,H=8;
+const colOf=n=>(n-1)%COLORS.length;
+const same=(a,b)=>colOf(a.n)===colOf(b.n)||((a.n&1)===(b.n&1));
+const clone=b=>b.map(row=>row.map(v=>v?{...v}:null));
+function pairs(board){
+ const out=new Set();
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+  const a=board[y][x];if(!a)continue;
+  for(const [dx,dy] of [[1,0],[0,1]]){
+   const nx=x+dx,ny=y+dy;if(nx>=W||ny>=H)continue;
+   const b=board[ny][nx];if(b&&same(a,b)){out.add(a.id);out.add(b.id);}
   }
  }
- for(const [id,ev] of active){
-  const progress=cl((sec-ev.start)/ev.dur);
-  const target=ev.level?332:374;
-  const y=-44+(target+44)*ease(progress);
-  const clear=round.events.find(e=>e.kind==='clear'&&e.n===ev.n&&e.col===ev.col&&e.start>=ev.start&&e.start<=ev.start+.5);
-  const decay=clear?cl((sec-clear.start)/clear.dur):0;
-  tile(c,52+ev.col*49,y,ev.n,1-decay,1+decay*.22);
+ return out;
+}
+function gravity(board){
+ let moved=false;
+ for(let x=0;x<W;x++){
+  let target=H-1;
+  for(let y=H-1;y>=0;y--)if(board[y][x]){
+   if(y!==target){board[target][x]=board[y][x];board[y][x]=null;moved=true;}
+   target--;
+  }
  }
- const final=round.events[round.events.length-1];
- const finalShow=sec>final.start+.5;
- if(finalShow){
-  const v=ease((sec-final.start-.5)/.8);
-  c.fillStyle='#f5e6b9';c.font='bold 19px Arial';
-  c.fillText('最後に残った番号！',300,174);
-  tile(c,278,222,round.winner,1,1+v*1.3);
+ return moved;
+}
+export function makeFallingRound(count,winner,seed){
+ let s=seed>>>0||1;const rand=()=>((s=(Math.imul(s,1664525)+1013904223)>>>0)/4294967296);
+ const board=Array.from({length:H},()=>Array(W).fill(null)),events=[];
+ let time=0.15,nextId=1,bag=[],drops=0,chains=0;
+ const fresh=()=>{bag=Array.from({length:count},(_,i)=>i+1);for(let i=bag.length-1;i>0;i--){const j=Math.floor(rand()*(i+1));[bag[i],bag[j]]=[bag[j],bag[i]];}};
+ const record=(kind,before,after,dur,more={})=>{events.push({kind,start:time,dur,before,after,...more});time+=dur;};
+ const cascade=()=>{
+  for(let i=0;i<25;i++){
+   const dead=pairs(board);if(!dead.size)break;
+   let before=clone(board);
+   for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(board[y][x]&&dead.has(board[y][x].id))board[y][x]=null;
+   record('clear',before,clone(board),.17,{removed:[...dead]});
+   before=clone(board);
+   if(gravity(board)){record('gravity',before,clone(board),.14);chains++;}
+  }
+ };
+ const total=Math.max(85,Math.min(180,count*3));
+ for(let i=0;i<total;i++){
+  if(!bag.length)fresh();
+  const n=bag.pop();
+  let choices=[];for(let x=0;x<W;x++)if(!board[0][x])choices.push(x);
+  if(!choices.length){
+   // An arcade "shuffle" clears the clogged well visibly, then play resumes.
+   record('flush',clone(board),Array.from({length:H},()=>Array(W).fill(null)),.4);
+   for(let y=0;y<H;y++)board[y].fill(null);
+   choices=[0,1,2,3,4];
+  }
+  const col=choices[Math.floor(rand()*choices.length)];
+  let row=H-1;while(row>0&&!(!board[row][col]))row--;
+  const before=clone(board);board[row][col]={n,id:nextId++};
+  record('drop',before,clone(board),.24,{n,col,row});
+  drops++;cascade();
  }
- c.fillStyle='#f5e6b9';c.font='bold 15px Arial';
- c.fillText('全番号４回ずつ＋当選番号だけ１回追加  /  落下 '+fallen+'/'+round.total,300,440);
- c.font='bold 17px Arial';c.fillText(finalShow?round.winner+'番が当選！':clearing?'同じ色！ ２個まとめて消去！':'番号ブロックが次々落下！',300,469);
+ // A visible bonus stage clears the remaining board and introduces exactly one
+ // new block: the winner, chosen uniformly at the beginning by app.js.
+ const empty=Array.from({length:H},()=>Array(W).fill(null));
+ record('bonus',clone(board),empty,.65);
+ const before=clone(empty),col=2;empty[H-1][col]={n:winner,id:nextId++};
+ record('final',before,clone(empty),.70,{n:winner,col,row:H-1});
+ return {winner,count,events,seconds:time+1.35,drops,chains};
+}
+export const fallingDuration=round=>Math.ceil((round?.seconds??40)*1000);
+function tiles(c,board,alpha=1,progress=1,kind='',before=null){
+ if(!board)return;
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+  const item=board[y][x];if(!item)continue;
+  const px=178+x*50,ty=70+y*43;
+  let py=ty;
+  if(kind==='drop'||kind==='final'){
+   const had=before?.some(row=>row.some(v=>v?.id===item.id));
+   if(!had)py=-48+(ty+48)*ease(progress);
+  }else if(kind==='gravity'&&before){
+   let prev=-1;for(let z=0;z<H;z++)if(before[z][x]?.id===item.id)prev=z;
+   if(prev>=0)py=(70+prev*43)+(ty-(70+prev*43))*ease(progress);
+  }
+  c.save();c.globalAlpha=alpha;c.fillStyle=COLORS[colOf(item.n)];
+  c.beginPath();c.roundRect(px,py,45,38,5);c.fill();
+  c.strokeStyle='#f7f1dc';c.lineWidth=1.5;c.stroke();
+  c.fillStyle='#15273f';c.textAlign='center';c.textBaseline='middle';c.font='900 17px Arial';c.fillText(item.n,px+22.5,py+19);
+  c.restore();
+ }
+}
+export function drawFalling(canvas,round,elapsed=0,duration=40000,reduced=false){
+ const c=canvas.getContext('2d');if(!c)return;
+ const sec=Math.max(0,elapsed/1000);
+ c.fillStyle='#111d35';c.fillRect(0,0,600,480);
+ c.fillStyle='#f7e5b9';c.textAlign='center';c.font='bold 21px Arial';c.fillText('落ちものパズル・５列の大連鎖！',300,32);
+ c.fillStyle='#263e59';c.beginPath();c.roundRect(168,58,266,360,9);c.fill();
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++){c.strokeStyle='#3b536e';c.strokeRect(177+x*50,70+y*43,46,39);}
+ if(!round)return;
+ let ev=round.events[0],idx=0;
+ for(let i=0;i<round.events.length;i++){if(sec>=round.events[i].start){ev=round.events[i];idx=i;}else break;}
+ const progress=clamp((sec-ev.start)/ev.dur);
+ const board=progress>=1?ev.after:ev.before;
+ if(ev.kind==='drop'||ev.kind==='final'||ev.kind==='gravity')tiles(c,ev.after,1,progress,ev.kind,ev.before);
+ else if(ev.kind==='clear'){tiles(c,ev.before,1-progress); }
+ else if(ev.kind==='bonus'){tiles(c,ev.before,1-progress);}
+ else tiles(c,board);
+ c.fillStyle='#e6ebf7';c.font='bold 15px Arial';c.textAlign='center';
+ c.fillText('同じ色・偶数同士・奇数同士が隣接 → 消去',300,448);
+ const ended=sec>=round.events[round.events.length-1].start+round.events[round.events.length-1].dur;
+ c.fillStyle='#f5dda5';c.font='bold 19px Arial';
+ c.fillText(ended?round.winner+'番が最後に残った！':ev.kind==='clear'?'同じ条件で接触！ 消える！':ev.kind==='gravity'?'すき間へ落下！ 連鎖は続く？':ev.kind==='bonus'?'ボーナス全消し！':ev.kind==='final'?'最後の１個！':'どんどん落ちてくる！',300,473);
 }
