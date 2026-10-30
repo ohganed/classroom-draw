@@ -3,10 +3,7 @@ const cl=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
 const smooth=x=>{x=cl(x);return x*x*(3-2*x)};
 export function makePirateRound(count,winner,seed){
  let s=seed>>>0||1;const rand=()=>((s=(Math.imul(s,1664525)+1013904223)>>>0)/4294967296);
- const others=Array.from({length:count},(_,i)=>i+1).filter(n=>n!==winner);
- for(let i=others.length-1;i>0;i--){let j=Math.floor(rand()*(i+1));[others[i],others[j]]=[others[j],others[i]];}
- const exits=new Map(others.map((n,i)=>[n,.16+.76*(i+.5*rand())/Math.max(1,others.length)]));
- return {count,winner,ships:Array.from({length:count},(_,i)=>({n:i+1,x:35+(i%8)*16,y:100+Math.floor(i/8)*60,phase:rand()*6.28,drift:(rand()-.5)*90,exit:exits.get(i+1)??Infinity,side:rand()>.5?1:-1}))};
+ return {count,winner,ships:Array.from({length:count},(_,i)=>({n:i+1,x:38+(i%8)*17,y:95+Math.floor(i/8)*58,phase:rand()*6.28,windEffect:rand(),resistance:rand()*.7,side:rand()>.5?1:-1}))};
 }
 function ship(c,b,x,y,scale,tilt,champion=false){
  c.save();c.translate(x,y);c.rotate(tilt);c.scale(scale,scale);
@@ -24,18 +21,33 @@ export function drawPirate(canvas,round,elapsed=0,duration=10000,reduced=false){
  c.fillStyle='#fff1ba';c.font='bold 19px Arial';c.textAlign='center';c.fillText('海賊船の大航海',300,29);
  c.font='bold 13px Arial';c.fillText('宝島',544,355);
  if(!round)return;
- let remaining=0;
+ // Wind indicators: blue arrows point to the right for tailwind, amber to the left for headwind.
+ const wind=Math.sin(t*17+1.1)+.35*Math.sin(t*31);
+ const tailwind=wind>=0,dir=tailwind?1:-1;
+ c.save();c.fillStyle='rgba(18,40,61,.88)';c.fillRect(164,40,272,40);
+ c.font='bold 15px Arial';c.textAlign='center';c.fillStyle=tailwind?'#bde9f5':'#ffdb98';
+ c.fillText(tailwind?'追い風　→　宝島へ':'逆風　←　進みにくい',300,58);
+ c.strokeStyle=tailwind?'#bde9f5':'#ffdb98';c.lineWidth=3;
+ for(let k=0;k<4;k++){const x=205+k*59,y=69;c.beginPath();c.moveTo(x-dir*14,y);c.lineTo(x+dir*14,y);c.lineTo(x+dir*7,y-5);c.moveTo(x+dir*14,y);c.lineTo(x+dir*7,y+5);c.stroke();}
+ c.restore();
  for(const b of round.ships){
-  const out=t>=b.exit;if(out&&t>b.exit+.075)continue;if(!out)remaining++;
-  // Every surviving ship sails continuously toward the island on the right.
-  const progress=cl(t*(b.n===round.winner?1:0.72)+Math.sin(t*8+b.phase)*.012);
-  let x=b.x+(b.n===round.winner?524:472-b.x)*smooth(progress)+Math.sin(t*16+b.phase)*6;
-  let y=b.y+(250-b.y)*smooth(progress)+Math.sin(t*21+b.phase)*8;
-  if(out){let z=cl((t-b.exit)/.075);x+=b.side*z*200;y+=z*90;}
-  let angle=out?b.side*cl((t-b.exit)/.075)*1.3:Math.sin(t*17+b.phase)*.24;
-  const arrival=b.n===round.winner?smooth((t-.78)/.22):0;
+  // Ships vary in how strongly they respond to wind. The average forward speed
+  // remains positive, except for the most wind-sensitive ships in a headwind.
+  const influence=b.windEffect;
+  const headwind=wind<0?Math.abs(wind):0;
+  const gust=wind>0?wind:0;
+  const slow=influence>.5?headwind*(.75+b.resistance):headwind*.12;
+  const boost=influence>.36?gust*.36:gust*.05;
+  const base=b.n===round.winner?1:.78;
+  // Integral-like continuous travel with pronounced slowdowns and reversals.
+  const progress=cl(t*base +(boost-slow)*Math.sin(Math.PI*t)*.20);
+  let x=b.x+(524-b.x)*smooth(progress)+Math.sin(t*13+b.phase)*5;
+  let y=b.y+(250-b.y)*smooth(progress)+Math.sin(t*18+b.phase)*7;
+  const arrival=b.n===round.winner?smooth((t-.85)/.15):0;
   x+=(524-x)*arrival;y+=(250-y)*arrival;
-  ship(c,b,x,y,done?2:1+arrival*.9,reduced?0:angle,b.n===round.winner&&done);
+  const angle=Math.sin(t*19+b.phase)*.19+(influence>.5?-wind*.12:0);
+  ship(c,b,x,y,done&&b.n===round.winner?2:1+arrival*.8,reduced?0:angle,b.n===round.winner&&done);
  }
- c.fillStyle='#f5e8bd';c.font='bold 17px Arial';c.fillText(done?round.winner+'番が宝島に到着！':'航海中　残り '+remaining+' 隻',300,461);
+ c.fillStyle='#f5e8bd';c.font='bold 17px Arial';c.textAlign='center';
+ c.fillText(done?round.winner+'番が宝島に到着！':'航海中　'+round.count+' 隻　（全船表示）',300,461);
 }
