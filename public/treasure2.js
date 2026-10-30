@@ -8,6 +8,12 @@ export function makeTreasureRound(count,winner,seed){
  const finalists=[winner,...others.slice(0,Math.min(7,count-1))];
  return {winner,count,ships:Array.from({length:count},(_,i)=>({n:i+1,x:20+(i%8)*18,y:86+Math.floor(i/8)*66,phase:rand()*6.28,landing:finalists.includes(i+1),row:finalists.indexOf(i+1),delay:rand()*.12,pace:.55+rand()*.25}))};
 }
+// Shared path matches the visible winding trail: all captains use the same route.
+function trail(u){
+ const t=clamp(u),first=t<=.70,q=first?t/.70:(t-.70)/.30;
+ const a=first?[328,360]:[459,225],control=first?[389,279]:[485,205],b=first?[459,225]:[510,170];
+ const k=1-q;return {x:k*k*a[0]+2*k*q*control[0]+q*q*b[0],y:k*k*a[1]+2*k*q*control[1]+q*q*b[1]};
+}
 function boat(c,x,y,n,scale=1){
  c.save();c.translate(x,y);c.scale(scale,scale);
  c.fillStyle='#9b6d50';c.beginPath();c.moveTo(-18,4);c.lineTo(18,4);c.lineTo(10,15);c.lineTo(-10,15);c.closePath();c.fill();
@@ -38,17 +44,21 @@ export function drawTreasure(canvas,round,elapsed=0,duration=12000,reduced=false
  if(!round)return;
  for(const b of round.ships){
   const move=smooth(clamp((t-b.delay)/.65));
-  const dockX=316+(b.landing?b.row%3*16:-25),dockY=130+(b.landing?b.row*36:b.y*.35);
+  const dockX=b.landing?300+(b.row%3)*7:291,dockY=b.landing?340+(b.row%3)*7:130+b.y*.35;
   const x=b.x+(dockX-b.x)*move,y=b.y+(dockY-b.y)*move+(!reduced?Math.sin(t*20+b.phase)*5:0);
   boat(c,x,y,b.n,b.landing?1:.75);
-  if(b.landing&&t>.52){
-   const run=clamp((t-.52)/.45);
-   const startX=dockX+22,startY=dockY-7;
-   const pace=b.n===round.winner?run:run*b.pace;
-   const cx=startX+(491-startX)*smooth(pace),cy=startY+(176-startY)*smooth(pace);
-   captain(c,cx,cy,b.n,reduced?0:run,b.n===round.winner&&done);
+  if(b.landing&&t>.55){
+   // First travel from the docking point to the marked trail entrance.
+   const entrance={x:328,y:360},shore={x:dockX+10,y:dockY};
+   const toward=clamp((t-.55)/.15);
+   const onTrail=clamp((t-.70)/.28);
+   const pace=b.n===round.winner?onTrail:onTrail*b.pace;
+   const route=trail(smooth(pace));
+   const cx=t<.70?shore.x+(entrance.x-shore.x)*smooth(toward):route.x;
+   const cy=t<.70?shore.y+(entrance.y-shore.y)*smooth(toward):route.y;
+   captain(c,cx,cy,b.n,reduced?0:t*8,b.n===round.winner&&done);
   }
  }
  if(done){c.fillStyle='#ffedab';c.font='bold 23px Arial';c.fillText(round.winner+' 番の船長が宝箱を発見！',300,463);}
- else {c.fillStyle='#fff1cc';c.font='bold 16px Arial';c.fillText(t<.5?'宝島へ接近中！': '船長たちが宝箱へダッシュ！',300,462);}
+ else {c.fillStyle='#fff1cc';c.font='bold 16px Arial';c.fillText(t<.5?'宝島へ接近中！': '道の入口から宝箱へダッシュ！',300,462);}
 }
