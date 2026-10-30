@@ -5,7 +5,7 @@ const ease=x=>{x=clamp(x);return x*x*(3-2*x)};
 const COLORS=['#ed847c','#72b9e2','#efc56e','#92cb8f','#bd9fe9','#77d2c8'];
 const W=5,H=8;
 const colOf=n=>(n-1)%COLORS.length;
-const same=(a,b)=>colOf(a.n)===colOf(b.n)||((a.n&1)===(b.n&1));
+const same=(a,b)=>colOf(a.n)===colOf(b.n);
 const clone=b=>b.map(row=>row.map(v=>v?{...v}:null));
 function pairs(board){
  const out=new Set();
@@ -141,7 +141,7 @@ export function drawFalling(canvas,round,elapsed=0,duration=40000,reduced=false)
  else if(ev.kind==='topout'){tiles(c,ev.before);const y=-40+52*ease(progress);c.fillStyle='#f7d57b';c.beginPath();c.roundRect(277,y,45,38,5);c.fill();c.fillStyle='#19283e';c.font='900 19px Arial';c.fillText(ev.n,299,y+26);}
  else tiles(c,board);
  c.fillStyle='#e6ebf7';c.font='bold 15px Arial';c.textAlign='center';
- c.fillText('同じ色・偶数同士・奇数同士が隣接 → 消去',300,448);
+ c.fillText('同じ色の2個が接触したときだけ消去',300,448);
  const ended=sec>=round.events[round.events.length-1].start+round.events[round.events.length-1].dur;
  c.fillStyle='#f5dda5';c.font='bold 19px Arial';
  c.fillText(ended?round.winner+'番が上限突破の次の番号！':ev.kind==='clear'?'同じ条件で接触！ 消える！':ev.kind==='gravity'?'すき間へ落下！ 連鎖は続く？':ev.kind==='topout'?'積み上がった！ 次の番号が当選！':'どんどん落ちてくる！',300,473);
