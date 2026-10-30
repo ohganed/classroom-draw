@@ -16,7 +16,7 @@ export function makeFallingRound(count,winner,seed){
    events.push({kind:'drop',n:blockOrder[j],col:j,row:Math.min(k,5),start:time,dur:.24});time+=.25;
   }
   if(group.length===9){events.push({kind:'wild',col:9,row:Math.min(k,5),start:time,dur:.24});time+=.25;
-   events.push({kind:'clear',start:time,dur:.40,items:[...group]});time+=.45;
+   events.push({kind:'clear',start:time,dur:.40,items:[...group],row:Math.min(k,5)});time+=.45;
   }else{events.push({kind:'chain',start:time,dur:.52,items:[...group]});time+=.56;}
  }
  return {winner,count,events,seconds:time+2.8};
@@ -44,13 +44,13 @@ export function drawFalling(canvas,round,elapsed=0,duration=18000,reduced=false)
    const y=72+ev.row*51,x=53+ev.col*49;
    state.set(key,{n:ev.kind==='wild'?null:ev.n,x,y,born:ev.start,dur:ev.dur});
   }else if(ev.kind==='clear'||ev.kind==='chain'){
-   if(sec>=ev.start+ev.dur){for(const n of ev.items)state.delete(n);if(ev.kind==='clear')state.delete('wild-'+Math.min(round.events.indexOf(ev),5));}
+   if(sec>=ev.start+ev.dur){for(const n of ev.items)state.delete(n);if(ev.kind==='clear')state.delete('wild-'+ev.row);}
    else{for(const n of ev.items){const item=state.get(n);if(item)item.dying=(sec-ev.start)/ev.dur;}flashRow=ev.kind==='clear'?1:0;}
   }
  }
  // Completed clear events also remove their wildcard via the row that was filled.
  for(const ev of round.events)if(ev.kind==='clear'&&sec>=ev.start+ev.dur){
-  for(const [key,item] of state)if(typeof key==='string'&&key.startsWith('wild-')&&Math.abs(item.born-ev.start)<.6)state.delete(key);
+  for(const [key,item] of state)if(key==='wild-'+ev.row)state.delete(key);
  }
  for(const item of state.values()){
   const u=cl((sec-item.born)/item.dur),y=-36+(item.y+36)*ease(u);
