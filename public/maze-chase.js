@@ -20,9 +20,30 @@ export function makeMazeChaseRound(count,winner,seed){
  const others=Array.from({length:count},(_,i)=>i+1).filter(n=>n!==winner);
  for(let i=others.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[others[i],others[j]]=[others[j],others[i]];}
  const exit=new Map(others.map((n,i)=>[n,.19+.72*(i+.2*r())/Math.max(1,others.length)]));
- return {winner,count,heroes:Array.from({length:count},(_,i)=>({n:i+1,seed:r()*1000,exit:exit.get(i+1)??2,color:i%5})),seed:r()*1000};
+ return {winner,count,heroes:Array.from({length:count},(_,i)=>({n:i+1,route:walk(r()*1000),exit:exit.get(i+1)??2,color:i%5})),ghosts:Array.from({length:4},()=>walk(r()*1000))};
 }
-function pos(seed,t){const z=Math.floor(seed)%paths.length;const pace=Math.floor(t*26+seed*3);return paths[(z+pace)%paths.length];}
+// Precompute a connected walk: every transition is exactly one open cell.
+// Interpolate adjacent cells; never teleport across a wall or an isolated row.
+const open=(x,y)=>y>=0&&y<maze.length&&x>=0&&x<maze[y].length&&maze[y][x]!=='#';
+function walk(seed){
+ let state=(Math.floor(seed*100003)>>>0)||1;
+ const rand=()=>((state=(Math.imul(state,1664525)+1013904223)>>>0)/4294967296);
+ let p=paths[Math.floor(rand()*paths.length)],previous=null;
+ const route=[p];
+ for(let i=0;i<420;i++){
+  let choices=[[1,0],[-1,0],[0,1],[0,-1]].map(([dx,dy])=>({x:p.x+dx,y:p.y+dy})).filter(v=>open(v.x,v.y));
+  const nonback=choices.filter(v=>!previous||v.x!==previous.x||v.y!==previous.y);
+  if(nonback.length&&rand()<.9)choices=nonback;
+  if(!choices.length){route.push(p);continue;}
+  const next=choices[Math.floor(rand()*choices.length)];previous=p;p=next;route.push(p);
+ }
+ return route;
+}
+function pos(route,t){
+ const step=clamp(t*26,0,route.length-1),i=Math.floor(step),u=step-i;
+ const a=route[i],b=route[Math.min(i+1,route.length-1)];
+ return {x:a.x+(b.x-a.x)*u,y:a.y+(b.y-a.y)*u};
+}
 export function drawMazeChase(canvas,round,elapsed=0,duration=13000,reduced=false){
  const c=canvas.getContext('2d');if(!c)return;const t=clamp(elapsed/duration);
  c.fillStyle='#050b20';c.fillRect(0,0,600,480);c.fillStyle='#f1da8d';c.textAlign='center';c.font='bold 21px Arial';c.fillText('迷路の鬼ごっこ！',300,29);
@@ -33,12 +54,12 @@ export function drawMazeChase(canvas,round,elapsed=0,duration=13000,reduced=fals
   else{c.fillStyle='#f3d79b';c.beginPath();c.arc(px+z/2,py+z/2,1.5,0,7);c.fill();}
  }
  if(!round)return;
- for(let i=0;i<4;i++){const p=pos(round.seed+i*39,t*.78);const x=ox+p.x*z+z/2,y=oy+p.y*z+z/2;
+ for(let i=0;i<4;i++){const p=pos(round.ghosts[i],t*.78);const x=ox+p.x*z+z/2,y=oy+p.y*z+z/2;
   c.fillStyle=['#e7739f','#75c9d5','#efad6d','#a992eb'][i];c.beginPath();c.arc(x,y,11,Math.PI,0);c.lineTo(x+11,y+10);for(let k=0;k<4;k++)c.lineTo(x+8-k*5,y+6+(k%2)*4);c.fill();
   c.fillStyle='#fff';c.beginPath();c.arc(x-4,y-1,3,0,7);c.arc(x+4,y-1,3,0,7);c.fill();
  }
  let remaining=0;
- for(const h of round.heroes){if(t>=h.exit)continue;remaining++;const p=pos(h.seed,t),x=ox+p.x*z+z/2,y=oy+p.y*z+z/2;
+ for(const h of round.heroes){if(t>=h.exit)continue;remaining++;const p=pos(h.route,t),x=ox+p.x*z+z/2,y=oy+p.y*z+z/2;
   const final=h.n===round.winner?clamp((t-.91)/.09):0;
   c.save();c.translate(x,y);c.fillStyle=['#f3d56c','#83d5a5','#da8aca','#79bce6','#ed927f'][h.color];
   c.beginPath();c.arc(0,0,10+final*7,0,Math.PI*2);c.fill();
