@@ -16,7 +16,7 @@ export function makeTrolleyRound(count,winner,seed){
  const depotN=Math.floor(count*.5),repairN=Math.floor(count*.375),sidingN=Math.max(0,count-1-depotN-repairN);
  const assignments=new Map();others.forEach((n,i)=>assignments.set(n,i<depotN?'depot':i<depotN+repairN?'repair':i<depotN+repairN+sidingN?'siding':'siding'));
  const carts=Array.from({length:count},(_,i)=>({n:i+1,to:i+1===winner?'station':assignments.get(i+1),speed:.87+rand()*.38,delay:rand()*.055,phase:rand()*6.28,lane:rand(),index:i}));
- return {count,winner,carts};
+ return {count,winner,carts,story:['front','close','middle','comeback'][Math.floor(rand()*4)]};
 }
 function rail(c,route,shade='#79949d'){
  c.beginPath();route.points.forEach((v,i)=>i?c.lineTo(v[0],v[1]):c.moveTo(v[0],v[1]));c.strokeStyle=shade;c.lineWidth=12;c.lineJoin='round';c.stroke();
@@ -47,7 +47,17 @@ export function drawTrolley(canvas,round,elapsed=0,duration=13000,reduced=false)
   const t=clamp((p-b.delay)/(1-b.delay)),v=b.speed;
   // Race progress across trunk is individual, without stage timers.
   let d=t*trunk.total*v*1.32;
-  if(b.to==='station')d=t*trunk.total*.87+.16*trunk.total*ease((t-.73)/.27);
+  if(b.to==='station'){
+   // Four distinct stories: early leader, steady finish, mid-race surge, late comeback.
+   const progress=round.story==='front'
+    ?t+.15*Math.sin(Math.PI*t)*Math.sin(Math.PI*t)
+    :round.story==='close'
+    ?t+.035*Math.sin(Math.PI*t*2)
+    :round.story==='middle'
+    ?t-.13*Math.sin(Math.PI*t)*Math.sin(Math.PI*t)
+    :t-.32*Math.sin(Math.PI*t)*Math.sin(Math.PI*t);
+   d=trunk.total*clamp(progress);
+  }
   let q,arrived=false;
   if(b.to==='station'){q=pos(trunk,clamp(d/trunk.total));arrived=d>=trunk.total;}
   else if(d<gate[b.to]){q=pos(trunk,d/trunk.total);}
