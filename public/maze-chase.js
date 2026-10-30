@@ -20,7 +20,22 @@ export function makeMazeChaseRound(count,winner,seed){
  const others=Array.from({length:count},(_,i)=>i+1).filter(n=>n!==winner);
  for(let i=others.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[others[i],others[j]]=[others[j],others[i]];}
  const exit=new Map(others.map((n,i)=>[n,.19+.72*(i+.2*r())/Math.max(1,others.length)]));
- return {winner,count,heroes:Array.from({length:count},(_,i)=>({n:i+1,route:walk(r()*1000),exit:exit.get(i+1)??2,color:i%5})),ghosts:Array.from({length:4},()=>walk(r()*1000))};
+ const heroes=Array.from({length:count},(_,i)=>({n:i+1,route:walk(r()*1000),exit:exit.get(i+1)??2,color:i%5}));
+ const ghosts=Array.from({length:4},()=>walk(r()*1000));
+ // Record real encounters from the same trajectories used for drawing.
+ // This avoids a surprise animation firing merely because sprites overlap
+ // visually while the underlying coordinates disagree.
+ const hits=new Map();
+ for(let step=0;step<=650;step++){
+  const t=step/650;
+  const gp=ghosts.map(route=>pos(route,t*.78));
+  for(const hero of heroes){
+   if(t>=hero.exit||hits.has(hero.n))continue;
+   const hp=pos(hero.route,t);
+   if(gp.some(p=>Math.hypot(p.x-hp.x,p.y-hp.y)<.76))hits.set(hero.n,t);
+  }
+ }
+ return {winner,count,heroes,ghosts,hits:Object.fromEntries(hits)};
 }
 // Precompute a connected walk: every transition is exactly one open cell.
 // Interpolate adjacent cells; never teleport across a wall or an isolated row.
@@ -62,11 +77,19 @@ export function drawMazeChase(canvas,round,elapsed=0,duration=13000,reduced=fals
   c.fillStyle='#fff';c.beginPath();c.arc(x-2.8,y-1,1.8,0,7);c.arc(x+2.8,y-1,1.8,0,7);c.fill();
  }
  let remaining=0;
- for(const h of round.heroes){if(t>=h.exit)continue;remaining++;const p=pos(h.route,t),x=ox+p.x*z+z/2,y=oy+p.y*z+z/2;
+ for(const h of round.heroes){
+  const hit=round.hits?.[h.n];
+  const startled=hit!==undefined&&t>=hit&&t<hit+.042;
+  if(t>=h.exit||hit!==undefined&&t>=hit+.042&&h.n!==round.winner)continue;
+  remaining++;const p=pos(h.route,startled?hit:t),x=ox+p.x*z+z/2,y=oy+p.y*z+z/2;
   const final=h.n===round.winner?clamp((t-.91)/.09):0;
   c.save();c.translate(x,y);c.fillStyle=['#f3d56c','#83d5a5','#da8aca','#79bce6','#ed927f'][h.color];
   c.beginPath();c.arc(0,0,7.8,0,Math.PI*2);c.fill();
   c.fillStyle='#17233b';c.font='900 9px Arial';c.textAlign='center';c.textBaseline='middle';c.fillText(h.n,0,1);c.restore();
+  if(startled){
+   c.fillStyle='#fff1a0';c.font='bold 18px Arial';c.textAlign='center';c.fillText('!',x+7,y-9);
+   c.strokeStyle='#fff1a0';c.lineWidth=2;c.beginPath();c.arc(x,y,9+(t-hit)*160,0,Math.PI*2);c.stroke();
+  }
  }
  c.restore();
  if(t>.93){c.fillStyle='#edda9c';c.font='900 31px Arial';c.fillText(round.winner+'番、逃げ切り！',300,401);}
