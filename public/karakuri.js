@@ -51,7 +51,7 @@ export function drawKarakuri(canvas,round,elapsed=0,duration=8000,reduced=false)
  const lengths=[];let total=0;
  for(let i=1;i<track.length;i++){const d=Math.hypot(track[i][0]-track[i-1][0],track[i][1]-track[i-1][1]);lengths.push(d);total+=d;}
  // Gate positions are physical locations on the uninterrupted track.
- const firstGate=lengths.slice(0,4).reduce((a,b)=>a+b,0)/total;
+ const firstGate=(lengths.slice(0,3).reduce((a,b)=>a+b,0)+220)/total;
  const secondGate=lengths.slice(0,8).reduce((a,b)=>a+b,0)/total;
  const pointAt=u=>{
   let remaining=clamp(u)*total;
@@ -81,7 +81,19 @@ export function drawKarakuri(canvas,round,elapsed=0,duration=8000,reduced=false)
    distance-=.16*smooth((clock-.7)/.3)*(1-b.jitter*.35);
   }
   distance=clamp(distance);
-  if(b.stage===0&&distance>=firstGate)continue;
+  if(b.stage===0&&distance>=firstGate){
+   // Rejected balls fly away from the gear in different arcs, then fade.
+   const flight=(distance-firstGate)*total/420;
+   if(!done&&flight<1.15&&!reduced){
+    const angle=-Math.PI*.94+b.jitter*Math.PI*.92;
+    const power=65+58*b.speed;
+    const x=300+Math.cos(angle)*power*flight;
+    const y=210+Math.sin(angle)*power*flight+125*flight*flight;
+    const r=n>60?7:n>30?9:12;
+    c.save();c.globalAlpha=clamp((1.15-flight)/.35);ball(c,x,y,r,b.n);c.restore();
+   }
+   continue;
+  }
   if(b.stage===1&&distance>=secondGate)continue;
   if(done&&b.n!==round.winner)continue;
   visible++;
