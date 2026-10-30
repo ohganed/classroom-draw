@@ -5,7 +5,7 @@ const ease=x=>{x=clamp(x);return x*x*(3-2*x)};
 const COLORS=['#ed847c','#72b9e2','#efc56e','#92cb8f','#bd9fe9','#77d2c8'];
 const W=5,H=8;
 const colOf=n=>(n-1)%COLORS.length;
-const same=(a,b)=>a.color===b.color;
+const same=(a,b)=>!a.locked&&!b.locked&&a.color===b.color;
 const clone=b=>b.map(row=>row.map(v=>v?{...v}:null));
 function pairs(board){
  const out=new Set();
@@ -36,6 +36,13 @@ export function makeFallingRound(count,winner,seed){
  const fresh=()=>{bag=Array.from({length:count},(_,i)=>i+1);for(let i=bag.length-1;i>0;i--){const j=Math.floor(rand()*(i+1));[bag[i],bag[j]]=[bag[j],bag[i]];}};
  const take=()=>{if(!bag.length)fresh();return bag.pop();};
  const record=(kind,before,after,dur,more={})=>{events.push({kind,start:time,dur,before,after,...more});time+=dur;};
+ // A completed bottom row becomes permanent gray foundation tiles.
+ function lockBottom(){
+  if(!board[H-1].every(Boolean)||board[H-1].every(v=>v.locked))return;
+  const before=clone(board);
+  for(const tile of board[H-1])tile.locked=true;
+  record('lock',before,clone(board),.32);
+ }
  // Only the pair that has just touched is cleared; no global sweeping of matches.
  function resolve(id){
   // A collision removes exactly the two individual tile IDs. Never perform
@@ -56,6 +63,7 @@ export function makeFallingRound(count,winner,seed){
    const fallen=clone(board);
    if(gravity(board)){
     record('gravity',fallen,clone(board),.23);chains++;
+    lockBottom();
     for(let yy=0;yy<H;yy++)for(let xx=0;xx<W;xx++){
      const v=board[yy][xx];if(v&&fallen[yy][xx]?.id!==v.id)queue.push(v.id);
     }
@@ -72,7 +80,7 @@ export function makeFallingRound(count,winner,seed){
   const before=clone(board),id=nextId++;
   board[row][col]={n,id,color};
   record('drop',before,clone(board),.19,{n,color,col,row});
-  drops++;resolve(id);return true;
+  drops++;lockBottom();resolve(id);lockBottom();return true;
  };
  for(let i=0;i<48;i++){
   const n=take(),color=Math.floor(rand()*COLORS.length);
@@ -118,7 +126,7 @@ function tiles(c,board,alpha=1,progress=1,kind='',before=null){
    let prev=-1;for(let z=0;z<H;z++)if(before[z][x]?.id===item.id)prev=z;
    if(prev>=0)py=(70+prev*43)+(ty-(70+prev*43))*ease(progress);
   }
-  c.save();c.globalAlpha=alpha;c.fillStyle=COLORS[item.color??colOf(item.n)];
+  c.save();c.globalAlpha=alpha;c.fillStyle=item.locked?'#929ca8':COLORS[item.color??colOf(item.n)];
   c.beginPath();c.roundRect(px,py,45,38,5);c.fill();
   c.strokeStyle='#f7f1dc';c.lineWidth=1.5;c.stroke();
   c.fillStyle='#15273f';c.textAlign='center';c.textBaseline='middle';c.font='900 17px Arial';c.fillText(item.n,px+22.5,py+19);
@@ -147,11 +155,12 @@ export function drawFalling(canvas,round,elapsed=0,duration=40000,reduced=false)
   tiles(c,survivors);
   tiles(c,matched,1-progress);
  }
+ else if(ev.kind==='lock'){tiles(c,ev.after);}
  else if(ev.kind==='topout'){tiles(c,ev.before);const y=-40+52*ease(progress);c.fillStyle='#f7d57b';c.beginPath();c.roundRect(277,y,45,38,5);c.fill();c.fillStyle='#19283e';c.font='900 19px Arial';c.fillText(ev.n,299,y+26);}
  else tiles(c,board);
  c.fillStyle='#e6ebf7';c.font='bold 15px Arial';c.textAlign='center';
- c.fillText('同じ色が縦・横・斜めで接触 → その2個だけ消去',300,448);
+ c.fillText('同色で2個消去・最下段5個が並ぶとグレー固定',300,448);
  const ended=sec>=round.events[round.events.length-1].start+round.events[round.events.length-1].dur;
  c.fillStyle='#f5dda5';c.font='bold 19px Arial';
- c.fillText(ended?round.winner+'番が上限突破の次の番号！':ev.kind==='clear'?'同じ条件で接触！ 消える！':ev.kind==='gravity'?'すき間へ落下！ 連鎖は続く？':ev.kind==='topout'?'積み上がった！ 次の番号が当選！':'どんどん落ちてくる！',300,473);
+ c.fillText(ended?round.winner+'番が上限突破の次の番号！':ev.kind==='clear'?'同じ条件で接触！ 消える！':ev.kind==='gravity'?'すき間へ落下！ 連鎖は続く？':ev.kind==='lock'?'最下段がグレーの土台になった！':ev.kind==='topout'?'積み上がった！ 次の番号が当選！':'どんどん落ちてくる！',300,473);
 }
