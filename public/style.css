@@ -173,3 +173,5 @@ body.numbers-mode #number{font-size:min(54vw,max(24px,calc(100cqh - 90px)))}
 
 /* Karakuri: tall mechanism with large readable final balls. */
 #karakuri-wrap{width:min(94vw,calc(64dvh * 600 / 490),620px);aspect-ratio:600 / 490;z-index:1;flex-shrink:1}#karakuri-wrap[hidden]{display:none!important}#karakuri{display:block;width:100%;height:100%}.result #karakuri-wrap{width:min(75vw,calc(39dvh * 600 / 490),390px)}@media(max-width:600px){#karakuri-wrap{width:min(96vw,calc(48dvh * 600 / 490))}.result #karakuri-wrap{width:min(80vw,calc(31dvh * 600 / 490))}}
+
+#trolley-wrap{width:min(96vw,calc(62dvh * 600 / 480),650px);aspect-ratio:5/4;flex-shrink:1;z-index:1}#trolley-wrap[hidden]{display:none!important}#trolley{display:block;width:100%;height:100%}.result #trolley-wrap{width:min(76vw,calc(37dvh * 600 / 480),420px)}@media(max-width:600px){#trolley-wrap{width:min(96vw,calc(47dvh * 600 / 480))}}
