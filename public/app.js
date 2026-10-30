@@ -31,7 +31,7 @@ import { makeDigRound, drawDig } from './dig-dog.js?v=89';
 import { makeLoveDogRound, drawLoveDog } from './love-dog.js?v=90';
 import { makeDogStickRound, drawDogStick } from './dog-stick.js?v=91';
 import { makeKappaRound, drawKappa } from './kappa.js?v=93';
-import { makeGourdRound, drawGourd } from './gourd.js?v=94';
+import { makeGourdRound, drawGourd } from './gourd.js?v=95';
 const $ = id => document.getElementById(id);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 let duration = 8000;
