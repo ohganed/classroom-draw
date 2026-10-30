@@ -5,7 +5,10 @@ export function makeMonkeyRound(count,winner,seed){
  const losers=Array.from({length:count},(_,i)=>i+1).filter(n=>n!==winner);
  for(let i=losers.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[losers[i],losers[j]]=[losers[j],losers[i]];}
  const falls=new Map(losers.map((n,i)=>[n,.14+.72*(i+r()*.35)/Math.max(1,losers.length)]));
- return {winner,count,monkeys:Array.from({length:count},(_,i)=>({n:i+1,tree:i%5,offset:((Math.floor(i/5)%8)-3.5)*8,phase:r()*6.28,fall:falls.get(i+1)??Infinity,side:r()>.5?1:-1}))};
+ const monkeys=Array.from({length:count},(_,i)=>({n:i+1,tree:i%5,offset:((Math.floor(i/5)%8)-3.5)*8,phase:r()*6.28,fall:falls.get(i+1)??Infinity,side:r()>.5?1:-1}));
+ const coconuts=monkeys.filter(m=>m.n!==winner).map(m=>({target:m.n,impact:m.fall,start:Math.max(.05,m.fall-(.09+r()*.035)),side:r()>.5?1:-1,curve:(r()-.5)*30}));
+ for(let i=0;i<35;i++){const impact=.12+r()*.78;coconuts.push({target:0,impact,start:Math.max(.04,impact-.07-r()*.04),side:r()>.5?1:-1,x:35+r()*530,y:120+r()*270,curve:(r()-.5)*55});}
+ return {winner,count,monkeys,coconuts};
 }
 function monkey(c,n,x,y,angle=0,scale=1){
  c.save();c.translate(x,y);c.rotate(angle);c.scale(scale,scale);
@@ -19,6 +22,7 @@ function monkey(c,n,x,y,angle=0,scale=1){
  c.fillStyle='#253a49';c.textAlign='center';c.textBaseline='middle';c.font='900 15px Arial';c.fillText(n,0,11);
  c.restore();
 }
+function coconut(c,x,y,rot){c.save();c.translate(x,y);c.rotate(rot);c.fillStyle='#835337';c.beginPath();c.arc(0,0,11,0,Math.PI*2);c.fill();c.fillStyle='#b28a62';c.beginPath();c.arc(-3,-4,3,0,Math.PI*2);c.fill();c.fillStyle='#513525';for(const [a,b] of [[3,-2],[-1,4],[5,5]]){c.beginPath();c.arc(a,b,1.7,0,Math.PI*2);c.fill();}c.restore();}
 export function drawMonkey(canvas,round,elapsed=0,duration=10000,reduced=false){
  const c=canvas.getContext('2d');if(!c)return;const t=cl(elapsed/duration),done=t>=1;
  c.fillStyle='#e7f2db';c.fillRect(0,0,600,480);
@@ -30,6 +34,18 @@ export function drawMonkey(canvas,round,elapsed=0,duration=10000,reduced=false){
  }
  c.fillStyle='#2c4e35';c.textAlign='center';c.font='bold 23px Arial';c.fillText('猿も木から落ちる！',300,32);
  if(!round)return;
+ // Coconuts fly in from BOTH sides, with each hit timed to a monkey's fall.
+ for(const nut of round.coconuts||[]){
+  if(t<nut.start||t>nut.impact+.035)continue;
+  const u=cl((t-nut.start)/(nut.impact-nut.start));
+  const m=nut.target?round.monkeys[nut.target-1]:null;
+  const arrivalX=m?70+m.tree*115+m.offset*.55+Math.sin(nut.impact*20+m.phase)*6:nut.x;
+  const arrivalY=m?391-285*cl(nut.impact*.98+.04*Math.sin(nut.impact*12+m.phase)):nut.y;
+  const x=(nut.side<0?-25:625)*(1-u)+arrivalX*u;
+  const y=arrivalY+Math.sin(Math.PI*u)*nut.curve;
+  coconut(c,x,y,t*30);
+  if(m&&Math.abs(t-nut.impact)<.016){c.strokeStyle='rgba(255,224,126,.85)';c.lineWidth=3;c.beginPath();c.arc(arrivalX,arrivalY,16+(t-nut.impact+.016)*390,0,Math.PI*2);c.stroke();}
+ }
  let remaining=0;
  for(const b of round.monkeys){
   const fallen=t>=b.fall,age=cl((t-b.fall)/.09);
@@ -45,5 +61,5 @@ export function drawMonkey(canvas,round,elapsed=0,duration=10000,reduced=false){
   x+=(300-x)*finale;y+=(91-y)*finale;
   monkey(c,b.n,x,y,reduced?0:angle,done&&b.n===round.winner?2.2:1+finale*.3);
  }
- c.fillStyle='#2c4e35';c.font='bold 18px Arial';c.fillText(done?round.winner+'番の猿がてっぺんに！':'木登り中　残り '+remaining+' 匹',300,463);
+ c.fillStyle='#2c4e35';c.font='bold 18px Arial';c.fillText(done?round.winner+'番の猿がてっぺんに！':'ココナッツ襲来！ 残り '+remaining+' 匹',300,463);
 }
