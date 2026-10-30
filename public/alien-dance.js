@@ -5,26 +5,27 @@ export function makeAlienRound(count,winner,seed){
  const losers=Array.from({length:count},(_,i)=>i+1).filter(n=>n!==winner);
  for(let i=losers.length-1;i>0;i--){const j=Math.floor(rand()*(i+1));[losers[i],losers[j]]=[losers[j],losers[i]];}
  const exits=new Map(losers.map((n,i)=>[n,0.16+0.76*(i+rand()*.5)/Math.max(1,losers.length)]));
- const aliens=Array.from({length:count},(_,i)=>({n:i+1,x:45+(i%10)*57,y:91+Math.floor(i/10)*77,phase:rand()*6.283,style:Math.floor(rand()*7),exit:exits.get(i+1)??Infinity,side:rand()>.5?1:-1}));
+ const aliens=Array.from({length:count},(_,i)=>({n:i+1,x:45+(i%10)*57,y:91+Math.floor(i/10)*77,phase:rand()*6.283,style:Math.floor(rand()*10),exit:exits.get(i+1)??Infinity,side:rand()>.5?1:-1}));
  return {count,winner,aliens};
 }
 function dancer(c,a,t,scale,depart=0){
- const beat=t*26+a.phase, w=Math.sin(beat),v=Math.cos(beat),kind=a.style;
+ const kind=a.style, beat=t*(kind===7?65:kind===8?37:kind===9?42:26)+a.phase, w=Math.sin(beat),v=Math.cos(beat);
  const freeze=kind===5&&Math.sin(t*8+a.phase)>.3;
  const sway=freeze?0:w;
- const hop=kind===1?Math.max(0,w)*17:kind===4?Math.max(0,Math.sin(beat*.6))*13:Math.abs(sway)*5;
- const twist=kind===2?sway*.5:kind===3?Math.sin(beat*.5)*.42:sway*.15;
- const slide=kind===0?sway*9:kind===6?Math.sin(beat*.47)*15:sway*4;
+ const hop=kind===1?Math.max(0,w)*17:kind===4?Math.max(0,Math.sin(beat*.6))*13:kind===8?Math.abs(w)*25:kind===9?Math.abs(w)*19:Math.abs(sway)*5;
+ const twist=kind===2?sway*.5:kind===3?Math.sin(beat*.5)*.42:kind===8?sway*.75:kind===9?sway*.62:kind===7?sway*.18:sway*.15;
+ const slide=kind===0?sway*9:kind===6?Math.sin(beat*.47)*15:kind===7?sway*5:kind>=8?sway*15:sway*4;
  c.save();c.translate(a.x+depart*a.side*160+slide,a.y-hop);
+ if(kind===7){c.translate(Math.sin(t*73+a.phase)*3,Math.cos(t*67+a.phase)*2);}
  c.rotate(twist);if(kind===3)c.scale(Math.sin(beat*.38)>0?1:-1,1);
  c.scale(scale,scale);
  c.strokeStyle='#96c9be';c.lineWidth=4;c.lineCap='round';
  c.beginPath();
- const kick=kind===4?Math.max(0,sway)*16:0;
+ const kick=kind===4?Math.max(0,sway)*16:kind>=8?Math.max(0,sway)*24:0;
  c.moveTo(-8,13);c.lineTo(-13-kick,24);
  c.moveTo(8,13);c.lineTo(11+kick,24);
- c.moveTo(-12,-1);c.lineTo(-23-(kind===6?Math.sin(beat*.5)*13:sway*9),-12+v*7);
- c.moveTo(12,-1);c.lineTo(23+(kind===6?Math.cos(beat*.5)*13:sway*9),-12-v*7);
+ c.moveTo(-12,-1);c.lineTo(-23-(kind>=8?sway*23:kind===6?Math.sin(beat*.5)*13:sway*9),-12+v*(kind>=8?16:7));
+ c.moveTo(12,-1);c.lineTo(23+(kind>=8?sway*23:kind===6?Math.cos(beat*.5)*13:sway*9),-12-v*(kind>=8?16:7));
  c.stroke();
  c.fillStyle=['#9cdbb4','#b6b0ed','#f0c58d','#8bd2d9'][a.n%4];
  c.beginPath();c.ellipse(0,0,16+(kind===0?Math.abs(w)*4:0),17,0,0,7);c.fill();
