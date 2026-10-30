@@ -44,7 +44,7 @@ import { makeBrickRound, drawBrick, brickDuration } from './brick-breaker.js?v=1
 import { playBrickSound } from './brick-breaker-audio.js?v=106';
 import { makeFallingRound, drawFalling, fallingDuration } from './falling-puzzle.js?v=119';
 import { playFallingSound } from './falling-puzzle-audio.js?v=107';
-import { makeMazeChaseRound, drawMazeChase } from './maze-chase.js?v=121';
+import { makeMazeChaseRound, drawMazeChase } from './maze-chase.js?v=122';
 import { playMazeChaseSound } from './maze-chase-audio.js?v=120';
 const $ = id => document.getElementById(id);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
