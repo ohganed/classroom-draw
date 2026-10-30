@@ -142,7 +142,7 @@ function finish(audible = true) {
 let pinballEvents=[],pinballEventIndex=0,lastPinballSound=-1000;
 function tick() {
  if (!running) return;
- const elapsed = performance.now()-started, frame = frameAt(elapsed,mode==='trolley'?buildSchedule(13000):schedule);
+ const elapsed = performance.now()-started, frame = mode==='trolley'?{index:0,done:elapsed>=13000}:frameAt(elapsed,schedule);
  if (frame.done) { finish(); return; }
  if(mode==='die' && !reduced.matches){drawDie(elapsed,winner);raf=requestAnimationFrame(tick);return;}
  if(mode==='lottery'){ if(!reduced.matches) drawLottery(lotteryCanvas,elapsed,duration,count,null,false);raf=requestAnimationFrame(tick);return;}
