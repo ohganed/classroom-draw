@@ -1,6 +1,6 @@
 const PREFIX = `classroom-draw:${self.registration.scope}:`;
-const CACHE = PREFIX + 'v73';
-const ASSETS = ['./','./index.html','./style.css','./app.js','./draw.js','./lottery.js','./roulette.js','./ball-race.js','./race-camera.js','./race-leaderboard.js','./horse-race.js','./pinball.js','./pinball-audio.js','./die-3d.js','./maze.js','./crane.js','./machine.js','./karakuri.js','./trolley.js','./frog-pond.js','./alien-dance.js','./bowling.js','./robot-race.js','./baby-race.js','./crane-audio.js','./galton.js','./manifest.webmanifest','./icons/icon.svg','./icons/icon-192.png','./icons/icon-512.png','./icons/apple-touch-icon.png'];
+const CACHE = PREFIX + 'v74';
+const ASSETS = ['./','./index.html','./style.css','./app.js','./draw.js','./lottery.js','./roulette.js','./ball-race.js','./race-camera.js','./race-leaderboard.js','./horse-race.js','./pinball.js','./pinball-audio.js','./die-3d.js','./maze.js','./crane.js','./machine.js','./karakuri.js','./trolley.js','./frog-pond.js','./alien-dance.js','./bowling.js','./balloon.js','./robot-race.js','./baby-race.js','./crane-audio.js','./galton.js','./manifest.webmanifest','./icons/icon.svg','./icons/icon-192.png','./icons/icon-512.png','./icons/apple-touch-icon.png'];
 self.addEventListener('install', event => {
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));
 });
