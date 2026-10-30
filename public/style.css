@@ -144,3 +144,19 @@ body.race-running #maze-wrap canvas{
 #robot-wrap{width:min(96vw,60dvh,650px);aspect-ratio:60/47;flex-shrink:1;z-index:1}#robot-wrap[hidden]{display:none!important}#robot{display:block;width:100%;height:100%}.result #robot-wrap{width:min(72vw,37dvh,390px)}@media(max-width:600px){#robot-wrap{width:min(98vw,48dvh)}.result #robot-wrap{width:min(78vw,31dvh)}}
 
 #baby-wrap{width:min(96vw,60dvh,650px);aspect-ratio:60/47;flex-shrink:1;z-index:1}#baby-wrap[hidden]{display:none!important}#baby{display:block;width:100%;height:100%}.result #baby-wrap{width:min(72vw,37dvh,390px)}@media(max-width:600px){#baby-wrap{width:min(98vw,48dvh)}.result #baby-wrap{width:min(78vw,31dvh)}}
+
+/* Give the robot field the available screen during a race. */
+body.race-running #robot-wrap{width:min(calc(100vw - 16px),calc(83dvh * 60 / 47),1100px)!important;max-height:83dvh}
+body.robot-mode #robot-wrap{max-width:100%}
+@media(max-height:700px){
+ body.robot-mode:not(.race-running) #robot-wrap{width:min(90vw,30dvh)}
+ body.robot-mode:not(.race-running) .result #robot-wrap{width:min(60vw,20dvh)}
+ body.robot-mode .result #number{font-size:20dvh}
+ body.robot-mode #app{padding-top:8px;padding-bottom:12px}
+ body.robot-mode .stage{padding:4px 0}
+ body.robot-mode #hint{margin-top:10px}
+ body.robot-mode .install{display:none}
+ body.robot-mode .primary{min-height:48px;padding:10px 24px}
+}
+body.robot-mode #app{grid-template-columns:minmax(0,1fr)}
+body.robot-mode .stage{min-width:0}

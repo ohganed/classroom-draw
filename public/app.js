@@ -11,7 +11,7 @@ import { drawMaze, makeMazeRound } from './maze.js';
 import { drawCrane, makeCraneRound } from './crane.js?v=46';
 import { scheduleCraneSounds } from './crane-audio.js';
 import { drawMachine, makeMachineRound, MACHINE_EVENTS } from './machine.js?v=43';
-import { drawRobotRace, makeRobotRound } from './robot-race.js?v=45';
+import { drawRobotRace, makeRobotRound } from './robot-race.js?v=51';
 import { drawBabyRace, makeBabyRound } from './baby-race.js?v=50';
 const $ = id => document.getElementById(id);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
@@ -42,7 +42,7 @@ $('count').addEventListener('change', () => {
  if (!Number.isInteger(value) || value < 1 || value > 99) {
   $('count').value = count; $('hint').textContent = '人数は1〜99の整数で入力してください'; return;
  }
- count = value; updateCount();shuffleGalton();babyRound=null;robotRound=null;mazeRound=null;craneRound=null;machineRound=null;if(mode==='machine')machineRound=makeMachineRound(count,randomNumber(undefined,count),crypto.getRandomValues(new Uint32Array(1))[0]);if(mode==='crane')craneRound=makeCraneRound(count,randomNumber(undefined,count),crypto.getRandomValues(new Uint32Array(1))[0]);if(mode==='galton')galtonRound=makeGaltonRound(count,n=>randomNumber(undefined,n));syncMode();
+ count = value; updateCount();shuffleGalton();babyRound=null;robotRound=null;mazeRound=null;craneRound=null;machineRound=null;if(mode==='machine')machineRound=makeMachineRound(count,randomNumber(undefined,count),crypto.getRandomValues(new Uint32Array(1))[0]);if(mode==='crane')craneRound=makeCraneRound(count,randomNumber(undefined,count),crypto.getRandomValues(new Uint32Array(1))[0]);if(mode==='galton')galtonRound=makeGaltonRound(count,n=>randomNumber(undefined,n));if(mode==='robot')robotRound=makeRobotRound(count,randomNumber(undefined,count),crypto.getRandomValues(new Uint32Array(1))[0]);syncMode();
  $('app').className = ''; $('number').textContent = '?'; $('status').textContent = '次の主役は、だれだろう。';
  $('hint').textContent = `タップすると、${duration / 1000}秒で決まります`; $('announcement').textContent = `${count}人に設定しました。`;
  try { localStorage.setItem('classroom-draw-count', String(count)); } catch {}
@@ -98,7 +98,7 @@ function drawDieLegacy(time = 0, selected = null) {
  dc.restore();
 }
 function drawDie(time=0,selected=null){drawDie3D(die,time,duration,selected,reduced.matches);}
-function syncMode(){babyWrap.hidden=mode!=='baby';robotWrap.hidden=mode!=='robot';machineWrap.hidden=mode!=='machine';craneWrap.hidden=mode!=='crane';mazeWrap.hidden=mode!=='maze';galtonWrap.hidden=mode!=='galton';pinballWrap.hidden=mode!=='pinball';horseWrap.hidden=mode!=='horse';raceWrap.hidden=mode!=='race';rouletteWrap.hidden=mode!=='roulette';dieWrap.hidden=mode!=='die';lotteryWrap.hidden=mode!=='lottery';$('number').hidden=mode!=='numbers'&&!$('app').classList.contains('result');if(mode==='die')drawDie(0,null);if(mode==='lottery')drawLottery(lotteryCanvas,0,duration,count,null,reduced.matches);if(mode==='roulette')drawRoulette(rouletteCanvas,count,0,null);if(mode==='race')drawBallRace(raceCanvas,count,0,duration,null,true);if(mode==='horse')drawHorseRace(horseCanvas,count,0,duration,null,true);if(mode==='pinball')drawPinball(pinballCanvas,count,0,duration,null,true);if(mode==='galton')drawGalton(galtonCanvas,galtonRound,0,duration,true);if(mode==='maze')drawMaze(mazeCanvas,mazeRound,0,duration,true);if(mode==='crane')drawCrane(craneCanvas,craneRound,0,duration,true);if(mode==='machine')drawMachine(machineCanvas,machineRound,0,duration,true);if(mode==='robot')drawRobotRace(robotCanvas,robotRound,0,duration,true);if(mode==='baby')drawBabyRace(babyCanvas,babyRound,0,duration,true);}
+function syncMode(){document.body.classList.toggle('robot-mode',mode==='robot');babyWrap.hidden=mode!=='baby';robotWrap.hidden=mode!=='robot';machineWrap.hidden=mode!=='machine';craneWrap.hidden=mode!=='crane';mazeWrap.hidden=mode!=='maze';galtonWrap.hidden=mode!=='galton';pinballWrap.hidden=mode!=='pinball';horseWrap.hidden=mode!=='horse';raceWrap.hidden=mode!=='race';rouletteWrap.hidden=mode!=='roulette';dieWrap.hidden=mode!=='die';lotteryWrap.hidden=mode!=='lottery';$('number').hidden=mode!=='numbers'&&!$('app').classList.contains('result');if(mode==='die')drawDie(0,null);if(mode==='lottery')drawLottery(lotteryCanvas,0,duration,count,null,reduced.matches);if(mode==='roulette')drawRoulette(rouletteCanvas,count,0,null);if(mode==='race')drawBallRace(raceCanvas,count,0,duration,null,true);if(mode==='horse')drawHorseRace(horseCanvas,count,0,duration,null,true);if(mode==='pinball')drawPinball(pinballCanvas,count,0,duration,null,true);if(mode==='galton')drawGalton(galtonCanvas,galtonRound,0,duration,true);if(mode==='maze')drawMaze(mazeCanvas,mazeRound,0,duration,true);if(mode==='crane')drawCrane(craneCanvas,craneRound,0,duration,true);if(mode==='machine')drawMachine(machineCanvas,machineRound,0,duration,true);if(mode==='robot')drawRobotRace(robotCanvas,robotRound,0,duration,true);if(mode==='baby')drawBabyRace(babyCanvas,babyRound,0,duration,true);}
 $('mode').addEventListener('change',()=>{if(running){$('mode').value=mode;return;}mode=$('mode').value;if(mode==='baby'&&!babyRound)babyRound=makeBabyRound(count,randomNumber(undefined,count),crypto.getRandomValues(new Uint32Array(1))[0]);if(mode==='robot'&&!robotRound)robotRound=makeRobotRound(count,randomNumber(undefined,count),crypto.getRandomValues(new Uint32Array(1))[0]);if(mode==='machine'&&!machineRound)machineRound=makeMachineRound(count,randomNumber(undefined,count),crypto.getRandomValues(new Uint32Array(1))[0]);if(mode==='crane'&&!craneRound)craneRound=makeCraneRound(count,randomNumber(undefined,count),crypto.getRandomValues(new Uint32Array(1))[0]);if(mode==='maze'&&!mazeRound)mazeRound=makeMazeRound(count,randomNumber(undefined,count),crypto.getRandomValues(new Uint32Array(1))[0]);if(mode==='galton'&&!galtonRound)galtonRound=makeGaltonRound(count,n=>randomNumber(undefined,n));try{localStorage.setItem('classroom-draw-mode',mode);}catch{} $('app').className='';$('number').textContent='?';syncMode();});
 if(mode==='maze'&&!mazeRound)mazeRound=makeMazeRound(count,randomNumber(undefined,count),crypto.getRandomValues(new Uint32Array(1))[0]);
 if(mode==='crane'&&!craneRound)craneRound=makeCraneRound(count,randomNumber(undefined,count),crypto.getRandomValues(new Uint32Array(1))[0]);
@@ -107,7 +107,7 @@ if(mode==='robot'&&!robotRound)robotRound=makeRobotRound(count,randomNumber(unde
 if(mode==='baby'&&!babyRound)babyRound=makeBabyRound(count,randomNumber(undefined,count),crypto.getRandomValues(new Uint32Array(1))[0]);
 syncMode();
 let sound = false, context, master, running = false, started = 0, lastIndex = -1, winner, raf, raceStory='comeback',pinballSeed=1;
-const raceModes=new Set(['race','horse','maze']);
+const raceModes=new Set(['race','horse','maze','robot']);
 function syncRaceLayout(){document.body.classList.toggle('race-running',running&&raceModes.has(mode));}
 try { sound = localStorage.getItem('classroom-draw-sound') === 'on'; } catch {}
 function updateSound() { $('sound').textContent = `音 ${sound ? 'ON' : 'OFF'}`; $('sound').setAttribute('aria-pressed', String(sound)); }
@@ -119,11 +119,11 @@ function unlockAudio() {
   if (context.state !== 'running') context.resume().catch(() => {});
  } catch { sound = false; updateSound(); $('hint').textContent = 'この端末では音を再生できません。抽選は続けられます。'; }
 }
-function tone(frequency, delay = 0, duration = .045, type = 'sine') {
+function tone(frequency, delay = 0, duration = .045, type = 'sine', volume = .4) {
  if (!sound || !context || context.state !== 'running' || document.hidden) return;
  const t = context.currentTime + delay, osc = context.createOscillator(), gain = context.createGain();
  osc.type = type; osc.frequency.value = frequency;
- gain.gain.setValueAtTime(0,t); gain.gain.linearRampToValueAtTime(.4,t+.006); gain.gain.exponentialRampToValueAtTime(.001,t+duration);
+ gain.gain.setValueAtTime(0,t); gain.gain.linearRampToValueAtTime(volume,t+.006); gain.gain.exponentialRampToValueAtTime(.001,t+duration);
  osc.connect(gain); gain.connect(master); osc.start(t); osc.stop(t+duration+.02);
  osc.onended = () => { osc.disconnect(); gain.disconnect(); };
 }
@@ -161,7 +161,7 @@ function tick() {
  if(mode==='baby'){if(!reduced.matches)drawBabyRace(babyCanvas,babyRound,elapsed,duration,false);raf=requestAnimationFrame(tick);return;}
  if(mode==='robot'){
   if(!reduced.matches)drawRobotRace(robotCanvas,robotRound,elapsed,duration,false);
-  const sec=Math.floor(elapsed/600);if(sec!==robotLastSound&&sound&&context?.state==='running'&&!document.hidden){robotLastSound=sec;tone(sec%2?260:370,0,.065,'sine');}
+  const sec=Math.floor(elapsed/600);if(!reduced.matches&&sec!==robotLastSound&&sound&&context?.state==='running'&&!document.hidden){robotLastSound=sec;tone(sec%2?260:370,0,.065,'sine',.08);}
   raf=requestAnimationFrame(tick);return;
  }
  if(mode==='machine'){
