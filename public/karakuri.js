@@ -40,7 +40,7 @@ export function drawKarakuri(canvas,round,elapsed=0,duration=8000,reduced=false)
  c.save();c.translate(300,207);c.rotate(reduced?0:p*4.5);
  c.fillStyle='#b6c6cb';for(let i=0;i<8;i++){c.save();c.rotate(i*Math.PI/4);c.fillRect(-6,-27,12,12);c.restore();}
  c.beginPath();c.arc(0,0,19,0,Math.PI*2);c.fill();c.fillStyle='#3b6071';c.beginPath();c.arc(0,0,7,0,Math.PI*2);c.fill();c.restore();
- c.save();c.translate(305,318);c.rotate(reduced?0:Math.sin(p*19)*.045);c.fillStyle='#c7ad79';c.fillRect(-110,-6,220,12);c.restore();
+ c.save();c.translate(305,318);c.rotate(reduced?0:Math.sin(p*27)*.18);c.fillStyle='#c7ad79';c.fillRect(-110,-6,220,12);c.restore();
  c.fillStyle='#d1bb8e';c.font='bold 13px Arial';c.fillText('① 歯車ゲート',135,190);c.fillText('② 揺れる橋',145,295);
  c.fillText('決勝・逆転レール',300,396);c.fillText('GOAL',516,453);
  if(!round)return;
@@ -52,7 +52,7 @@ export function drawKarakuri(canvas,round,elapsed=0,duration=8000,reduced=false)
  for(let i=1;i<track.length;i++){const d=Math.hypot(track[i][0]-track[i-1][0],track[i][1]-track[i-1][1]);lengths.push(d);total+=d;}
  // Gate positions are physical locations on the uninterrupted track.
  const firstGate=(lengths.slice(0,3).reduce((a,b)=>a+b,0)+220)/total;
- const secondGate=lengths.slice(0,8).reduce((a,b)=>a+b,0)/total;
+ const secondGate=(lengths.slice(0,7).reduce((a,b)=>a+b,0)+217)/total;
  const pointAt=u=>{
   let remaining=clamp(u)*total;
   for(let j=0;j<lengths.length;j++){
@@ -94,7 +94,19 @@ export function drawKarakuri(canvas,round,elapsed=0,duration=8000,reduced=false)
    }
    continue;
   }
-  if(b.stage===1&&distance>=secondGate)continue;
+  if(b.stage===1&&distance>=secondGate){
+   // The seesaw kicks rejected balls outward as soon as each reaches its center.
+   const flight=(distance-secondGate)*total/400;
+   if(!done&&flight<1.18&&!reduced){
+    const side=b.jitter<.5?-1:1;
+    const power=65+75*b.speed;
+    const x=305+side*power*flight;
+    const y=318-(105+55*b.jitter)*flight+145*flight*flight;
+    const r=round.first.length>30?10:13;
+    c.save();c.globalAlpha=clamp((1.18-flight)/.35);ball(c,x,y,r,b.n);c.restore();
+   }
+   continue;
+  }
   if(done&&b.n!==round.winner)continue;
   visible++;
   const pt=pointAt(done&&b.n===round.winner?1:distance);
