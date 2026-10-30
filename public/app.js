@@ -39,7 +39,7 @@ import { makeChestnutRound, drawChestnut } from './chestnut.js?v=99';
 import { makeStarQuintetRound, drawStarQuintet } from './star-quintet.js?v=101';
 import { makeDrumRound, drawDrum } from './drum-arcade.js?v=102';
 import { playDrumBeat } from './drum-arcade-audio.js?v=102';
-import { makeCastleRound, drawCastle } from './castle-finale.js?v=103';
+import { makeCastleRound, drawCastle } from './castle-finale.js?v=104';
 const $ = id => document.getElementById(id);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 let duration = 8000;
