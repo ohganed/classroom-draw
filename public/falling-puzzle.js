@@ -127,7 +127,7 @@ export function drawFalling(canvas,round,elapsed=0,duration=40000,reduced=false)
  const board=progress>=1?ev.after:ev.before;
  if(ev.kind==='drop'||ev.kind==='final'||ev.kind==='gravity')tiles(c,ev.after,1,progress,ev.kind,ev.before);
  else if(ev.kind==='clear'){tiles(c,ev.before,1-progress); }
- else if(ev.kind==='topout'){tiles(c,ev.before);const y=-40+52*ease(progress);tiles(c,[[{n:ev.n,id:-1}]],0);c.fillStyle='#f7d57b';c.beginPath();c.roundRect(277,y,45,38,5);c.fill();c.fillStyle='#19283e';c.font='900 19px Arial';c.fillText(ev.n,299,y+26);}
+ else if(ev.kind==='topout'){tiles(c,ev.before);const y=-40+52*ease(progress);c.fillStyle='#f7d57b';c.beginPath();c.roundRect(277,y,45,38,5);c.fill();c.fillStyle='#19283e';c.font='900 19px Arial';c.fillText(ev.n,299,y+26);}
  else tiles(c,board);
  c.fillStyle='#e6ebf7';c.font='bold 15px Arial';c.textAlign='center';
  c.fillText('同じ色・偶数同士・奇数同士が隣接 → 消去',300,448);
