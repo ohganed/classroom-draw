@@ -42,7 +42,7 @@ import { playDrumBeat } from './drum-arcade-audio.js?v=102';
 import { makeCastleRound, drawCastle } from './castle-finale.js?v=104';
 import { makeBrickRound, drawBrick, brickDuration } from './brick-breaker.js?v=106';
 import { playBrickSound } from './brick-breaker-audio.js?v=106';
-import { makeFallingRound, drawFalling, fallingDuration } from './falling-puzzle.js?v=109';
+import { makeFallingRound, drawFalling, fallingDuration } from './falling-puzzle.js?v=110';
 import { playFallingSound } from './falling-puzzle-audio.js?v=107';
 const $ = id => document.getElementById(id);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
