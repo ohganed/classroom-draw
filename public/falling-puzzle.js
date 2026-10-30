@@ -32,43 +32,65 @@ function gravity(board){
 export function makeFallingRound(count,winner,seed){
  let s=seed>>>0||1;const rand=()=>((s=(Math.imul(s,1664525)+1013904223)>>>0)/4294967296);
  const board=Array.from({length:H},()=>Array(W).fill(null)),events=[];
- let time=0.15,nextId=1,bag=[],drops=0,chains=0;
+ let time=.12,nextId=1,bag=[],drops=0,chains=0,topout=false;
  const fresh=()=>{bag=Array.from({length:count},(_,i)=>i+1);for(let i=bag.length-1;i>0;i--){const j=Math.floor(rand()*(i+1));[bag[i],bag[j]]=[bag[j],bag[i]];}};
+ const take=()=>{if(!bag.length)fresh();return bag.pop();};
  const record=(kind,before,after,dur,more={})=>{events.push({kind,start:time,dur,before,after,...more});time+=dur;};
- const cascade=()=>{
-  for(let i=0;i<25;i++){
-   const dead=pairs(board);if(!dead.size)break;
-   let before=clone(board);
-   for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(board[y][x]&&dead.has(board[y][x].id))board[y][x]=null;
-   record('clear',before,clone(board),.17,{removed:[...dead]});
-   before=clone(board);
-   if(gravity(board)){record('gravity',before,clone(board),.14);chains++;}
+ // Only the pair that has just touched is cleared; no global sweeping of matches.
+ function resolve(id){
+  for(let chain=0;chain<25;chain++){
+   let y0=-1,x0=-1;
+   for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(board[y][x]?.id===id){y0=y;x0=x;}
+   if(y0<0)break;
+   let partner=null;
+   for(const [dx,dy] of [[0,1],[-1,0],[1,0],[0,-1]]){
+    const x=x0+dx,y=y0+dy;
+    if(x>=0&&x<W&&y>=0&&y<H&&board[y][x]&&same(board[y0][x0],board[y][x])){partner=board[y][x];break;}
+   }
+   if(!partner)break;
+   const before=clone(board);
+   board[y0][x0]=null;
+   for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(board[y][x]?.id===partner.id)board[y][x]=null;
+   record('clear',before,clone(board),.21,{removed:[id,partner.id]});
+   const fallen=clone(board);if(gravity(board)){record('gravity',fallen,clone(board),.23);chains++;}
+   // After the two blocks disappear, only newly landed blocks may trigger another pair.
+   const moved=[];
+   for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(board[y][x]&&fallen[y][x]?.id!==board[y][x].id)moved.push(board[y][x].id);
+   for(const movedId of moved){
+    let found=null;
+    for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(board[y][x]?.id===movedId)found=[x,y];
+    if(!found)continue;
+    const [x,y]=found;let p=null;
+    for(const [dx,dy] of [[0,1],[-1,0],[1,0]]){
+     const xx=x+dx,yy=y+dy;if(xx>=0&&xx<W&&yy>=0&&yy<H&&board[yy][xx]&&same(board[y][x],board[yy][xx])){p=board[yy][xx];break;}
+    }
+    if(p){id=movedId;break;}
+   }
+   if(id===undefined)break;
+   const still=board.some(row=>row.some(v=>v?.id===id));if(!still)break;
   }
- };
- const total=Math.max(85,Math.min(180,count*3));
- for(let i=0;i<total;i++){
-  if(!bag.length)fresh();
-  const n=bag.pop();
-  let choices=[];for(let x=0;x<W;x++)if(!board[0][x])choices.push(x);
-  if(!choices.length){
-   // An arcade "shuffle" clears the clogged well visibly, then play resumes.
-   record('flush',clone(board),Array.from({length:H},()=>Array(W).fill(null)),.4);
-   for(let y=0;y<H;y++)board[y].fill(null);
-   choices=[0,1,2,3,4];
-  }
-  const col=choices[Math.floor(rand()*choices.length)];
-  let row=H-1;while(row>0&&!(!board[row][col]))row--;
-  const before=clone(board);board[row][col]={n,id:nextId++};
-  record('drop',before,clone(board),.24,{n,col,row});
-  drops++;cascade();
  }
- // A visible bonus stage clears the remaining board and introduces exactly one
- // new block: the winner, chosen uniformly at the beginning by app.js.
- const empty=Array.from({length:H},()=>Array(W).fill(null));
- record('bonus',clone(board),empty,.65);
- const before=clone(empty),col=2;empty[H-1][col]={n:winner,id:nextId++};
- record('final',before,clone(empty),.70,{n:winner,col,row:H-1});
- return {winner,count,events,seconds:time+1.35,drops,chains};
+ // Shuffled full bags keep all numbers nearly equally frequent. We bias the
+ // falling column towards taller stacks, allowing a genuine top-out.
+ for(let i=0;i<1200;i++){
+  const n=take();
+  const heights=Array.from({length:W},(_,x)=>board.filter(row=>row[x]).length);
+  let col=Math.floor(rand()*W);
+  if(i>20&&rand()<.72){const maximum=Math.max(...heights);const candidates=heights.map((h,x)=>({h,x})).filter(v=>v.h>=maximum-1);col=candidates[Math.floor(rand()*candidates.length)].x;}
+  if(board[0][col]){
+   // The incoming piece has crossed the upper limit: this is the top-out.
+   // The app's preselected fair number is displayed as the NEXT incoming piece.
+   record('topout',clone(board),clone(board),.8,{n:winner,col});
+   topout=true;break;
+  }
+  let row=H-1;while(row>0&&board[row][col])row--;
+  const before=clone(board),id=nextId++;
+  board[row][col]={n,id};
+  record('drop',before,clone(board),.26,{n,col,row});
+  drops++;resolve(id);
+ }
+ if(!topout)record('topout',clone(board),clone(board),.8,{n:winner,col:2});
+ return {winner,count,events,seconds:time+1.5,drops,chains,topout};
 }
 export const fallingDuration=round=>Math.ceil((round?.seconds??40)*1000);
 function tiles(c,board,alpha=1,progress=1,kind='',before=null){
@@ -105,11 +127,11 @@ export function drawFalling(canvas,round,elapsed=0,duration=40000,reduced=false)
  const board=progress>=1?ev.after:ev.before;
  if(ev.kind==='drop'||ev.kind==='final'||ev.kind==='gravity')tiles(c,ev.after,1,progress,ev.kind,ev.before);
  else if(ev.kind==='clear'){tiles(c,ev.before,1-progress); }
- else if(ev.kind==='bonus'){tiles(c,ev.before,1-progress);}
+ else if(ev.kind==='topout'){tiles(c,ev.before);const y=-40+52*ease(progress);tiles(c,[[{n:ev.n,id:-1}]],0);c.fillStyle='#f7d57b';c.beginPath();c.roundRect(277,y,45,38,5);c.fill();c.fillStyle='#19283e';c.font='900 19px Arial';c.fillText(ev.n,299,y+26);}
  else tiles(c,board);
  c.fillStyle='#e6ebf7';c.font='bold 15px Arial';c.textAlign='center';
  c.fillText('同じ色・偶数同士・奇数同士が隣接 → 消去',300,448);
  const ended=sec>=round.events[round.events.length-1].start+round.events[round.events.length-1].dur;
  c.fillStyle='#f5dda5';c.font='bold 19px Arial';
- c.fillText(ended?round.winner+'番が最後に残った！':ev.kind==='clear'?'同じ条件で接触！ 消える！':ev.kind==='gravity'?'すき間へ落下！ 連鎖は続く？':ev.kind==='bonus'?'ボーナス全消し！':ev.kind==='final'?'最後の１個！':'どんどん落ちてくる！',300,473);
+ c.fillText(ended?round.winner+'番が上限突破の次の番号！':ev.kind==='clear'?'同じ条件で接触！ 消える！':ev.kind==='gravity'?'すき間へ落下！ 連鎖は続く？':ev.kind==='topout'?'積み上がった！ 次の番号が当選！':'どんどん落ちてくる！',300,473);
 }
