@@ -193,3 +193,5 @@ body.numbers-mode #number{font-size:min(54vw,max(24px,calc(100cqh - 90px)))}
 #ghost-wrap{width:min(96vw,calc(62dvh * 600 / 480),650px);aspect-ratio:5/4;flex-shrink:1;z-index:1}#ghost-wrap[hidden]{display:none!important}#ghost{display:block;width:100%;height:100%}.result #ghost-wrap{width:min(76vw,calc(37dvh * 600 / 480),420px)}@media(max-width:600px){#ghost-wrap{width:min(96vw,calc(47dvh * 600 / 480))}}
 
 #washer-wrap{width:min(96vw,calc(62dvh * 600 / 480),650px);aspect-ratio:5/4;flex-shrink:1;z-index:1}#washer-wrap[hidden]{display:none!important}#washer{display:block;width:100%;height:100%}.result #washer-wrap{width:min(76vw,calc(37dvh * 600 / 480),420px)}@media(max-width:600px){#washer-wrap{width:min(96vw,calc(47dvh * 600 / 480))}}
+
+#botamochi-wrap{width:min(96vw,calc(62dvh * 600 / 480),650px);aspect-ratio:5/4;flex-shrink:1;z-index:1}#botamochi-wrap[hidden]{display:none!important}#botamochi{display:block;width:100%;height:100%}.result #botamochi-wrap{width:min(76vw,calc(37dvh * 600 / 480),420px)}@media(max-width:600px){#botamochi-wrap{width:min(96vw,calc(47dvh * 600 / 480))}}
