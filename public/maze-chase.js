@@ -54,17 +54,21 @@ export function drawMazeChase(canvas,round,elapsed=0,duration=13000,reduced=fals
   else{c.fillStyle='#f3d79b';c.beginPath();c.arc(px+z/2,py+z/2,1.5,0,7);c.fill();}
  }
  if(!round)return;
+ c.save();c.beginPath();
+ for(let y=0;y<maze.length;y++)for(let x=0;x<maze[y].length;x++)if(open(x,y))c.rect(ox+x*z+.5,oy+y*z+.5,z-1,z-1);
+ c.clip();
  for(let i=0;i<4;i++){const p=pos(round.ghosts[i],t*.78);const x=ox+p.x*z+z/2,y=oy+p.y*z+z/2;
-  c.fillStyle=['#e7739f','#75c9d5','#efad6d','#a992eb'][i];c.beginPath();c.arc(x,y,11,Math.PI,0);c.lineTo(x+11,y+10);for(let k=0;k<4;k++)c.lineTo(x+8-k*5,y+6+(k%2)*4);c.fill();
-  c.fillStyle='#fff';c.beginPath();c.arc(x-4,y-1,3,0,7);c.arc(x+4,y-1,3,0,7);c.fill();
+  c.fillStyle=['#e7739f','#75c9d5','#efad6d','#a992eb'][i];c.beginPath();c.arc(x,y,7.5,Math.PI,0);c.lineTo(x+7.5,y+7);for(let k=0;k<4;k++)c.lineTo(x+6-k*4,y+5+(k%2)*2);c.fill();
+  c.fillStyle='#fff';c.beginPath();c.arc(x-2.8,y-1,1.8,0,7);c.arc(x+2.8,y-1,1.8,0,7);c.fill();
  }
  let remaining=0;
  for(const h of round.heroes){if(t>=h.exit)continue;remaining++;const p=pos(h.route,t),x=ox+p.x*z+z/2,y=oy+p.y*z+z/2;
   const final=h.n===round.winner?clamp((t-.91)/.09):0;
   c.save();c.translate(x,y);c.fillStyle=['#f3d56c','#83d5a5','#da8aca','#79bce6','#ed927f'][h.color];
-  c.beginPath();c.arc(0,0,10+final*7,0,Math.PI*2);c.fill();
-  c.fillStyle='#17233b';c.font='900 11px Arial';c.textAlign='center';c.textBaseline='middle';c.fillText(h.n,0,1);c.restore();
+  c.beginPath();c.arc(0,0,7.8,0,Math.PI*2);c.fill();
+  c.fillStyle='#17233b';c.font='900 9px Arial';c.textAlign='center';c.textBaseline='middle';c.fillText(h.n,0,1);c.restore();
  }
+ c.restore();
  if(t>.93){c.fillStyle='#edda9c';c.font='900 31px Arial';c.fillText(round.winner+'番、逃げ切り！',300,401);}
  c.fillStyle='#f4e9c9';c.font='bold 17px Arial';c.fillText(t>=1?'最後の1人が勝利！':'残り '+remaining+'人！ 敵から逃げろ！',300,463);
 }
