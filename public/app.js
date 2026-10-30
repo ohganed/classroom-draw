@@ -8,7 +8,7 @@ import { playPinballBounce } from './pinball-audio.js';
 import { drawDie3D } from './die-3d.js';
 import { drawGalton, makeGaltonRound } from './galton.js';
 import { drawMaze, makeMazeRound } from './maze.js';
-import { drawCrane, makeCraneRound } from './crane.js?v=59';
+import { drawCrane, makeCraneRound } from './crane.js?v=60';
 import { scheduleCraneSounds } from './crane-audio.js';
 import { drawMachine, makeMachineRound, MACHINE_EVENTS } from './machine.js?v=43';
 import { drawRobotRace, makeRobotRound } from './robot-race.js?v=53';
