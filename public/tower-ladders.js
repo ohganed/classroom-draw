@@ -42,7 +42,7 @@ export function makeTowerRound(count,winner,seed){
    const dx=heading-h.x,dist=Math.abs(dx);
    h.x+=Math.sign(dx)*Math.min(dist,h.speed*STEP);
    // The trap on each floor also changes every second.
-   if(h.f>0&&h.n!==winner&&Math.abs(h.x-map[second][h.f-1].holes.some(x=>Math.abs(h.x-x)<7))&&h.mode==='run'&&rnd()<.62){
+   if(h.f>0&&h.n!==winner&&map[second][h.f-1].holes.some(x=>Math.abs(h.x-x)<7)&&h.mode==='run'&&rnd()<.62){
     h.mode='fall';h.from=h.f;h.to=h.f-1;h.until=time+.36;h.destination=h.x;events.push({kind:'trap',n:h.n,t:time,f:h.f});continue;
    }
    if(Math.abs(h.x-ladder)<5&&h.mode==='run'&&(h.n===winner||rnd()<.19)){
