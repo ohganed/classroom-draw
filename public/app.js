@@ -352,7 +352,7 @@ $('start').addEventListener('click', () => {
  if(mode==='crane'){craneWrap.hidden=false;$('number').hidden=true;drawCrane(craneCanvas,craneRound,0,duration,reduced.matches);if(sound&&context){const audioContext=context,audioMaster=master,audioRound=craneRound;const play=()=>{if(sound&&running&&mode==='crane'&&context===audioContext&&master===audioMaster&&audioContext.state==='running')scheduleCraneSounds(audioContext,audioMaster,audioRound,duration);};if(audioContext.state==='running')play();else audioContext.resume().then(play).catch(()=>{});}}
  tick();
 });
-function slowSlotDigit(){if(!running||mode!=='slot'||slotClicks>=3)return;slotClicks++;renderSlot(slotWrap,winner,performance.now()-started,slotClicks);if(sound)tone(800+slotClicks*110,0,.12,'triangle',.36);}
+function slowSlotDigit(){if(!running||mode!=='slot')return;const elapsed=performance.now()-started;const next=Math.min(3,slotStage(elapsed,slotClicks)+1);if(next<=slotStage(elapsed,slotClicks))return;slotClicks=next;renderSlot(slotWrap,winner,elapsed,slotClicks);if(sound)tone(800+slotClicks*110,0,.12,'triangle',.36);}
 slotWrap.addEventListener('click',slowSlotDigit);
 slotWrap.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();slowSlotDigit();}});
 document.querySelector('.stage').addEventListener('click',e=>{if(mode==='slot'&&running&&!slotWrap.contains(e.target))slowSlotDigit();});
