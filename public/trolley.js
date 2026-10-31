@@ -7,7 +7,7 @@ const depot=[[545,156],[576,179],[576,420],[470,420]];
 const repair=[[520,226],[565,247],[565,445],[340,445]];
 const siding=[[52,298],[90,331],[90,445],[220,445]];
 function geom(points){let lengths=[],total=0;for(let i=1;i<points.length;i++){let d=Math.hypot(points[i][0]-points[i-1][0],points[i][1]-points[i-1][1]);lengths.push(d);total+=d;}return {points,lengths,total};}
-const trunk=geom(main),shortTrunk=geom(main.slice(0,4).concat(main.slice(7))),branch={depot:geom(depot),repair:geom(repair),siding:geom(siding)};
+const trunk=geom(main),shortTrunk=geom(main.slice(0,4).concat([[535,207]],main.slice(7))),branch={depot:geom(depot),repair:geom(repair),siding:geom(siding)};
 function pos(route,u){let left=clamp(u)*route.total;for(let i=0;i<route.lengths.length;i++){const len=route.lengths[i];if(left<=len||i===route.lengths.length-1){let t=clamp(left/len),a=route.points[i],b=route.points[i+1];return {x:a[0]+(b[0]-a[0])*t,y:a[1]+(b[1]-a[1])*t,angle:Math.atan2(b[1]-a[1],b[0]-a[0])};}left-=len;}return {x:route.points[0][0],y:route.points[0][1],angle:0};}
 const gate={depot:geom(main.slice(0,4)).total,repair:geom(main.slice(0,7)).total,siding:geom(main.slice(0,9)).total};
 export function makeTrolleyRound(count,winner,seed){
@@ -66,7 +66,7 @@ export function drawTrolley(canvas,round,elapsed=0,duration=13000,reduced=false)
   let q,arrived=false;
   if(b.to==='station'){q=pos(path,clamp(d/path.total));arrived=d>=path.total;}
   else {
-   const branchGate=useShortcut?geom(main.slice(0,4).concat(main.slice(7,9))).total:gate[b.to];
+   const branchGate=useShortcut?geom(main.slice(0,4).concat([[535,207]],main.slice(7,9))).total:gate[b.to];
    if(d<branchGate)q=pos(path,d/path.total);
    else{const br=branch[b.to];const remaining=d-branchGate;q=pos(br,remaining/br.total);arrived=remaining>=br.total;}
   }
