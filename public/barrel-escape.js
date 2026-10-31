@@ -22,16 +22,30 @@ export function makeBarrelRound(count,winner,seed){
  return {winner,count,heroes,barrels};
 }
 function floorY(level,x){return 377-level*79+(level%2?-.035:.035)*(x-300);}
-export function drawBarrel(canvas,round,elapsed=0,duration=13500,reduced=false){
+export function drawBarrel(canvas,round,elapsed=0,duration=13500,reduced=false,gorilla=false){
  const c=canvas.getContext('2d');if(!c)return;
  const sec=cl(elapsed/1000,0,13.5),t=sec/13.5;
  c.fillStyle='#10132c';c.fillRect(0,0,600,480);
- c.textAlign='center';c.font='bold 22px monospace';c.fillStyle='#f9d786';c.fillText('タル転がし・大脱走！',300,29);
+ c.textAlign='center';c.font='bold 22px monospace';c.fillStyle='#f9d786';c.fillText(gorilla?'ゴリラの樽ころがし！':'タル転がし・大脱走！',300,29);
  for(let j=0;j<4;j++){
   const left=43,right=557,y0=floorY(j,left),y1=floorY(j,right);
   c.strokeStyle='#ec7697';c.lineWidth=9;c.beginPath();c.moveTo(left,y0);c.lineTo(right,y1);c.stroke();
   c.strokeStyle='#ffe19d';c.lineWidth=2;c.beginPath();c.moveTo(left,y0-4);c.lineTo(right,y1-4);c.stroke();
   if(j<3){const x=j%2===0?540:60;c.strokeStyle='#87ccdb';c.lineWidth=4;for(let k=0;k<5;k++){const y=floorY(j,x)-k*13;c.beginPath();c.moveTo(x-12,y);c.lineTo(x+12,y);c.stroke();}}
+ }
+ if(gorilla){
+  // Original cartoon gorilla atop the girder; no copyrighted artwork used.
+  c.save();c.translate(88,70);
+  c.fillStyle='#6a4a65';c.beginPath();c.ellipse(0,0,28,24,0,0,7);c.fill();
+  c.fillStyle='#8b6b78';c.beginPath();c.ellipse(0,6,17,13,0,0,7);c.fill();
+  c.fillStyle='#6a4a65';c.beginPath();c.arc(-17,-17,12,0,7);c.arc(17,-17,12,0,7);c.fill();
+  c.fillStyle='#e3bed0';c.beginPath();c.ellipse(0,-9,15,10,0,0,7);c.fill();
+  c.fillStyle='#201c2d';c.beginPath();c.arc(-7,-13,2.3,0,7);c.arc(7,-13,2.3,0,7);c.fill();
+  c.strokeStyle='#30253c';c.lineWidth=2;c.beginPath();c.arc(0,-4,6,.1,Math.PI-.1);c.stroke();
+  const arm=Math.sin(sec*7)*5;c.strokeStyle='#6a4a65';c.lineWidth=10;c.lineCap='round';
+  c.beginPath();c.moveTo(-22,-3);c.lineTo(-36,-12+arm);c.moveTo(22,-3);c.lineTo(36,-12-arm);c.stroke();
+  c.restore();
+  c.fillStyle='#fff2ae';c.font='bold 14px monospace';c.fillText('🏁',522,74);
  }
  // Enlarge number labels once half the original contestants have been caught.
  const aliveCount=round?round.heroes.filter(h=>h.n===round.winner||sec<h.lose).length:0;
