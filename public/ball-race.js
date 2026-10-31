@@ -3,6 +3,7 @@ import { drawRaceLeaderboard } from './race-leaderboard.js?v=61';
 // Low-flash dramatic race: several apparent leaders, late comeback by the uniformly selected winner.
 // Animation is illustrative; the app selects the winner independently with crypto randomness.
 const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};
+export const ballBurstProgress=(elapsed,duration)=>raceProgress(elapsed,duration);
 export function ballBurstIds(count,winner){
  const candidate=winner??1,burstCount=Math.min(count-1,Math.round(count*2/3)),ids=[];
  for(let k=0;k<burstCount;k++){
