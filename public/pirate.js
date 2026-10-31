@@ -3,7 +3,7 @@ const cl=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
 const smooth=x=>{x=cl(x);return x*x*(3-2*x)};
 export function makePirateRound(count,winner,seed){
  let s=seed>>>0||1;const rand=()=>((s=(Math.imul(s,1664525)+1013904223)>>>0)/4294967296);
- return {count,winner,ships:Array.from({length:count},(_,i)=>({n:i+1,x:38+(i%8)*17,y:95+Math.floor(i/8)*58,phase:rand()*6.28,windEffect:rand(),resistance:rand()*.7,side:rand()>.5?1:-1}))};
+ return {count,winner,ships:Array.from({length:count},(_,i)=>({n:i+1,x:38+(i%8)*17,y:95+Math.floor(i/8)*58,phase:rand()*6.28,windEffect:rand(),resistance:rand()*.7,side:rand()>.5?1:-1,speed:.57+rand()*.70,drift:(rand()-.5)*75,sway:3+rand()*15}))};
 }
 function ship(c,b,x,y,scale,tilt,champion=false){
  c.save();c.translate(x,y);c.rotate(tilt);c.scale(scale,scale);
@@ -38,11 +38,11 @@ export function drawPirate(canvas,round,elapsed=0,duration=10000,reduced=false){
   const gust=wind>0?wind:0;
   const slow=influence>.5?headwind*(.75+b.resistance):headwind*.12;
   const boost=influence>.36?gust*.36:gust*.05;
-  const base=b.n===round.winner?1:.78;
+  const base=(b.n===round.winner?1:.76)*b.speed;
   // Integral-like continuous travel with pronounced slowdowns and reversals.
   const progress=cl(t*base +(boost-slow)*Math.sin(Math.PI*t)*.20);
-  let x=b.x+(524-b.x)*smooth(progress)+Math.sin(t*13+b.phase)*5;
-  let y=b.y+(250-b.y)*smooth(progress)+Math.sin(t*18+b.phase)*7;
+  let x=b.x+(524-b.x)*smooth(progress)+Math.sin(t*(8+b.speed*9)+b.phase)*10;
+  let y=b.y+(250-b.y)*smooth(progress)+Math.sin(t*(11+b.speed*13)+b.phase)*b.sway+b.drift*Math.sin(Math.PI*t);
   const arrival=b.n===round.winner?smooth((t-.85)/.15):0;
   x+=(524-x)*arrival;y+=(250-y)*arrival;
   const angle=Math.sin(t*19+b.phase)*.19+(influence>.5?-wind*.12:0);
