@@ -5,7 +5,7 @@ import { playStarQuintetBeat } from './star-quintet-audio.js?v=101';
 import { randomNumber, buildSchedule, frameAt } from './draw.js';
 import { drawLottery } from './lottery.js';
 import { drawRoulette, rouletteAngle } from './roulette.js';
-import { drawBallRace } from './ball-race.js?v=62';
+import { drawBallRace, ballBurstIds, ballBurstAt, ballBurstProgress } from './ball-race.js?v=63';
 import { drawHorseRace } from './horse-race.js?v=61';
 import { drawPinball, getPinballCollisions } from './pinball.js';
 import { playPinballBounce } from './pinball-audio.js';
@@ -186,6 +186,7 @@ if(mode==='invaders'&&!invadersRound)invadersRound=makeInvadersRound(count,rando
 syncMode();
 let starQuintetAudioBeat=-1;
 let horseGallopBeat=-1;
+let ballAudioBeat=-1,ballBurstPlayed=new Set();
 let sound = false, context, master, running = false, started = 0, lastIndex = -1, winner, raf, raceStory='comeback',pinballSeed=1;
 const raceModes=new Set(['race','horse','maze','robot']);
 function syncRaceLayout(){document.body.classList.toggle('race-running',running&&raceModes.has(mode));}
@@ -227,7 +228,29 @@ function tick() {
   if(mode==='die' && !reduced.matches){drawDie(elapsed,winner);raf=requestAnimationFrame(tick);return;}
  if(mode==='lottery'){ if(!reduced.matches) drawLottery(lotteryCanvas,elapsed,duration,count,null,false);raf=requestAnimationFrame(tick);return;}
  if(mode==='roulette'){if(!reduced.matches)drawRoulette(rouletteCanvas,count,rouletteAngle(elapsed,duration,winner,count),null);raf=requestAnimationFrame(tick);return;}
- if(mode==='race'){if(!reduced.matches)drawBallRace(raceCanvas,count,elapsed,duration,winner,false,raceStory);raf=requestAnimationFrame(tick);return;}
+ if(mode==='race'){
+  if(sound&&!reduced.matches&&!document.hidden&&context?.state==='running'){
+   const progress=ballBurstProgress(elapsed,duration);
+   const beat=Math.floor(elapsed/(duration*.72<5000?235:300));
+   if(beat!==ballAudioBeat){
+    ballAudioBeat=beat;
+    tone(220+(beat%4)*65,0,.055,'triangle',.16);
+    if(beat%4===2)tone(390,0,.028,'sine',.10);
+   }
+   let burstSounds=0;
+   for(const n of ballBurstIds(count,winner)){
+    if(progress>=ballBurstAt(n)&&!ballBurstPlayed.has(n)){
+     ballBurstPlayed.add(n);
+     if(burstSounds++<3){
+      tone(115+(n%6)*35,0,.13,'sawtooth',.18);
+      tone(650+(n%5)*90,.025,.075,'triangle',.17);
+     }
+    }
+   }
+  }
+  if(!reduced.matches)drawBallRace(raceCanvas,count,elapsed,duration,winner,false,raceStory);
+  raf=requestAnimationFrame(tick);return;
+ }
  if(mode==='horse'){
   if(sound&&!reduced.matches&&!document.hidden&&context?.state==='running'){
    const pairInterval=elapsed>duration*.75?285:elapsed>duration*.45?345:405;
@@ -321,7 +344,7 @@ $('start').addEventListener('click', () => {
  $('app').className = 'running'; $('start').disabled = true; $('start').textContent = '抽選中…'; $('status').textContent = 'だれの番かな…';
  $('caption').textContent = 'あと少し、お楽しみに'; $('hint').textContent = `${mode==='slot'?12:mode==='minesweeper'?14:mode==='daruma'?30:mode==='invaders'?13:mode==='mazechase'?13:mode==='fallingpuzzle'?Math.ceil(fallingDuration(fallingRound)/1000):mode==='brickbreaker'?Math.ceil(brickDuration(count)/1000):mode==='amidarace'?13:mode==='towerladders'?16:mode==='barrelescape'?14:mode==='castlefinale'?14:mode==='drumarcade'?12:mode==='starquintet'?12:mode==='chestnut'?11:mode==='tortoisehare'?11:mode==='catcoin'?10:mode==='gourd'?10:mode==='kappa'?11:mode==='dogstick'?10:mode==='lovedog'?10:mode==='digdog'?11:mode==='monkey'?10:mode==='detour'?11:mode==='botamochi'?10:mode==='washer'?10:mode==='ghost'?10:mode==='treasure2'?12:mode==='pirate'?10:mode==='penguin'?9:mode==='balloon'?8:mode==='bowling'?8:mode==='alien'?10:mode==='frog'?10:mode==='trolley'?13:duration/1000}秒で番号が決まります`; $('announcement').textContent = `抽選中です。${mode==='brickbreaker'?12:mode==='castlefinale'?14:mode==='drumarcade'?12:mode==='starquintet'?12:mode==='chestnut'?11:mode==='tortoisehare'?11:mode==='catcoin'?10:mode==='gourd'?10:mode==='kappa'?11:mode==='dogstick'?10:mode==='lovedog'?10:mode==='digdog'?11:mode==='monkey'?10:mode==='detour'?11:mode==='botamochi'?10:mode==='washer'?10:mode==='ghost'?10:mode==='treasure2'?12:mode==='pirate'?10:mode==='penguin'?9:mode==='balloon'?8:mode==='bowling'?8:mode==='alien'?10:mode==='frog'?10:mode==='trolley'?13:duration/1000}秒で決まります。`;
  $('number').textContent = '…'; if(mode==='die'){$('number').hidden=true;dieWrap.hidden=false;drawDie(0,null);}if(mode==='lottery'){$('number').hidden=true;lotteryWrap.hidden=false;drawLottery(lotteryCanvas,0,duration,count,null,reduced.matches);}if(mode==='roulette'){$('number').hidden=true;rouletteWrap.hidden=false;drawRoulette(rouletteCanvas,count,0,null);}
- if(mode==='race'){$('number').hidden=true;raceWrap.hidden=false;drawBallRace(raceCanvas,count,0,duration,winner,reduced.matches,raceStory);}
+ if(mode==='race'){ballAudioBeat=-1;ballBurstPlayed.clear();$('number').hidden=true;raceWrap.hidden=false;drawBallRace(raceCanvas,count,0,duration,winner,reduced.matches,raceStory);}
  if(mode==='horse'){$('number').hidden=true;horseWrap.hidden=false;drawHorseRace(horseCanvas,count,0,duration,winner,reduced.matches,raceStory);}
  if(mode==='pinball'){$('number').hidden=true;pinballWrap.hidden=false;drawPinball(pinballCanvas,count,0,duration,winner,reduced.matches,pinballSeed);}
  if(mode==='galton'){galtonWrap.hidden=false;$('number').hidden=true;drawGalton(galtonCanvas,galtonRound,0,duration,reduced.matches);}
