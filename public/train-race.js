@@ -18,31 +18,65 @@ function buildTracks(){
  }
 }
 function route(){
- let r=4,indices=[START],warpJump=-1;
- const useWarp=randomInt(100)<78;
- for(let x=1;x<COL;x++){
-   if(x===6&&useWarp){
-     const exitRow=randomInt(ROW);
-     indices.push(index(9,exitRow));warpJump=indices.length-2;
-     r=exitRow;x=9;
-     continue;
+ // Every ordinary segment follows an actual edge of the rendered rail graph.
+ const byStart=new Map();
+ for(const e of tracks){
+   const p=nodes[e.a],q=nodes[e.b];
+   const from=p.c<q.c?e.a:e.b,to=p.c<q.c?e.b:e.a;
+   if(nodes[from].c===nodes[to].c)continue;
+   if(!byStart.has(from))byStart.set(from,[]);
+   byStart.get(from).push({to,edge:e});
+ }
+ const portals=tracks.filter(e=>e.type==='tunnel'&&nodes[e.a].r===nodes[e.b].r);
+ let at=START,segments=[],total=0,warpUsed=false;
+ const add=(a,b,type)=>{
+   const l=type==='warp'?100:Math.hypot(b.x-a.x,b.y-a.y);
+   segments.push({a,b,l,start:total,type});total+=l;
+ };
+ while(at!==FINISH&&segments.length<42){
+   const here=nodes[at],remaining=COL-1-here.c;
+   const choices=(byStart.get(at)||[]).filter(c=>Math.abs(nodes[c.to].r-4)<=remaining-1 || remaining>5);
+   if(!choices.length)break;
+   const preferred=here.c>=10?choices.filter(c=>Math.abs(nodes[c.to].r-4)<Math.abs(here.r-4)):[];
+   const pool=preferred.length?preferred:choices;
+   const chosen=pool[randomInt(pool.length)];
+   const dest=nodes[chosen.to],edge=chosen.edge;
+   // The entrance is the actual black opening halfway along a tunnel track.
+   const canWarp=!warpUsed&&edge.type==='tunnel'&&randomInt(100)<85;
+   const farther=portals.filter(e=>{
+     const p=nodes[e.a],q=nodes[e.b];
+     return Math.min(p.c,q.c)>=here.c+3&&Math.max(p.c,q.c)<=11;
+   });
+   if(canWarp&&farther.length){
+     const portal=farther[randomInt(farther.length)];
+     const midIn={x:(here.x+dest.x)/2,y:(here.y+dest.y)/2};
+     const p=nodes[portal.a],q=nodes[portal.b];
+     const midOut={x:(p.x+q.x)/2,y:(p.y+q.y)/2};
+     const exit=p.c<q.c?q:p;
+     add(here,midIn,'tunnel');
+     add(midIn,midOut,'warp');
+     add(midOut,exit,'tunnel');
+     at=portal.a===portal.b?at:(p.c<q.c?portal.b:portal.a);
+     warpUsed=true;
+   }else{
+     add(here,dest,edge.type);
+     at=chosen.to;
    }
-   let delta=x===COL-1?4-r:(randomInt(5)-2);
-   if(x>=10)delta=Math.sign(4-r);
-   r=Math.max(0,Math.min(ROW-1,r+Math.max(-1,Math.min(1,delta))));
-   if(x===COL-1)r=4;
-   indices.push(index(x,r));
  }
- const segments=[];let length=0;
- for(let i=1;i<indices.length;i++){
-   const a=nodes[indices[i-1]],b=nodes[indices[i]];
-   const warp=i-1===warpJump;
-   const l=warp?150:Math.hypot(b.x-a.x,b.y-a.y);
-   const edge=warp?null:tracks.find(e=>(e.a===indices[i-1]&&e.b===indices[i])||(e.b===indices[i-1]&&e.a===indices[i]));
-   segments.push({a,b,l,start:length,type:warp?'warp':edge?.type||'rail'});
-   length+=l;
+ // If an unusual graph state cannot reach the goal, a valid route is regenerated.
+ if(at!==FINISH)return routeFallback(byStart);
+ return {segments,length:total};
+}
+function routeFallback(byStart){
+ let at=START,segments=[],total=0;
+ while(at!==FINISH){
+   const p=nodes[at];
+   const opts=(byStart.get(at)||[]).filter(o=>Math.abs(nodes[o.to].r-4)<=COL-1-nodes[o.to].c);
+   if(!opts.length)throw new Error('Rail graph is disconnected');
+   const e=opts[randomInt(opts.length)],q=nodes[e.to],l=Math.hypot(q.x-p.x,q.y-p.y);
+   segments.push({a:p,b:q,l,start:total,type:e.edge.type});total+=l;at=e.to;
  }
- return {segments,length};
+ return {segments,length:total};
 }
 function init(){
  cancelAnimationFrame(raf);playing=false;elapsed=0;countInput.disabled=false;
@@ -73,16 +107,6 @@ function scenery(){
    g.fillStyle='#73976a';g.beginPath();g.ellipse(x,y,34,28,0,0,7);g.fill();
    g.fillStyle='#303d38';g.beginPath();g.ellipse(x,y,18,14,0,0,7);g.fill();
  }
- // Portal entrances and exits are on existing rail junctions, not arbitrary off-track positions.
- for(const [column,label,color] of [[5,'IN','#7b469d'],[9,'OUT','#246db2']]){
-  for(let row=0;row<ROW;row++){
-   const p=nodes[index(column,row)];
-   g.strokeStyle=color;g.lineWidth=4;
-   g.beginPath();g.ellipse(p.x,p.y,18,23,0,0,Math.PI*2);g.stroke();
-   g.fillStyle='#f9f5ff';g.font='bold 10px system-ui';g.textAlign='center';
-   g.fillText(label,p.x,p.y-27);
-  }
- }
  for(const n of nodes){g.fillStyle='#efbf5b';g.beginPath();g.arc(n.x,n.y,4,0,7);g.fill()}
  g.font='bold 22px system-ui';g.textAlign='center';
  for(const [id,label] of [[START,'🚉 共通始発駅'],[FINISH,'💐 花束駅']]){
@@ -94,11 +118,11 @@ function locate(t){
  let s=route.segments.at(-1);
  for(const z of route.segments){if(d<=z.start+z.l){s=z;break}}
  const u=Math.max(0,Math.min(1,(d-s.start)/s.l));
- if(s.type==='warp')return {x:u<.5?s.a.x:s.b.x,y:u<.5?s.a.y:s.b.y,angle:0,type:'warp',u};
+ if(s.type==='warp')return {x:s.a.x,y:s.a.y,angle:0,type:'warp',u};
  return {x:s.a.x+(s.b.x-s.a.x)*u,y:s.a.y+(s.b.y-s.a.y)*u,angle:Math.atan2(s.b.y-s.a.y,s.b.x-s.a.x),type:s.type,u};
 }
 function paint(t,p){
- if((p.type==='tunnel'&&p.u>.25&&p.u<.75)||(p.type==='warp'&&p.u>.16&&p.u<.84))return;
+ if((p.type==='tunnel'&&p.u>.25&&p.u<.75)||p.type==='warp')return;
  g.save();g.translate(p.x,p.y);g.rotate(p.angle);
  g.fillStyle='#263a333b';g.fillRect(-19,9,39,9);
  g.fillStyle=t.color;g.strokeStyle='#20333e';g.lineWidth=1.8;
