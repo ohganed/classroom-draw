@@ -268,3 +268,6 @@ body.numbers-mode #number{font-size:min(54vw,max(24px,calc(100cqh - 90px)))}
 .slot-footer{font-weight:900;margin-top:9px;letter-spacing:.13em;color:#f1b4de;font-size:clamp(11px,2vw,16px)}
 .result #slot-wrap{width:min(85vw,550px)}
 @media(prefers-reduced-motion:reduce){.slot-cell .slot-flip{animation:none!important}}
+
+/* Keep the mode label legible on narrow iPhone screens. */
+@media(max-width:600px){.tools{width:100%}.tools .count-label{white-space:nowrap}.tools .count-label:has(#mode){flex:1 1 100%;min-width:0}.tools #mode{flex:1;min-width:0;width:100%}}
