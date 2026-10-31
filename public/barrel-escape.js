@@ -14,11 +14,11 @@ export function makeBarrelRound(count,winner,seed){
  // The time of contact is when the moving barrel reaches the runner's x.
  const barrels=order.map(n=>{
   const h=heroes[n-1],impact=h.lose,dir=(n%2?1:-1);
-  return {level:h.level,impact,dir,target:h.x,start:impact-.72};
+  return {n,level:h.level,impact,dir,target:h.x,start:impact-.72};
  });
  // The winning character faces one extra barrel and jumps over it.
  const chosen=heroes[winner-1];
- barrels.push({level:chosen.level,impact:12.15,dir:1,target:chosen.x,start:11.43,dodge:true});
+ barrels.push({n:winner,level:chosen.level,impact:12.15,dir:1,target:chosen.x,start:11.43,dodge:true});
  return {winner,count,heroes,barrels};
 }
 function floorY(level,x){return 377-level*79+(level%2?-.035:.035)*(x-300);}
@@ -33,6 +33,9 @@ export function drawBarrel(canvas,round,elapsed=0,duration=13500,reduced=false){
   c.strokeStyle='#ffe19d';c.lineWidth=2;c.beginPath();c.moveTo(left,y0-4);c.lineTo(right,y1-4);c.stroke();
   if(j<3){const x=j%2===0?540:60;c.strokeStyle='#87ccdb';c.lineWidth=4;for(let k=0;k<5;k++){const y=floorY(j,x)-k*13;c.beginPath();c.moveTo(x-12,y);c.lineTo(x+12,y);c.stroke();}}
  }
+ // Enlarge number labels once half the original contestants have been caught.
+ const aliveCount=round?round.heroes.filter(h=>h.n===round.winner||sec<h.lose).length:0;
+ const enlarged=round&&aliveCount<=Math.ceil(round.count/2);
  // Both the barrel and runner use the same platform and x coordinates.
  const barrelPosition=b=>b.target+(sec-b.impact)*165*b.dir;
  if(round)for(const b of round.barrels){
@@ -42,7 +45,11 @@ export function drawBarrel(canvas,round,elapsed=0,duration=13500,reduced=false){
   c.save();c.translate(x,y);c.rotate((sec-b.start)*11*b.dir);
   c.fillStyle='#c47443';c.beginPath();c.arc(0,0,12,0,Math.PI*2);c.fill();
   c.strokeStyle='#ffce87';c.lineWidth=3;c.beginPath();c.arc(0,0,8,0,Math.PI*2);c.stroke();
-  c.strokeStyle='#5c352c';c.beginPath();c.moveTo(-10,0);c.lineTo(10,0);c.stroke();c.restore();
+  c.strokeStyle='#5c352c';c.beginPath();c.moveTo(-10,0);c.lineTo(10,0);c.stroke();
+  c.rotate(-(sec-b.start)*11*b.dir);
+  c.fillStyle='#fff7d1';c.fillRect(enlarged?-14:-11,enlarged?-14:-9,enlarged?28:22,enlarged?28:18);
+  c.fillStyle='#17253b';c.textAlign='center';c.textBaseline='middle';c.font='900 '+(enlarged?19:10)+'px monospace';c.fillText(b.n,0,1);
+  c.restore();
  }
  let remaining=0;
  if(round)for(const h of round.heroes){
@@ -62,8 +69,8 @@ export function drawBarrel(canvas,round,elapsed=0,duration=13500,reduced=false){
   c.fillStyle=color[h.n%color.length];
   c.fillRect(-10,-12,20,22);c.fillRect(-8,-18,16,7);
   c.fillStyle='#27354a';c.fillRect(-5,-7,3,3);c.fillRect(3,-7,3,3);
-  c.fillStyle='#fff9da';c.fillRect(-13,-32,26,14);
-  c.fillStyle='#1c2e48';c.font='bold 11px monospace';c.fillText(h.n,0,-21);
+  c.fillStyle='#fff9da';c.fillRect(enlarged?-18:-13,enlarged?-44:-32,enlarged?36:26,enlarged?27:14);
+  c.fillStyle='#1c2e48';c.font=(enlarged?'900 20px':'bold 11px')+' monospace';c.textBaseline='middle';c.fillText(h.n,0,enlarged?-30:-25);
   if(hit){c.fillStyle='#fff1aa';c.font='bold 22px monospace';c.fillText('★',15,-15);}
   if(jump>12){c.fillStyle='#fef6ac';c.font='bold 13px monospace';c.fillText('!',14,-18);}
   c.restore();
