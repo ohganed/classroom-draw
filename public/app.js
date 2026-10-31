@@ -671,7 +671,29 @@ function tick() {
  if(mode==='starquintet'){const beat=Math.floor(elapsed/300);if(beat!==starQuintetAudioBeat){starQuintetAudioBeat=beat;if(sound&&!document.hidden&&context?.state==='running')playStarQuintetBeat(context,master,beat);}if(!reduced.matches)drawStarQuintet(starQuintetCanvas,starQuintetRound,elapsed,12000,false);raf=requestAnimationFrame(tick);return;}
  if(mode==='robot'){
   if(!reduced.matches)drawRobotRace(robotCanvas,robotRound,elapsed,duration,false);
-  const sec=Math.floor(elapsed/600);if(!reduced.matches&&sec!==robotLastSound&&sound&&context?.state==='running'&&!document.hidden){robotLastSound=sec;tone(sec%2?260:370,0,.065,'sine',.08);}
+  if(sound&&!reduced.matches&&!document.hidden&&context?.state==='running'){
+    // Original upbeat robot groove, with musical steps every 150 ms.
+    const beat=Math.floor(elapsed/150);
+    if(beat!==robotLastSound){
+      robotLastSound=beat;
+      const i=beat%16;
+      if(i%4===0){tone(90,0,.10,'triangle',.24);tone(55,0,.08,'sine',.18);}
+      if(i%4===2)tone(370,0,.055,'square',.07);
+      if(i%2===1)tone(880,0,.023,'triangle',.045);
+      const bass=[130.81,0,130.81,196,0,164.81,130.81,0,146.83,0,196,0,174.61,164.81,0,146.83][i];
+      if(bass)tone(bass,0,.105,'sawtooth',.07);
+      if(i===3||i===11)tone(660,0,.08,'sine',.10);
+      // Robot jumps and mechanical squeaks.
+      if(i===5||i===13){tone(440,0,.07,'sine',.12);tone(698.46,.08,.10,'triangle',.09);}
+      if(i===7)tone(290,0,.07,'square',.08);
+      // The first and second obstacle gates create distinctive impacts.
+      const prev=(beat-1)*150/duration,next=beat*150/duration;
+      if((prev<.30&&next>=.30)||(prev<.58&&next>=.58)){
+        tone(175,0,.16,'sawtooth',.24);tone(760,.04,.095,'triangle',.15);
+        tone(490,.14,.09,'square',.09);
+      }
+    }
+  }
   raf=requestAnimationFrame(tick);return;
  }
  if(mode==='machine'){
