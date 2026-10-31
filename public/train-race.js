@@ -69,7 +69,7 @@ function init(){
  cancelAnimationFrame(raf);playing=false;elapsed=0;countInput.disabled=false;
  const n=Math.max(1,Math.min(99,Math.floor(Number(countInput.value)||40)));countInput.value=n;
  winner=randomInt(n)+1;buildTracks();
- trains=Array.from({length:n},(_,i)=>({number:i+1,route:route(),p:0,delay:i*.11,pace:.65+randomInt(31)/100,boost:(randomInt(21)-10)/100,color:`hsl(${i*137.508%360} 72% 44%)`}));
+ trains=Array.from({length:n},(_,i)=>({number:i+1,route:route(),p:0,delay:randomInt(650)/100,pace:.48+randomInt(66)/100,phase:randomInt(628)/100,wave:1.2+randomInt(180)/100,color:`hsl(${i*137.508%360} 72% 44%)`}));
  btn.disabled=false;meter.value=0;clock.textContent='0.0 / 35秒';status.textContent='🚉 共通始発駅で待機中';result.textContent='💐 花束駅には誰が到着する？';draw();
 }
 function stroke(a,b,w,col){g.beginPath();g.moveTo(a.x,a.y);g.lineTo(b.x,b.y);g.strokeStyle=col;g.lineWidth=w;g.lineCap='round';g.stroke()}
@@ -145,11 +145,23 @@ function frame(now){
  if(!playing)return;
  elapsed=Math.min(DURATION,now-started);const t=elapsed/DURATION,sec=elapsed/1000;
  for(const v of trains){
-  const local=Math.max(0,(sec-v.delay)/(35-v.delay));
-  // Distinct speeds create visible leaders and trailers, without affecting the uniform draw.
-  const warpBonus=v.route.segments.some(s=>s.type==='warp')?Math.max(0,Math.min(.12,(local-.37)*.25)):0;
-  const travel=local*(v.pace+v.boost*Math.sin(local*Math.PI*2))+warpBonus;
-  v.p=v.number===winner?(t<.78?Math.min(.75,local*.88):.70+.30*Math.pow(Math.max(0,(t-.78)/.22),1.55)):Math.min(.965,Math.max(0,travel));
+  // Different departure times and smoothly changing speeds make each train
+  // travel independently. The sine integral never makes a train run backwards.
+  const progressAt=time=>{
+   const local=Math.max(0,(time-v.delay)/(35-v.delay));
+   const angle=2*Math.PI*v.wave*local;
+   const sway=.14*(Math.cos(v.phase)-Math.cos(angle+v.phase))/(2*Math.PI*v.wave);
+   return Math.max(0,local*v.pace+sway);
+  };
+  const travel=progressAt(sec);
+  if(v.number===winner&&t>=.78){
+   const atTurn=progressAt(DURATION*.78/1000);
+   const u=Math.min(1,(t-.78)/.22);
+   const smooth=u*u*(3-2*u);
+   v.p=atTurn+(1-atTurn)*smooth;
+  }else{
+   v.p=Math.min(v.number===winner?.96:.965,travel);
+  }
  }
  meter.value=sec;clock.textContent=sec.toFixed(1)+' / 35秒';
  status.textContent=sec<8?'🚉 全列車が順次発車':sec<23?'🌀 黒いトンネルから別の場所へワープ！':sec<31?'🚂 先頭集団と後続の差に注目':'🏁 最終ポイントで大逆転！';
