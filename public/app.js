@@ -231,10 +231,9 @@ function tick() {
  if(mode==='roulette'){
   if(!reduced.matches)drawRoulette(rouletteCanvas,count,rouletteAngle(elapsed,duration,winner,count,false,rouletteLayout),null,rouletteLayout);
   if(sound&&!reduced.matches&&!document.hidden&&context?.state==='running'){
-    const t=Math.min(1,elapsed/duration),speed=1.8*6*Math.PI*Math.pow(1-t,2)/duration;
-    const sector=Math.floor((Math.max(0,elapsed)/duration)*count*6); // sound follows deceleration
-    const interval=100+Math.pow(t,2)*440;
-    const beat=Math.floor(elapsed/interval);
+    const t=Math.min(1,elapsed/duration);
+    const angle=rouletteAngle(elapsed,duration,winner,count,false,rouletteLayout);
+    const beat=Math.floor(angle/(Math.PI*2/count));
     if(beat!==rouletteSoundStep){rouletteSoundStep=beat;tone(430+Math.round((1-t)*260),0,.035,'triangle',.16);}
   }
   raf=requestAnimationFrame(tick);return;
