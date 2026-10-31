@@ -10,8 +10,8 @@ export function makeCraneRound(count,winner,seed){
   const col=i%11,row=Math.floor(i/11),x=61+col*43+(r()-.5)*9,y=360-row*32+(r()-.5)*12;
   balls.push({number:i+1,x,y,shade:Math.floor(r()*3)});
  }
- // Uniformly choose 1-5 total attempts (only one when there is one capsule).
- const attempts=count===1?1:1+Math.floor(r()*5);
+ // Uniformly choose 1-10 total attempts (only one when there is one capsule).
+ const attempts=count===1?1:1+Math.floor(r()*10);
  const misses=attempts-1;
  const fake=Array.from({length:misses},()=>{const index=Math.floor(r()*(count-1));return 1+index+(index>=winner-1?1:0);});
  return {balls,winner,misses,fake,offset:r()*24-12};
@@ -25,7 +25,8 @@ function capsule(c,x,y,n,shade=0,r=16,alpha=1){
  c.fillStyle='#172738';c.font='bold '+Math.round(Math.min(r*1.15,36))+'px Arial';c.textAlign='center';c.textBaseline='middle';c.fillText(String(n),x,y-3);
  c.restore();
 }
-export function drawCrane(canvas,round,elapsed=0,duration=8000,reduced=false){
+export const craneDuration=round=>Math.min(10000,(round?.misses+1||1)*700);
+export function drawCrane(canvas,round,elapsed=0,duration=craneDuration(round),reduced=false){
  const c=canvas.getContext('2d');if(!c)return;
  const p=clamp(elapsed/duration,0,1),done=p>=1;
  c.clearRect(0,0,600,470);
