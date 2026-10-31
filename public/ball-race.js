@@ -17,13 +17,14 @@ export function drawBallRace(canvas,count=40,elapsed=0,duration=8000,winner=null
  ctx.fillStyle='#36d8ca';ctx.fillRect(finish,top-14,4,bottom-top+30);
  ctx.fillStyle='#a9f9fa';ctx.font='bold 17px Arial';ctx.textAlign='center';ctx.fillText('GOAL',finish-22,23);
  const candidate=winner??1,positions=[];
- const burstCount=Math.min(count-1,Math.max(2,Math.floor(count*.13))),burstIds=[];
+ const burstCount=Math.min(count-1,Math.round(count*2/3)),burstIds=[];
  for(let k=0;k<burstCount;k++){
   let n=1+((candidate*13+k*17+7)%count);
   while(n===candidate||burstIds.includes(n))n=n%count+1;
   burstIds.push(n);
  }
- const burstAt=n=>.28+.45*((n*37%89)/89);
+ export const ballBurstAt=n=>.17+.65*((n*37%89)/89);
+ const burstAt=ballBurstAt;
  // Scenario is chosen once per draw; deterministic rendering prevents flicker.
  const rivalA=(candidate%count)+1,rivalB=((candidate+Math.floor(count/2))%count)+1;
  for(let i=0;i<count;i++){
@@ -56,12 +57,14 @@ export function drawBallRace(canvas,count=40,elapsed=0,duration=8000,winner=null
   const burst=burstIds.includes(n),at=burstAt(n),gone=burst&&p>=at;
   if(!gone)positions.push({n,x,y});
   if(gone){
-   if(!reduced&&p<at+.095){
-    const f=Math.min(1,(p-at)/.095);
-    for(let j=0;j<7;j++){
-     const a=j*Math.PI*2/7+n*.7;
-     ctx.fillStyle=['#f3d96d','#52d8e2','#f7b3cd'][j%3];
-     ctx.beginPath();ctx.arc(x+Math.cos(a)*f*22,y+Math.sin(a)*f*15,Math.max(.6,r*(1-f)*.55),0,Math.PI*2);ctx.fill();
+   if(!reduced&&p<at+.12){
+    const f=Math.min(1,(p-at)/.12),radius=(11+f*27)*(count>60?.65:1);
+    ctx.strokeStyle='rgba(250,205,88,'+(0.8*(1-f))+')';
+    ctx.lineWidth=Math.max(.5,3*(1-f));ctx.beginPath();ctx.arc(x,y,radius,0,Math.PI*2);ctx.stroke();
+    for(let j=0;j<15;j++){
+     const a=j*Math.PI*2/15+n*.7,dist=radius*(.75+(j%3)*.2);
+     ctx.fillStyle=['#fce686','#42e0e6','#ff8b9a','#f9ae55'][j%4];
+     ctx.beginPath();ctx.arc(x+Math.cos(a)*dist,y+Math.sin(a)*dist*.72,Math.max(.6,(3.8+j%3)*(1-f)),0,Math.PI*2);ctx.fill();
     }
    }
    ctx.fillStyle='#b3dce8';ctx.font='bold '+(count>50?7:10)+'px Arial';ctx.textAlign='right';ctx.textBaseline='middle';ctx.fillText(String(n),35,y);continue;
