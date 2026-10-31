@@ -18,63 +18,50 @@ function buildTracks(){
  }
 }
 function route(){
- // Every ordinary segment follows an actual edge of the rendered rail graph.
+ // Check reachability before choosing a branch. A random dead end must never
+ // prevent the initial scene (or a new round) from rendering.
  const byStart=new Map();
  for(const e of tracks){
-   const p=nodes[e.a],q=nodes[e.b];
-   const from=p.c<q.c?e.a:e.b,to=p.c<q.c?e.b:e.a;
-   if(nodes[from].c===nodes[to].c)continue;
-   if(!byStart.has(from))byStart.set(from,[]);
-   byStart.get(from).push({to,edge:e});
+  const p=nodes[e.a],q=nodes[e.b];
+  if(p.c===q.c)continue;
+  const from=p.c<q.c?e.a:e.b,to=p.c<q.c?e.b:e.a;
+  if(!byStart.has(from))byStart.set(from,[]);
+  byStart.get(from).push({to,edge:e});
  }
+ const reachable=new Set([FINISH]);
+ for(let col=COL-2;col>=0;col--){
+  for(let row=0;row<ROW;row++){
+   const id=index(col,row);
+   if((byStart.get(id)||[]).some(o=>reachable.has(o.to)))reachable.add(id);
+  }
+ }
+ if(!reachable.has(START))throw new Error('Rail graph has no route to the flower station');
  const portals=tracks.filter(e=>e.type==='tunnel'&&nodes[e.a].r===nodes[e.b].r);
  let at=START,segments=[],total=0,warpUsed=false;
  const add=(a,b,type)=>{
-   const l=type==='warp'?100:Math.hypot(b.x-a.x,b.y-a.y);
-   segments.push({a,b,l,start:total,type});total+=l;
+  const l=type==='warp'?100:Math.hypot(b.x-a.x,b.y-a.y);
+  segments.push({a,b,l,start:total,type});total+=l;
  };
- while(at!==FINISH&&segments.length<42){
-   const here=nodes[at],remaining=COL-1-here.c;
-   const choices=(byStart.get(at)||[]).filter(c=>Math.abs(nodes[c.to].r-4)<=remaining-1 || remaining>5);
-   if(!choices.length)break;
-   const preferred=here.c>=10?choices.filter(c=>Math.abs(nodes[c.to].r-4)<Math.abs(here.r-4)):[];
-   const pool=preferred.length?preferred:choices;
-   const chosen=pool[randomInt(pool.length)];
-   const dest=nodes[chosen.to],edge=chosen.edge;
-   // The entrance is the actual black opening halfway along a tunnel track.
-   const canWarp=!warpUsed&&edge.type==='tunnel'&&randomInt(100)<85;
-   const farther=portals.filter(e=>{
-     const p=nodes[e.a],q=nodes[e.b];
-     return Math.min(p.c,q.c)>=here.c+3&&Math.max(p.c,q.c)<=11;
-   });
-   if(canWarp&&farther.length){
-     const portal=farther[randomInt(farther.length)];
-     const midIn={x:(here.x+dest.x)/2,y:(here.y+dest.y)/2};
-     const p=nodes[portal.a],q=nodes[portal.b];
-     const midOut={x:(p.x+q.x)/2,y:(p.y+q.y)/2};
-     const exit=p.c<q.c?q:p;
-     add(here,midIn,'tunnel');
-     add(midIn,midOut,'warp');
-     add(midOut,exit,'tunnel');
-     at=portal.a===portal.b?at:(p.c<q.c?portal.b:portal.a);
-     warpUsed=true;
-   }else{
-     add(here,dest,edge.type);
-     at=chosen.to;
-   }
- }
- // If an unusual graph state cannot reach the goal, a valid route is regenerated.
- if(at!==FINISH)return routeFallback(byStart);
- return {segments,length:total};
-}
-function routeFallback(byStart){
- let at=START,segments=[],total=0;
  while(at!==FINISH){
-   const p=nodes[at];
-   const opts=(byStart.get(at)||[]).filter(o=>Math.abs(nodes[o.to].r-4)<=COL-1-nodes[o.to].c);
-   if(!opts.length)throw new Error('Rail graph is disconnected');
-   const e=opts[randomInt(opts.length)],q=nodes[e.to],l=Math.hypot(q.x-p.x,q.y-p.y);
-   segments.push({a:p,b:q,l,start:total,type:e.edge.type});total+=l;at=e.to;
+  const here=nodes[at];
+  const choices=(byStart.get(at)||[]).filter(o=>reachable.has(o.to));
+  // Favour gradual return to the flower station in the last few columns.
+  const preferred=here.c>=10?choices.filter(o=>Math.abs(nodes[o.to].r-4)<Math.abs(here.r-4)):[];
+  const pool=preferred.length?preferred:choices;
+  const chosen=pool[randomInt(pool.length)],dest=nodes[chosen.to],edge=chosen.edge;
+  const farther=portals.filter(e=>{
+   const p=nodes[e.a],q=nodes[e.b],exit=p.c<q.c?e.b:e.a;
+   return Math.min(p.c,q.c)>=here.c+3&&Math.max(p.c,q.c)<=11&&reachable.has(exit);
+  });
+  if(!warpUsed&&edge.type==='tunnel'&&farther.length&&randomInt(100)<85){
+   const portal=farther[randomInt(farther.length)];
+   const p=nodes[portal.a],q=nodes[portal.b];
+   const midIn={x:(here.x+dest.x)/2,y:(here.y+dest.y)/2};
+   const midOut={x:(p.x+q.x)/2,y:(p.y+q.y)/2};
+   const exit=p.c<q.c?portal.b:portal.a;
+   add(here,midIn,'tunnel');add(midIn,midOut,'warp');
+   add(midOut,nodes[exit],'tunnel');at=exit;warpUsed=true;
+  }else{add(here,dest,edge.type);at=chosen.to;}
  }
  return {segments,length:total};
 }
