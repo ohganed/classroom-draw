@@ -5,8 +5,21 @@ export function makeBarrelRound(count,winner,seed){
  let z=seed>>>0||1;const rand=()=>((z=(Math.imul(z,1664525)+1013904223)>>>0)/4294967296);
  const order=Array.from({length:count},(_,i)=>i+1).filter(n=>n!==winner);
  for(let i=order.length-1;i>0;i--){const j=Math.floor(rand()*(i+1));[order[i],order[j]]=[order[j],order[i]];}
- const lose=new Map(order.map((n,i)=>[n,2+9.4*(i+.4*rand())/Math.max(1,order.length)]));
- return {winner,count,heroes:Array.from({length:count},(_,i)=>({n:i+1,phase:rand()*5,side:rand()>.5?1:-1,lose:lose.get(i+1)??100})),barrels:Array.from({length:12},(_,i)=>({phase:rand()*.9+i*.65,level:i%4}))};
+ const lose=new Map(order.map((n,i)=>[n,2+9.2*(i+.45)/Math.max(1,order.length)]));
+ const heroes=Array.from({length:count},(_,i)=>({
+  n:i+1,level:i%4,x:78+(Math.floor(i/4)%10)*46,
+  lose:lose.get(i+1)??100
+ }));
+ // Each barrel is aimed at an actual runner on that runner's platform.
+ // The time of contact is when the moving barrel reaches the runner's x.
+ const barrels=order.map(n=>{
+  const h=heroes[n-1],impact=h.lose,dir=(n%2?1:-1);
+  return {level:h.level,impact,dir,target:h.x,start:impact-.72};
+ });
+ // The winning character faces one extra barrel and jumps over it.
+ const chosen=heroes[winner-1];
+ barrels.push({level:chosen.level,impact:12.15,dir:1,target:chosen.x,start:11.43,dodge:true});
+ return {winner,count,heroes,barrels};
 }
 function floorY(level,x){return 377-level*79+(level%2?-.035:.035)*(x-300);}
 export function drawBarrel(canvas,round,elapsed=0,duration=13500,reduced=false){
@@ -20,24 +33,39 @@ export function drawBarrel(canvas,round,elapsed=0,duration=13500,reduced=false){
   c.strokeStyle='#ffe19d';c.lineWidth=2;c.beginPath();c.moveTo(left,y0-4);c.lineTo(right,y1-4);c.stroke();
   if(j<3){const x=j%2===0?540:60;c.strokeStyle='#87ccdb';c.lineWidth=4;for(let k=0;k<5;k++){const y=floorY(j,x)-k*13;c.beginPath();c.moveTo(x-12,y);c.lineTo(x+12,y);c.stroke();}}
  }
- // Barrels roll along the same sloped platform line as the runners.
- if(round){for(let i=0;i<round.barrels.length;i++){
-  const b=round.barrels[i],travel=(sec*0.23+b.phase)%1,dir=b.level%2?1:-1;
-  const x=dir===1?48+travel*500:548-travel*500,y=floorY(b.level,x)-14;
-  c.save();c.translate(x,y);c.rotate(sec*4*(dir===1?1:-1));c.fillStyle='#c47443';c.beginPath();c.arc(0,0,12,0,Math.PI*2);c.fill();c.strokeStyle='#ffce87';c.lineWidth=3;c.beginPath();c.arc(0,0,8,0,Math.PI*2);c.stroke();c.strokeStyle='#5c352c';c.beginPath();c.moveTo(-10,0);c.lineTo(10,0);c.stroke();c.restore();
- }}
+ // Both the barrel and runner use the same platform and x coordinates.
+ const barrelPosition=b=>b.target+(sec-b.impact)*165*b.dir;
+ if(round)for(const b of round.barrels){
+  if(sec<b.start||sec>b.impact+.45)continue;
+  const x=barrelPosition(b),y=floorY(b.level,x)-13;
+  if(x<43||x>557)continue;
+  c.save();c.translate(x,y);c.rotate((sec-b.start)*11*b.dir);
+  c.fillStyle='#c47443';c.beginPath();c.arc(0,0,12,0,Math.PI*2);c.fill();
+  c.strokeStyle='#ffce87';c.lineWidth=3;c.beginPath();c.arc(0,0,8,0,Math.PI*2);c.stroke();
+  c.strokeStyle='#5c352c';c.beginPath();c.moveTo(-10,0);c.lineTo(10,0);c.stroke();c.restore();
+ }
  let remaining=0;
  if(round)for(const h of round.heroes){
-  if(sec>h.lose+.22)continue;
-  const jumping=cl((sec%1.1-.1)/.55,0,1),jump=Math.sin(jumping*Math.PI)*24;
-  const progress=cl((sec+h.phase*.35)/11,0,1),level=Math.min(3,Math.floor(progress*4)),direction=level%2?1:-1;
-  const x=direction>0?56+cl((progress*4)%1,0,1)*480:544-cl((progress*4)%1,0,1)*480;
-  const y=floorY(level,x)-19-jump,hit=sec>=h.lose;
+  const isWinner=h.n===round.winner;
+  const b=round.barrels.find(v=>v.target===h.x&&v.level===h.level&&(v.dodge===isWinner)&&(isWinner||Math.abs(v.impact-h.lose)<.001));
+  const danger=b&&sec>=b.start?Math.abs(barrelPosition(b)-h.x):Infinity;
+  // All disappearances follow an actual barrel reaching the same x on the
+  // same floor; the winner is the only runner who jumps clear of the impact.
+  const hit=!isWinner&&b&&sec>=b.impact&&danger<95;
+  if(hit&&sec>h.lose+.25)continue;
   if(!hit)remaining++;
-  c.save();c.translate(x,y);c.fillStyle=color[h.n%color.length];
-  c.fillRect(-10,-12,20,22);c.fillRect(-8,-18,16,7);c.fillStyle='#27354a';c.fillRect(-5,-7,3,3);c.fillRect(3,-7,3,3);
-  c.fillStyle='#fff9da';c.fillRect(-13,-32,26,14);c.fillStyle='#1c2e48';c.font='bold 11px monospace';c.fillText(h.n,0,-21);
+  const jump=isWinner&&b&&sec>=b.impact-.24&&sec<=b.impact+.28
+   ?Math.sin(Math.PI*(sec-(b.impact-.24))/.52)*35:0;
+  const x=h.x,y=floorY(h.level,x)-19-jump;
+  c.save();c.translate(x,y);
+  if(hit)c.rotate(Math.min(1,(sec-h.lose)*6)*.9);
+  c.fillStyle=color[h.n%color.length];
+  c.fillRect(-10,-12,20,22);c.fillRect(-8,-18,16,7);
+  c.fillStyle='#27354a';c.fillRect(-5,-7,3,3);c.fillRect(3,-7,3,3);
+  c.fillStyle='#fff9da';c.fillRect(-13,-32,26,14);
+  c.fillStyle='#1c2e48';c.font='bold 11px monospace';c.fillText(h.n,0,-21);
   if(hit){c.fillStyle='#fff1aa';c.font='bold 20px monospace';c.fillText('!',15,-15);}
+  if(jump>12){c.fillStyle='#fef6ac';c.font='bold 13px monospace';c.fillText('!',14,-18);}
   c.restore();
  }
  c.fillStyle='#e9f2fc';c.font='bold 16px monospace';c.fillText('残り '+remaining+'人',300,437);
