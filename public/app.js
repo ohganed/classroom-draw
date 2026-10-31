@@ -1,4 +1,4 @@
-import { makeDarumaRound, drawDaruma, playDarumaSound, DARUMA_DURATION } from './daruma.js?v=138';
+import { makeDarumaRound, drawDaruma, playDarumaSound, DARUMA_DURATION } from './daruma.js?v=139';
 import { playStarQuintetBeat } from './star-quintet-audio.js?v=101';
 import { randomNumber, buildSchedule, frameAt } from './draw.js';
 import { drawLottery } from './lottery.js';
