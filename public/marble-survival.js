@@ -27,10 +27,11 @@ function init(){
 }
 async function start(){
  if(!ctx){try{ctx=new (window.AudioContext||window.webkitAudioContext)();}catch{}}
- if(ctx?.state==='suspended')await ctx.resume();
+ const resumeAudio=ctx?.state==='suspended'?ctx.resume():Promise.resolve();
  if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){
   try{const p=await DeviceOrientationEvent.requestPermission();sensorOK=p==='granted';if(p!=='granted')$('status').textContent='傾きの許可なし：矢印操作も使えます';}catch{$('status').textContent='傾きセンサー利用不可：矢印操作も使えます';}
  }
+ await resumeAudio;
  if(ended)init();
  running=true;last=performance.now();cancelAnimationFrame(raf);raf=requestAnimationFrame(frame);
 }
