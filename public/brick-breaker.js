@@ -10,27 +10,31 @@ export function makeBrickRound(count,winner,seed){
  let s=seed>>>0||1,r=()=>((s=(Math.imul(s,1664525)+1013904223)>>>0)/4294967296);
  const rest=Array.from({length:count},(_,i)=>i+1).filter(n=>n!==winner);
  for(let i=rest.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[rest[i],rest[j]]=[rest[j],rest[i]];}
- // Winner sits above all the other bricks in its column: a vertical projectile can
- // clear every other brick without hitting or artificially preserving the winner.
- const winSlot=Math.min(4,count-1),slots=Array(count).fill(null);
+ // Randomize the winner's physical position: no row or depth gives a clue.
+ // Balls can enter from the top or bottom of a column.
+ const winSlot=Math.floor(r()*count),slots=Array(count).fill(null);
  slots[winSlot]=winner;let k=0;for(let i=0;i<count;i++)if(i!==winSlot)slots[i]=rest[k++];
  const bricks=slots.map((n,i)=>({n,x:23+(i%10)*56,y:88+Math.floor(i/10)*50,w:50,h:38,hit:Infinity}));
  const byNum=new Map(bricks.map(b=>[b.n,b]));
  const alive=new Set(rest),shots=[];let prevX=300;
- // Columns and hit priorities vary with seed; the collision candidate is always
- // the physically lowest remaining rectangle on the projectile's vertical ray.
+ // Every shot targets an outermost surviving brick, either from above or below.
+ // This makes every depth reachable while the winner is never touched.
  while(alive.size){
-  const columns=[];
+  const options=[];
   for(let col=0;col<10;col++){
-   const target=bricks.filter(b=>alive.has(b.n)&&Math.floor((b.x-23)/56)===col).sort((a,b)=>b.y-a.y)[0];
-   if(target)columns.push(target);
+   const column=bricks.filter(b=>alive.has(b.n)||b.n===winner).filter(b=>Math.floor((b.x-23)/56)===col).sort((a,b)=>a.y-b.y);
+   if(!column.length)continue;
+   if(column[0].n!==winner)options.push({target:column[0],fromTop:true});
+   if(column[column.length-1].n!==winner)options.push({target:column[column.length-1],fromTop:false});
   }
-  const target=columns[Math.floor(r()*columns.length)];
-  const x=target.x+target.w/2,contact=target.y+target.h+R;
-  const motion=BASE_Y-contact;
+  if(!options.length)throw new Error('No collision-safe brick route');
+  const {target,fromTop}=options[Math.floor(r()*options.length)];
+  const x=target.x+target.w/2,launch=fromTop?68:BASE_Y;
+  const contact=fromTop?target.y-R:target.y+target.h+R;
+  const motion=contact-launch;
   const move=.17,fly=.225,back=.225,settle=.11;
   const start=shots.length*(move+fly+back+settle);
-  shots.push({start,x,prevX,target:target.n,contact,motion,move,fly,back,settle});
+  shots.push({start,x,prevX,target:target.n,launch,contact,motion,fromTop,move,fly,back,settle});
   target.hit=start+move+fly;
   alive.delete(target.n);prevX=x;
  }
@@ -58,19 +62,20 @@ export function drawBrick(canvas,round,elapsed=0,duration=12000,reduced=false){
  let x=300,y=BASE_Y,active=null,shotIndex=-1;
  for(let i=0;i<round.shots.length;i++){
   const shot=round.shots[i];
-  if(sec<shot.start){break;}
-  shotIndex=i;
-  const age=sec-shot.start;
-  if(age<shot.move){x=shot.prevX+(shot.x-shot.prevX)*smooth(age/shot.move);y=BASE_Y;active=shot;break;}
-  if(age<shot.move+shot.fly){x=shot.x;y=BASE_Y-shot.motion*((age-shot.move)/shot.fly);active=shot;break;}
-  if(age<shot.move+shot.fly+shot.back){x=shot.x;y=shot.contact+shot.motion*((age-shot.move-shot.fly)/shot.back);active=shot;break;}
-  x=shot.x;y=BASE_Y;active=shot;
+  if(sec<shot.start)break;
+  shotIndex=i;const age=sec-shot.start;
+  if(age<shot.move){x=shot.prevX+(shot.x-shot.prevX)*smooth(age/shot.move);y=shot.launch;active=shot;break;}
+  if(age<shot.move+shot.fly){x=shot.x;y=shot.launch+shot.motion*((age-shot.move)/shot.fly);active=shot;break;}
+  if(age<shot.move+shot.fly+shot.back){x=shot.x;y=shot.contact-shot.motion*((age-shot.move-shot.fly)/shot.back);active=shot;break;}
+  x=shot.x;y=shot.launch;active=shot;
   if(age<shot.move+shot.fly+shot.back+shot.settle)break;
  }
- c.fillStyle='#f6d98b';c.beginPath();c.roundRect(cl(x-49,18,484),PADDLE_Y,98,12,6);c.fill();
+ const paddleY=active?.fromTop?53:PADDLE_Y;
+ c.fillStyle=active?.fromTop?'#96d5e5':'#f6d98b';
+ c.beginPath();c.roundRect(cl(x-49,18,484),paddleY,98,12,6);c.fill();
  c.fillStyle='#f7f9fa';c.beginPath();c.arc(x,y,R,0,Math.PI*2);c.fill();
  if(active&&sec>=active.start+active.move+active.fly&&sec<active.start+active.move+active.fly+.12){
-  c.strokeStyle='#ffefb0';c.lineWidth=2;c.beginPath();c.arc(active.x,active.contact-R,14,0,Math.PI*2);c.stroke();
+  c.strokeStyle='#ffefb0';c.lineWidth=2;c.beginPath();c.arc(active.x,active.contact+(active.fromTop?R:-R),14,0,Math.PI*2);c.stroke();
  }
  const finale=sec>=round.shots.length*.73+.7;
  if(finale){
