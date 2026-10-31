@@ -5,7 +5,7 @@ import { playStarQuintetBeat } from './star-quintet-audio.js?v=101';
 import { randomNumber, buildSchedule, frameAt } from './draw.js';
 import { drawLottery } from './lottery.js';
 import { drawRoulette, rouletteAngle } from './roulette.js';
-import { drawBallRace } from './ball-race.js?v=61';
+import { drawBallRace } from './ball-race.js?v=62';
 import { drawHorseRace } from './horse-race.js?v=61';
 import { drawPinball, getPinballCollisions } from './pinball.js';
 import { playPinballBounce } from './pinball-audio.js';
