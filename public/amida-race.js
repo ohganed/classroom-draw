@@ -41,12 +41,17 @@ export function drawAmida(canvas,round,elapsed=0,duration=DURATION,reduced=false
  const progress=clamp(elapsed/(duration*.89));
  c.fillStyle='#0a152c';c.fillRect(0,0,600,480);
  c.textAlign='center';c.textBaseline='alphabetic';c.fillStyle='#fae4ad';
- c.font='bold 20px sans-serif';c.fillText('立体ジャングルジム・あみだくじ',300,27);
+ c.font='bold 20px sans-serif';c.fillText('立体7×7ジャングルジム あみだ！',300,27);
  if(!round)return;
  // Depth-sort solid 3D vertical pillars.
  for(let depth=0;depth<=12;depth++)for(let z=0;z<7;z++){
   const x=depth-z;if(x<0||x>6)continue;const p=index(x,z),a=project(p,0),b=project(p,LEVELS);
   c.strokeStyle='#567eac';c.lineWidth=2.6;c.beginPath();c.moveTo(a.x,a.y);c.lineTo(b.x,b.y);c.stroke();
+ }
+ // A square ground-plane grid makes the east-west / north-south depth visible.
+ for(let z=0;z<7;z++)for(let x=0;x<7;x++){
+  const a=project(index(x,z),0);
+  c.fillStyle='rgba(110,165,198,.30)';c.beginPath();c.arc(a.x,a.y,2.1,0,Math.PI*2);c.fill();
  }
  // Horizontal beams link only adjacent pillars at identical height.
  for(let level=0;level<LEVELS;level++)for(const [a,b] of round.edges[level]){
