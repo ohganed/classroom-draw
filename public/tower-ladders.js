@@ -9,7 +9,17 @@ export function makeTowerRound(count,winner,seed){
  const heroes=Array.from({length:count},(_,i)=>({n:i+1,f:0,x:55+(i%20)*25,y:0,speed:65+rnd()*48,mode:'run',until:0,from:0,to:0,color:i%6}));
  const path=[],events=[];let done=false,finishTime=TOTAL;
  // One-second equipment changes, shared by all competitors.
- const map=Array.from({length:17},(_,second)=>Array.from({length:5},(_,floor)=>({ladder:trackX(seed,second,floor,1),hole:trackX(seed,second,floor+1,2)})));
+ const map=Array.from({length:17},(_,second)=>Array.from({length:5},(_,floor)=>{
+  // Three ladders and two traps on each level, five separate positions.
+  // Shuffle ten spacious slots so neither equipment nor hitboxes overlap.
+  const slots=Array.from({length:10},(_,i)=>72+i*49);
+  let salt=(seed+second*911+floor*131)>>>0;
+  for(let i=slots.length-1;i>0;i--){
+   salt=(Math.imul(salt,1664525)+1013904223)>>>0;
+   const j=salt%(i+1);[slots[i],slots[j]]=[slots[j],slots[i]];
+  }
+  return {ladders:slots.slice(0,3),holes:slots.slice(3,5)};
+ }));
  // For the selected runner, the equipment remains real: winning requires
  // reaching each ladder's physical x-coordinate and completing five climbs.
  const champion=heroes[winner-1];champion.speed=245;
@@ -26,13 +36,13 @@ export function makeTowerRound(count,winner,seed){
    const targetFloor=h.f;
    if(targetFloor>=5)continue;
    const gear=map[second][targetFloor];
-   const ladder=gear.ladder;
+   const ladder=gear.ladders.reduce((a,b)=>Math.abs(b-h.x)<Math.abs(a-h.x)?b:a);
    // All characters react to the *current* ladder position, not a fake path.
    const heading=h.n===winner?ladder:(h.f>=4?ladder+(h.n%2?30:-30):ladder);
    const dx=heading-h.x,dist=Math.abs(dx);
    h.x+=Math.sign(dx)*Math.min(dist,h.speed*STEP);
    // The trap on each floor also changes every second.
-   if(h.f>0&&h.n!==winner&&Math.abs(h.x-map[second][h.f-1].hole)<7&&h.mode==='run'&&rnd()<.62){
+   if(h.f>0&&h.n!==winner&&Math.abs(h.x-map[second][h.f-1].holes.some(x=>Math.abs(h.x-x)<7))&&h.mode==='run'&&rnd()<.62){
     h.mode='fall';h.from=h.f;h.to=h.f-1;h.until=time+.36;h.destination=h.x;events.push({kind:'trap',n:h.n,t:time,f:h.f});continue;
    }
    if(Math.abs(h.x-ladder)<5&&h.mode==='run'&&(h.n===winner||rnd()<.19)){
@@ -61,10 +71,13 @@ export function drawTower(canvas,round,elapsed=0,duration=16000,reduced=false){
   c.fillStyle='#e4f0fa';c.font='bold 15px monospace';c.textAlign='left';c.fillText(name,6,y-17);
   if(f<5&&round){
    const gear=round.map[second][f];
-   c.strokeStyle='#95e8c0';c.lineWidth=3;for(const side of [-7,7]){c.beginPath();c.moveTo(gear.ladder+side,y-65);c.lineTo(gear.ladder+side,y);c.stroke();}
-   for(let k=0;k<5;k++){c.beginPath();c.moveTo(gear.ladder-7,y-10-k*11);c.lineTo(gear.ladder+7,y-10-k*11);c.stroke();}
+   for(const ladder of gear.ladders){
+    c.strokeStyle='#95e8c0';c.lineWidth=3;
+    for(const side of [-7,7]){c.beginPath();c.moveTo(ladder+side,y-65);c.lineTo(ladder+side,y);c.stroke();}
+    for(let k=0;k<5;k++){c.beginPath();c.moveTo(ladder-7,y-10-k*11);c.lineTo(ladder+7,y-10-k*11);c.stroke();}
+   }
   }
-  if(f>0&&round){const hole=round.map[second][f-1].hole;c.fillStyle='#050814';c.fillRect(hole-17,y-1,34,7);c.fillStyle='#ff8ca9';c.fillRect(hole-17,y+5,34,2);}
+  if(f>0&&round){for(const hole of round.map[second][f-1].holes){c.fillStyle='#050814';c.fillRect(hole-17,y-1,34,7);c.fillStyle='#ff8ca9';c.fillRect(hole-17,y+5,34,2);}}
  }
  if(!round)return;
  const index=Math.min(round.snapshots.length-1,Math.floor(t/STEP));
