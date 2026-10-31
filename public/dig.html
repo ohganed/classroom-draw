@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#142b34">
+<title>地底の花束探し | だれの番？</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#112b35;color:#f4f6e9;font-family:system-ui,-apple-system,sans-serif}main{max-width:1260px;margin:auto;padding:12px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}a{color:#beddf3}h1{font-size:clamp(22px,3vw,34px);margin:6px 0}.settings,.actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}input{width:72px;padding:9px;font-size:18px;border:0;border-radius:10px}button{font-size:17px;font-weight:750;border:0;border-radius:11px;padding:12px 18px;background:#dfebe9;color:#123039}button.primary{background:#ffcd70}button:disabled{opacity:.5}canvas{width:100%;height:auto;display:block;border-radius:16px;background:#3a251d;touch-action:pan-y}.actions{margin-top:12px}#status{font-size:clamp(17px,2.5vw,25px);font-weight:700;margin:13px 0}#result{font-size:clamp(24px,4vw,44px);font-weight:900;text-align:center;min-height:58px;color:#ffda89}.note{font-size:13px;color:#b7ced5;line-height:1.6}progress{width:100%;height:11px;accent-color:#ffcd70}@media(prefers-reduced-motion:reduce){*{animation:none!important}}
+</style></head><body><main>
+<div class="top"><div><a href="./">← だれの番？へ戻る</a><h1>⛏️ 地底の花束探し</h1></div><div class="settings"><label>参加人数 <input id="count" type="number" min="1" max="99" value="40" max="40"></label><button id="sound" aria-pressed="false">♪ 音 OFF</button></div></div>
+<canvas id="field" width="1200" height="690" role="img" aria-label="番号付きの探検家が地中を掘り、花束に向かって競争する画面"></canvas>
+<div class="actions"><button id="start" class="primary">▶ 探検スタート</button><button id="reset">↻ 地形を変える</button><span id="clock">0.0 / 20秒</span></div>
+<progress id="progress" max="20" value="0"></progress><p id="status" aria-live="polite">40人が地上で待機中</p><div id="result" aria-live="polite">💐 花束を最初に見つけるのは？</div>
+<p class="note">番号の位置は毎回ランダム。全員同じ掘削ルールで進み、最初に花束へ着いた番号が当選します。落石は一時的な足止めです。点滅演出はありません。</p>
+</main>
+<script>
+'use strict';
+const W=40,H=20,S=27,OX=60,OY=82,TOTAL=20000;
+const $=id=>document.getElementById(id),canvas=$('field'),g=canvas.getContext('2d');
+let round=null,playing=false,started=0,raf=0,sound=false,audio=null;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function rand32(){const a=new Uint32Array(1);crypto.getRandomValues(a);return a[0]||1;}
+function rng(seed){let s=seed>>>0;return ()=>{s^=s<<13;s^=s>>>17;s^=s<<5;return (s>>>0)/4294967296;};}
+function shuffle(a,r){for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function createRound(n,seed){
+ const r=rng(seed),N=W*H,soil=new Uint8Array(N),goal={x:10+Math.floor(r()*20),y:H-2};
+ for(let y=1;y<H;y++)for(let x=0;x<W;x++){let v=r();soil[y*W+x]=v<.065?2:v<.15?0:1;}
+ for(let x=0;x<W;x++)soil[x]=0;
+ soil[goal.y*W+goal.x]=0;soil[(goal.y-1)*W+goal.x]=0;
+ const labels=shuffle(Array.from({length:n},(_,i)=>i+1),r);
+ const slots=shuffle(Array.from({length:W},(_,i)=>i),r);
+ const people=Array.from({length:n},(_,i)=>({number:labels[i],x:slots[i%W],y:0,cool:Math.floor(r()*3),stun:0,phase:r()*6}));
+ const frames=[],events=[];let victor=null,finishStep=0;
+ const snapshot=()=>frames.push({ground:soil.slice(),people:people.map(p=>[p.x,p.y,p.stun])});
+ snapshot();
+ for(let step=1;step<=650;step++){
+  const order=shuffle(Array.from({length:n},(_,i)=>i),r);
+  for(const id of order){
+   const p=people[id];if(p.stun>0){p.stun--;continue;}if(p.cool>0){p.cool--;continue;}
+   const dx=Math.sign(goal.x-p.x);
+   const options=[[p.x,p.y+1],[p.x+dx,p.y],[p.x+(r()<.5?-1:1),p.y],[p.x,p.y-1]];
+   if(r()<.33){const j=Math.floor(r()*3);[options[0],options[j]]=[options[j],options[0]];}
+   const choices=options.filter(([x,y])=>x>=0&&x<W&&y>=0&&y<H&&soil[y*W+x]!==2);
+   if(!choices.length){p.cool=1;continue;}
+   const scored=choices.map(([x,y])=>({x,y,score:Math.abs(goal.x-x)*.45+Math.abs(goal.y-y)*1.15+r()*2.6+(soil[y*W+x]===1?.55:0)}));
+   scored.sort((a,b)=>a.score-b.score);
+   const target=scored[r()<.18&&scored.length>1?1:0],idx=target.y*W+target.x;
+   if(soil[idx]===1){soil[idx]=0;p.cool=1;events.push({step,kind:'dig',x:target.x,y:target.y});}
+   else{p.x=target.x;p.y=target.y;p.cool=Math.floor(r()*2);}
+   if(p.x===goal.x&&p.y===goal.y){victor=p.number;finishStep=step;events.push({step,kind:'goal',number:victor});break;}
+  }
+  if(victor){snapshot();break;}
+  // Unsupported rocks can settle into the opened tunnel below them.
+  for(let j=0;j<3;j++){
+   const x=Math.floor(r()*W),y=1+Math.floor(r()*(H-2)),idx=y*W+x;
+   if(soil[idx]===2&&soil[idx+W]===0&&r()<.55){
+    soil[idx]=0;soil[idx+W]=2;events.push({step,kind:'rock',x,y:y+1});
+    for(const p of people)if(p.x===x&&p.y===y+1)p.stun=3;
+   }
+  }
+  snapshot();
+ }
+ if(!victor)return createRound(n,seed+0x9e3779b9);
+ return {frames,events,winner:victor,goal,steps:finishStep,n,seed,numbers:labels};
+}
+function capsule(x,y,n,stun,champ=false){
+ const px=OX+x*S+S/2,py=OY+y*S+S/2;
+ g.fillStyle='rgba(0,0,0,.25)';g.beginPath();g.ellipse(px,py+10,12,5,0,0,7);g.fill();
+ g.fillStyle=stun?'#9d9b9c':champ?'#ffd36e':'#77d0c1';g.beginPath();g.arc(px,py,12,0,7);g.fill();
+ g.fillStyle='#f2d36a';g.fillRect(px-12,py-11,24,6);g.fillRect(px-7,py-15,14,5);
+ g.fillStyle='#142632';g.font='bold 13px system-ui';g.textAlign='center';g.textBaseline='middle';g.fillText(n,px,py+2);
+}
+function paint(frame,step=0,done=false){
+ g.clearRect(0,0,1200,690);g.fillStyle='#192e35';g.fillRect(0,0,1200,690);
+ g.fillStyle='#6b9f68';g.fillRect(OX-10,OY-25,W*S+20,25);
+ const earth=['#263b3b','#996548','#35424b'];
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+  const v=frame.ground[y*W+x],px=OX+x*S,py=OY+y*S;
+  g.fillStyle=earth[v];g.fillRect(px,py,S,S);
+  if(v===1){g.fillStyle='#bb8257';g.fillRect(px+5,py+5,4,3);g.fillRect(px+18,py+17,3,4);}
+  if(v===2){g.fillStyle='#607783';g.beginPath();g.arc(px+13,py+13,10,0,7);g.fill();}
+ }
+ const goal=round.goal,gx=OX+goal.x*S+S/2,gy=OY+goal.y*S+S/2;
+ g.fillStyle='#ffcf72';g.beginPath();g.arc(gx,gy,18,0,7);g.fill();
+ g.font='26px system-ui';g.textAlign='center';g.textBaseline='middle';g.fillText('💐',gx,gy);
+ frame.people.forEach((p,i)=>capsule(p[0],p[1],round.numbers[i],p[2],done&&round.numbers[i]===round.winner));
+ g.fillStyle='#f5ebd9';g.font='bold 19px system-ui';g.textAlign='left';g.fillText('地底の花束探し',OX,40);
+ g.font='15px system-ui';g.fillText('● 土は掘れる　● 岩は通れない　● 空洞は近道',OX+340,40);
+ if(done){g.fillStyle='rgba(12,28,34,.82)';g.fillRect(330,280,540,105);g.fillStyle='#ffdb83';g.font='bold 46px system-ui';g.textAlign='center';g.fillText(round.winner+' 番が花束を発見！',600,338);}
+}
+function tone(f,d=.12){if(!sound||!audio||audio.state!=='running')return;const t=audio.currentTime,o=audio.createOscillator(),a=audio.createGain();o.type='sine';o.frequency.value=f;a.gain.setValueAtTime(.055,t);a.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(a);a.connect(audio.destination);o.start(t);o.stop(t+d+.01);}
+function unlock(){if(!sound)return;try{audio??=new(window.AudioContext||window.webkitAudioContext)();audio.resume();const o=audio.createOscillator(),a=audio.createGain();a.gain.value=.0001;o.connect(a);a.connect(audio.destination);o.start();o.stop(audio.currentTime+.03);}catch{}}
+function prepare(){
+ cancelAnimationFrame(raf);playing=false;const n=clamp(Math.floor(Number($('count').value)||40),1,40);$('count').value=n;
+ round=createRound(n,rand32()); $('start').disabled=false;$('count').disabled=false;$('progress').value=0;$('clock').textContent='0.0 / 20秒';$('status').textContent=n+'人が地上で待機中';$('result').textContent='💐 花束を最初に見つけるのは？';
+ paint(round.frames[0]);
+}
+function tick(now){
+ if(!playing)return;
+ const ms=Math.min(TOTAL,now-started),position=ms/TOTAL*round.steps;
+ const index=Math.min(round.frames.length-1,Math.floor(position));
+ paint(round.frames[index],index,false);
+ $('progress').value=ms/1000;$('clock').textContent=(ms/1000).toFixed(1)+' / 20秒';
+ $('status').textContent=ms<5000?'⛏️ みんなで掘り進んでいます':ms<14500?'🪨 岩に注意！ 近道を探そう':'💐 花束まであと少し';
+ const beat=Math.floor(ms/400);if(beat!==lastBeat){lastBeat=beat;if(beat%2===0)tone(220+(beat%4)*42,.05);}
+ if(ms>=TOTAL){playing=false;paint(round.frames.at(-1),round.steps,true);$('status').textContent='💐 花束を発見！';$('result').textContent=round.winner+' 番に決定！';$('start').disabled=false;$('count').disabled=false;[523,659,784].forEach((f,i)=>setTimeout(()=>tone(f,.15),i*180));return;}
+ raf=requestAnimationFrame(tick);
+}
+let lastBeat=-1;
+$('start').addEventListener('click',()=>{if(playing)return;prepare();unlock();playing=true;lastBeat=-1;started=performance.now();$('start').disabled=true;$('count').disabled=true;raf=requestAnimationFrame(tick);});
+$('reset').addEventListener('click',prepare);
+$('count').addEventListener('change',prepare);
+$('sound').addEventListener('click',()=>{sound=!sound;$('sound').textContent='♪ 音 '+(sound?'ON':'OFF');$('sound').setAttribute('aria-pressed',sound);if(sound){unlock();tone(660,.12);}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&playing){cancelAnimationFrame(raf);playing=false;$('start').disabled=false;$('count').disabled=false;$('status').textContent='停止しました。もう一度スタートできます';}});
+prepare();
+</script></body></html>
