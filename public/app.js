@@ -211,7 +211,7 @@ function unlockAudio() {
  if (!sound) return;
  try {
   if (!context) { const Audio = window.AudioContext || window.webkitAudioContext; context = new Audio(); master = context.createGain(); master.connect(context.destination); }
-  master.gain.setValueAtTime(0.18, context.currentTime);
+  master.gain.setValueAtTime(0.30, context.currentTime);
   if (context.state !== 'running') context.resume().catch(() => {});
  } catch { sound = false; updateSound(); $('hint').textContent = 'この端末では音を再生できません。抽選は続けられます。'; }
 }
