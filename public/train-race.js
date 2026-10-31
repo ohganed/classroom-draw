@@ -21,7 +21,7 @@ function route(){
  let r=4,indices=[START];
  for(let x=1;x<COL;x++){
    let delta=x===COL-1?4-r:(randomInt(5)-2);
-   if(x>10&&Math.random()<.72)delta=Math.sign(4-r);
+   if(x>=11)delta=Math.sign(4-r);
    r=Math.max(0,Math.min(ROW-1,r+Math.max(-1,Math.min(1,delta))));
    if(x===COL-1)r=4;
    indices.push(index(x,r));
@@ -119,7 +119,7 @@ function frame(now){
  }
  draw();raf=requestAnimationFrame(frame);
 }
-btn.addEventListener('click',()=>{init();playing=true;btn.disabled=true;countInput.disabled=true;lastClick=-1;result.textContent='🚂 40台の出発進行！';beep(560);started=performance.now();raf=requestAnimationFrame(frame)});
+btn.addEventListener('click',()=>{init();playing=true;btn.disabled=true;countInput.disabled=true;lastClick=-1;result.textContent='🚂 全列車、出発進行！';beep(560);started=performance.now();raf=requestAnimationFrame(frame)});
 reset.addEventListener('click',init);
 snd.addEventListener('click',()=>{enabled=!enabled;snd.textContent=enabled?'♪ 音 ON':'♪ 音 OFF';snd.setAttribute('aria-pressed',String(enabled));if(enabled)beep(640)});
 countInput.addEventListener('change',()=>{if(!playing)init()});
