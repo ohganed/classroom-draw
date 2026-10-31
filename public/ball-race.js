@@ -3,6 +3,16 @@ import { drawRaceLeaderboard } from './race-leaderboard.js?v=61';
 // Low-flash dramatic race: several apparent leaders, late comeback by the uniformly selected winner.
 // Animation is illustrative; the app selects the winner independently with crypto randomness.
 const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};
+export function ballBurstIds(count,winner){
+ const candidate=winner??1,burstCount=Math.min(count-1,Math.round(count*2/3)),ids=[];
+ for(let k=0;k<burstCount;k++){
+  let n=1+((candidate*13+k*17+7)%count);
+  while(n===candidate||ids.includes(n))n=n%count+1;
+  ids.push(n);
+ }
+ return ids;
+}
+export const ballBurstAt=n=>.17+.65*((n*37%89)/89);
 export function drawBallRace(canvas,count=40,elapsed=0,duration=8000,winner=null,reduced=false,story='comeback'){
  const ctx=canvas.getContext('2d');if(!ctx)return;
  const W=600,H=450;ctx.clearRect(0,0,W,H);
@@ -17,14 +27,7 @@ export function drawBallRace(canvas,count=40,elapsed=0,duration=8000,winner=null
  ctx.fillStyle='#36d8ca';ctx.fillRect(finish,top-14,4,bottom-top+30);
  ctx.fillStyle='#a9f9fa';ctx.font='bold 17px Arial';ctx.textAlign='center';ctx.fillText('GOAL',finish-22,23);
  const candidate=winner??1,positions=[];
- const burstCount=Math.min(count-1,Math.round(count*2/3)),burstIds=[];
- for(let k=0;k<burstCount;k++){
-  let n=1+((candidate*13+k*17+7)%count);
-  while(n===candidate||burstIds.includes(n))n=n%count+1;
-  burstIds.push(n);
- }
- export const ballBurstAt=n=>.17+.65*((n*37%89)/89);
- const burstAt=ballBurstAt;
+ const burstIds=ballBurstIds(count,candidate),burstAt=ballBurstAt;
  // Scenario is chosen once per draw; deterministic rendering prevents flicker.
  const rivalA=(candidate%count)+1,rivalB=((candidate+Math.floor(count/2))%count)+1;
  for(let i=0;i<count;i++){
