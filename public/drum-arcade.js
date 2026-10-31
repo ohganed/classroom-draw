@@ -28,7 +28,7 @@ export function drawDrum(canvas,round,elapsed=0,duration=12000,reduced=false){
  c.strokeStyle='#f9f2e0';c.lineWidth=3;c.beginPath();c.moveTo(164,117);c.lineTo(550,117);c.stroke();
  const beatProgress=t*40;
  for(let i=0;i<9;i++){
-  const eventIndex=Math.floor(beatProgress)+i;
+  const eventIndex=Math.floor(beatProgress)+8-i;
   if(eventIndex>=40)continue;
   const x=555-((beatProgress%1)+i)*45;if(x<168||x>555)continue;
   note(c,x,117,eventIndex%2?15:19,round?.events[eventIndex]?.red??(eventIndex%2===0));
