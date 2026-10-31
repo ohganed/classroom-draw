@@ -47,24 +47,24 @@ export function drawBarrel(canvas,round,elapsed=0,duration=13500,reduced=false){
  let remaining=0;
  if(round)for(const h of round.heroes){
   const isWinner=h.n===round.winner;
-  const b=round.barrels.find(v=>v.target===h.x&&v.level===h.level&&(v.dodge===isWinner)&&(isWinner||Math.abs(v.impact-h.lose)<.001));
+  const b=round.barrels.find(v=>v.target===h.x&&v.level===h.level&&(Boolean(v.dodge)===isWinner)&&(isWinner||Math.abs(v.impact-h.lose)<.001));
   const danger=b&&sec>=b.start?Math.abs(barrelPosition(b)-h.x):Infinity;
   // All disappearances follow an actual barrel reaching the same x on the
   // same floor; the winner is the only runner who jumps clear of the impact.
   const hit=!isWinner&&b&&sec>=b.impact;
-  if(hit&&sec>h.lose+.25)continue;
+  if(hit&&sec>h.lose+.38)continue;
   if(!hit)remaining++;
   const jump=isWinner&&b&&sec>=b.impact-.24&&sec<=b.impact+.28
    ?Math.sin(Math.PI*(sec-(b.impact-.24))/.52)*35:0;
   const x=h.x,y=floorY(h.level,x)-19-jump;
   c.save();c.translate(x,y);
-  if(hit)c.rotate(Math.min(1,(sec-h.lose)*6)*.9);
+  if(hit){const fall=cl((sec-h.lose)/.13);c.translate(0,fall*12);c.rotate(fall*1.48);}
   c.fillStyle=color[h.n%color.length];
   c.fillRect(-10,-12,20,22);c.fillRect(-8,-18,16,7);
   c.fillStyle='#27354a';c.fillRect(-5,-7,3,3);c.fillRect(3,-7,3,3);
   c.fillStyle='#fff9da';c.fillRect(-13,-32,26,14);
   c.fillStyle='#1c2e48';c.font='bold 11px monospace';c.fillText(h.n,0,-21);
-  if(hit){c.fillStyle='#fff1aa';c.font='bold 20px monospace';c.fillText('!',15,-15);}
+  if(hit){c.fillStyle='#fff1aa';c.font='bold 22px monospace';c.fillText('★',15,-15);}
   if(jump>12){c.fillStyle='#fef6ac';c.font='bold 13px monospace';c.fillText('!',14,-18);}
   c.restore();
  }
