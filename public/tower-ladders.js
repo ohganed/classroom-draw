@@ -7,7 +7,11 @@ const trackX=(seed,second,f,kind)=>60+((Math.imul(seed+second*23+f*41+kind*71,11
 export function makeTowerRound(count,winner,seed){
  let z=seed>>>0||1;const rnd=()=>((z=(Math.imul(z,1664525)+1013904223)>>>0)/4294967296);
  const heroes=Array.from({length:count},(_,i)=>({n:i+1,f:0,x:55+(i%20)*25,y:0,speed:65+rnd()*48,mode:'run',until:0,from:0,to:0,color:i%6}));
- const path=[],events=[];let done=false,finishTime=TOTAL;
+ const events=[];let done=false,finishTime=TOTAL;
+ // A small finalist pack stays together near the top until the last seconds.
+ const challengers=Array.from({length:count},(_,i)=>i+1).filter(n=>n!==winner);
+ for(let i=challengers.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[challengers[i],challengers[j]]=[challengers[j],challengers[i]];}
+ const finalists=new Set([winner,...challengers.slice(0,Math.min(5,count-1))]);
  // One-second equipment changes, shared by all competitors.
  const map=Array.from({length:17},(_,second)=>Array.from({length:5},(_,floor)=>{
   // Three ladders and two traps on each level, five separate positions.
@@ -22,7 +26,9 @@ export function makeTowerRound(count,winner,seed){
  }));
  // For the selected runner, the equipment remains real: winning requires
  // reaching each ladder's physical x-coordinate and completing five climbs.
- const champion=heroes[winner-1];champion.speed=245;
+ const champion=heroes[winner-1];
+ for(const h of heroes){h.finalist=finalists.has(h.n);h.speed=h.finalist?180+rnd()*35:125+rnd()*40;}
+ champion.speed=205;
  const snapshots=[];
  for(let tick=0;tick<=TOTAL/STEP;tick++){
   const time=Number((tick*STEP).toFixed(5)),second=Math.min(16,Math.floor(time));
@@ -38,15 +44,17 @@ export function makeTowerRound(count,winner,seed){
    const gear=map[second][targetFloor];
    const ladder=gear.ladders.reduce((a,b)=>Math.abs(b-h.x)<Math.abs(a-h.x)?b:a);
    // All characters react to the *current* ladder position, not a fake path.
-   const heading=h.n===winner?ladder:(h.f>=4?ladder+(h.n%2?30:-30):ladder);
+   const heading=ladder;
    const dx=heading-h.x,dist=Math.abs(dx);
    h.x+=Math.sign(dx)*Math.min(dist,h.speed*STEP);
    // The trap on each floor also changes every second.
-   if(h.f>0&&h.n!==winner&&map[second][h.f-1].holes.some(x=>Math.abs(h.x-x)<7)&&h.mode==='run'&&rnd()<.62){
+   if(h.f>0&&h.n!==winner&&map[second][h.f-1].holes.some(x=>Math.abs(h.x-x)<7)&&h.mode==='run'&&rnd()<(h.finalist?.045:.35)){
     h.mode='fall';h.from=h.f;h.to=h.f-1;h.until=time+.36;h.destination=h.x;events.push({kind:'trap',n:h.n,t:time,f:h.f});continue;
    }
-   if(Math.abs(h.x-ladder)<5&&h.mode==='run'&&(h.n===winner||rnd()<.19)){
-    if(h.f===4&&h.n!==winner)continue; // host-picked winner reaches 5F first
+   if(Math.abs(h.x-ladder)<5&&h.mode==='run'&&(h.finalist||rnd()<.42)){
+    // Hold the final climb until the closing stretch: several contenders
+    // visibly wait on 4F, then the fair preselected winner breaks away.
+    if(h.f===4&&(h.n!==winner||time<12.3))continue;
     h.mode='climb';h.from=h.f;h.to=h.f+1;h.until=time+.56;h.destination=ladder;
     events.push({kind:'ladder',n:h.n,t:time,f:h.f});
    }
