@@ -18,19 +18,29 @@ function buildTracks(){
  }
 }
 function route(){
- let r=4,indices=[START];
+ let r=4,indices=[START],warpJump=-1;
+ const useWarp=randomInt(100)<78;
  for(let x=1;x<COL;x++){
+   if(x===6&&useWarp){
+     const exitRow=randomInt(ROW);
+     indices.push(index(9,exitRow));warpJump=indices.length-2;
+     r=exitRow;x=9;
+     continue;
+   }
    let delta=x===COL-1?4-r:(randomInt(5)-2);
-   if(x>=11)delta=Math.sign(4-r);
+   if(x>=10)delta=Math.sign(4-r);
    r=Math.max(0,Math.min(ROW-1,r+Math.max(-1,Math.min(1,delta))));
    if(x===COL-1)r=4;
    indices.push(index(x,r));
  }
  const segments=[];let length=0;
  for(let i=1;i<indices.length;i++){
-   const a=nodes[indices[i-1]],b=nodes[indices[i]],l=Math.hypot(b.x-a.x,b.y-a.y);
-   const edge=tracks.find(e=>(e.a===indices[i-1]&&e.b===indices[i])||(e.b===indices[i-1]&&e.a===indices[i]));
-   segments.push({a,b,l,start:length,type:edge?.type||'rail'});length+=l;
+   const a=nodes[indices[i-1]],b=nodes[indices[i]];
+   const warp=i-1===warpJump;
+   const l=warp?150:Math.hypot(b.x-a.x,b.y-a.y);
+   const edge=warp?null:tracks.find(e=>(e.a===indices[i-1]&&e.b===indices[i])||(e.b===indices[i-1]&&e.a===indices[i]));
+   segments.push({a,b,l,start:length,type:warp?'warp':edge?.type||'rail'});
+   length+=l;
  }
  return {segments,length};
 }
@@ -63,6 +73,16 @@ function scenery(){
    g.fillStyle='#73976a';g.beginPath();g.ellipse(x,y,34,28,0,0,7);g.fill();
    g.fillStyle='#303d38';g.beginPath();g.ellipse(x,y,18,14,0,0,7);g.fill();
  }
+ // Portal entrances and exits are on existing rail junctions, not arbitrary off-track positions.
+ for(const [column,label,color] of [[5,'IN','#7b469d'],[9,'OUT','#246db2']]){
+  for(let row=0;row<ROW;row++){
+   const p=nodes[index(column,row)];
+   g.strokeStyle=color;g.lineWidth=4;
+   g.beginPath();g.ellipse(p.x,p.y,18,23,0,0,Math.PI*2);g.stroke();
+   g.fillStyle='#f9f5ff';g.font='bold 10px system-ui';g.textAlign='center';
+   g.fillText(label,p.x,p.y-27);
+  }
+ }
  for(const n of nodes){g.fillStyle='#efbf5b';g.beginPath();g.arc(n.x,n.y,4,0,7);g.fill()}
  g.font='bold 22px system-ui';g.textAlign='center';
  for(const [id,label] of [[START,'🚉 共通始発駅'],[FINISH,'💐 花束駅']]){
@@ -74,10 +94,11 @@ function locate(t){
  let s=route.segments.at(-1);
  for(const z of route.segments){if(d<=z.start+z.l){s=z;break}}
  const u=Math.max(0,Math.min(1,(d-s.start)/s.l));
+ if(s.type==='warp')return {x:u<.5?s.a.x:s.b.x,y:u<.5?s.a.y:s.b.y,angle:0,type:'warp',u};
  return {x:s.a.x+(s.b.x-s.a.x)*u,y:s.a.y+(s.b.y-s.a.y)*u,angle:Math.atan2(s.b.y-s.a.y,s.b.x-s.a.x),type:s.type,u};
 }
 function paint(t,p){
- if(p.type==='tunnel'&&p.u>.25&&p.u<.75)return;
+ if((p.type==='tunnel'&&p.u>.25&&p.u<.75)||(p.type==='warp'&&p.u>.16&&p.u<.84))return;
  g.save();g.translate(p.x,p.y);g.rotate(p.angle);
  g.fillStyle='#263a333b';g.fillRect(-19,9,39,9);
  g.fillStyle=t.color;g.strokeStyle='#20333e';g.lineWidth=1.8;
@@ -111,7 +132,7 @@ function frame(now){
   v.p=v.number===winner?(t<.74?local*.88:.68+.32*Math.pow((t-.74)/.26,1.55)):Math.min(.965,local*(.87+(v.number%11)*.008));
  }
  meter.value=sec;clock.textContent=sec.toFixed(1)+' / 35秒';
- status.textContent=sec<8?'🚉 全列車が順次発車':sec<23?'🚂 ポイントで分岐・合流中':sec<31?'🚇 トンネルと立体交差を通過':'🏁 最終ポイントで大逆転！';
+ status.textContent=sec<8?'🚉 全列車が順次発車':sec<23?'🌀 ワープトンネルで意外な地点へ！':sec<31?'🚇 トンネルと立体交差を通過':'🏁 最終ポイントで大逆転！';
  const tick=Math.floor(sec/3);if(tick!==lastClick){lastClick=tick;beep(370+(tick%4)*90)}
  if(elapsed>=DURATION){
   playing=false;trains.find(t=>t.number===winner).p=1;draw();btn.disabled=false;countInput.disabled=false;
