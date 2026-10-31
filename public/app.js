@@ -11,7 +11,7 @@ import { drawPinball, getPinballCollisions } from './pinball.js?v=72';
 import { playPinballBounce } from './pinball-audio.js';
 import { drawDie3D } from './die-3d.js';
 import { drawGalton, makeGaltonRound } from './galton.js';
-import { drawMaze, makeMazeRound } from './maze.js';
+import { drawMaze, makeMazeRound } from './maze.js?v=164';
 import { drawCrane, makeCraneRound } from './crane.js?v=60';
 import { scheduleCraneSounds } from './crane-audio.js';
 import { drawMachine, makeMachineRound, MACHINE_EVENTS } from './machine.js?v=43';
