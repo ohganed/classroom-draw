@@ -208,18 +208,38 @@ const raceModes=new Set(['race','horse','maze','robot']);
 function syncRaceLayout(){document.body.classList.toggle('race-running',running&&raceModes.has(mode));}
 try { sound = localStorage.getItem('classroom-draw-sound') === 'on'; } catch {}
 function updateSound() { $('sound').textContent = `音 ${sound ? 'ON' : 'OFF'}`; $('sound').setAttribute('aria-pressed', String(sound)); }
-function unlockAudio() {
+function unlockAudio(onReady) {
  if (!sound) return;
  try {
-  if (!context) { const Audio = window.AudioContext || window.webkitAudioContext; context = new Audio(); master = context.createGain(); master.connect(context.destination); }
-  master.gain.setValueAtTime(0.30, context.currentTime);
-  // Start a brief oscillator synchronously inside the tap gesture for iOS Safari.
-  // An asynchronous resume alone may not unlock Web Audio on iPhone.
-  const t=context.currentTime,osc=context.createOscillator(),g=context.createGain();
-  g.gain.value=.00001;osc.connect(g);g.connect(master);osc.start(t);osc.stop(t+.025);
-  osc.onended=()=>{osc.disconnect();g.disconnect();};
-  if (context.state !== 'running') context.resume().then(() => { if (sound && master) master.gain.setValueAtTime(.30,context.currentTime); }).catch(() => { $('hint').textContent='iPhoneの音声を再開できません。もう一度「音 ON」を押してください。'; });
- } catch { sound = false; updateSound(); $('hint').textContent = 'この端末では音を再生できません。抽選は続けられます。'; }
+  const Audio = window.AudioContext || window.webkitAudioContext;
+  if (!Audio) throw new Error('Web Audio unavailable');
+  if (!context || context.state === 'closed') {
+   context = new Audio();
+   master = context.createGain();
+   master.gain.value = .30;
+   master.connect(context.destination);
+  }
+  master.gain.setValueAtTime(.30,context.currentTime);
+  // iOS requires resume and a real sound source inside a user gesture.
+  const t=context.currentTime,osc=context.createOscillator(),gain=context.createGain();
+  osc.type='sine';osc.frequency.value=440;
+  gain.gain.setValueAtTime(.0001,t);
+  osc.connect(gain);gain.connect(master);osc.start(t);osc.stop(t+.06);
+  osc.onended=()=>{osc.disconnect();gain.disconnect();};
+  const ready=()=>{
+   if(!sound || !context || context.state!=='running')return;
+   master.gain.setValueAtTime(.30,context.currentTime);
+   if(typeof onReady==='function')onReady();
+  };
+  const resumed=context.resume();
+  if(context.state==='running')ready();
+  else Promise.resolve(resumed).then(ready).catch(()=>{
+   $('hint').textContent='音声を開始できません。もう一度「音 ON」を押してください。';
+  });
+ }catch{
+  sound=false;updateSound();
+  $('hint').textContent='このブラウザでは音声を開始できません。Safariで開いてお試しください。';
+ }
 }
 function tone(frequency, delay = 0, duration = .045, type = 'sine', volume = .4) {
  if (!sound || !context || context.state !== 'running' || document.hidden) return;
@@ -827,7 +847,7 @@ document.querySelector('.stage').addEventListener('click',e=>{if(mode==='slot'&&
 $('sound').addEventListener('click', () => {
  sound = !sound;
  if (!sound && master) master.gain.setValueAtTime(0,context.currentTime);
- if (sound) { unlockAudio(); const test=()=>{if(sound&&context?.state==='running'){tone(659.25,0,.16,'square',.35);tone(783.99,.17,.16,'square',.35);tone(987.77,.34,.22,'triangle',.42);}};if(context?.state==='running')test();else context?.resume().then(test).catch(()=>{}); }
+ if (sound) unlockAudio(()=>{tone(659.25,0,.16,'triangle',.32);tone(783.99,.19,.16,'triangle',.32);tone(987.77,.38,.25,'sine',.40);});
  updateSound(); try { localStorage.setItem('classroom-draw-sound',sound?'on':'off'); } catch {}
 });
 reduced.addEventListener('change', () => { if (running) { $('number').textContent = '…'; if(mode==='die') drawDie(0,null);if(mode==='lottery') drawLottery(lotteryCanvas,0,duration,count,null,true);if(mode==='roulette')drawRoulette(rouletteCanvas,count,0,null,rouletteLayout);if(mode==='race')drawBallRace(raceCanvas,count,0,duration,null,true);if(mode==='horse')drawHorseRace(horseCanvas,count,0,duration,null,true);if(mode==='pinball')drawPinball(pinballCanvas,count,0,duration,null,true);if(mode==='galton')drawGalton(galtonCanvas,galtonRound,0,duration,true);if(mode==='maze')drawMaze(mazeCanvas,mazeRound,0,duration,true);if(mode==='crane')drawCrane(craneCanvas,craneRound,0,duration,true);if(mode==='machine')drawMachine(machineCanvas,machineRound,0,duration,true); } });
