@@ -46,7 +46,7 @@ export function makeMazeRound(count,winner,seed){
  });
  return {grid,racers,winner};
 }
-function countRadius(count){return count>65?5:count>35?6:count>15?8:11;}
+function countRadius(count){return CELL*.43;} // Nearly fills a 43px maze corridor, leaving wall clearance.
 export function drawMaze(canvas,round,elapsed=0,duration=8000,reduced=false){
  if(!round)return;
  const c=canvas.getContext('2d');if(!c)return;
@@ -66,14 +66,14 @@ export function drawMaze(canvas,round,elapsed=0,duration=8000,reduced=false){
   const t=done?(b.number===round.winner?1:b.limit):(reduced?0:Math.max(0,(p-b.delay)/(1-b.delay))*b.limit);
   const steps=b.route.length-1,z=t*steps,k=Math.min(steps,Math.floor(z)),u=z-k;
   const a=b.route[k],v=b.route[Math.min(steps,k+1)];
-  const offsetX=((i%5)-2)*2.1,offsetY=((Math.floor(i/5)%5)-2)*2.1;
+  const offsetX=0,offsetY=0; // Keep larger characters inside the passage.
   const x=X+((a%COLS)*(1-u)+(v%COLS)*u+.5)*CELL+offsetX;
   const y=Y+(Math.floor(a/COLS)*(1-u)+Math.floor(v/COLS)*u+.5)*CELL+offsetY;
   const r=countRadius(round.racers.length);
   c.beginPath();c.arc(x,y,r,0,Math.PI*2);
   c.fillStyle=b.number===round.winner&&done?'#d9c181':i%3===0?'#94aabd':i%3===1?'#b4a593':'#8da9a1';c.fill();
   c.strokeStyle='#34455c';c.lineWidth=1;c.stroke();
-  c.fillStyle='#152537';c.font='bold '+(round.racers.length>35?8:11)+'px Arial';c.textAlign='center';c.textBaseline='middle';c.fillText(String(b.number),x,y);
+  c.fillStyle='#152537';c.font='900 '+(b.number>9?14:16)+'px Arial';c.textAlign='center';c.textBaseline='middle';c.fillText(String(b.number),x,y);
  });
  if(done){c.fillStyle='#ebd09a';c.font='bold 20px Arial';c.textAlign='center';c.fillText(round.winner+' 番が脱出！',300,452);}
 }
