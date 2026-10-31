@@ -63,11 +63,17 @@ export function drawPinball(canvas,count=40,elapsed=0,duration=8000,winner=null,
  const g=canvas.getContext('2d');if(!g)return;
  const p=clamp(elapsed/duration,0,1);
  g.clearRect(0,0,600,520);
- g.fillStyle='#15283d';g.fillRect(26,16,548,488);
+ g.fillStyle='#101c39';g.fillRect(26,16,548,488);
+ // Retro neon arcade cabinet, with stable lighting (no flashing).
+ for(let j=0;j<9;j++){g.strokeStyle=j%2?'#193959':'#23405d';g.lineWidth=2;g.beginPath();g.moveTo(35,30+j*44);g.lineTo(565,30+j*44);g.stroke();}
+ g.fillStyle='#d3a8f9';g.font='bold 18px Arial';g.textAlign='center';g.fillText('PINBALL  ★  SUPER COMBO',300,29);
+ g.strokeStyle='#b56fe0';g.lineWidth=5;g.beginPath();g.moveTo(50,47);g.lineTo(50,375);g.moveTo(550,47);g.lineTo(550,375);g.stroke();
+ g.strokeStyle='#54d8e5';g.lineWidth=3;g.beginPath();g.moveTo(95,342);g.lineTo(160,365);g.lineTo(202,345);g.moveTo(398,345);g.lineTo(440,365);g.lineTo(505,342);g.stroke();
  g.strokeStyle='#71849c';g.lineWidth=4;g.strokeRect(26,16,548,488);
  for(const [x,y] of BUMPS){
-  g.beginPath();g.arc(x,y,25,0,2*Math.PI);g.fillStyle='#556b83';g.fill();
-  g.strokeStyle='#9daec0';g.lineWidth=3;g.stroke();
+  g.beginPath();g.arc(x,y,29,0,2*Math.PI);g.fillStyle='#273c66';g.fill();
+  g.beginPath();g.arc(x,y,25,0,2*Math.PI);g.fillStyle='#8554b7';g.fill();
+  g.strokeStyle='#6ee3eb';g.lineWidth=3;g.stroke();
   g.beginPath();g.arc(x-5,y-6,8,0,2*Math.PI);g.fillStyle='#899bab';g.fill();
  }
  const columns=Math.min(20,count),rows=Math.ceil(count/columns),sw=520/columns,sh=87/rows;
@@ -80,6 +86,27 @@ export function drawPinball(canvas,count=40,elapsed=0,duration=8000,winner=null,
   g.fillText(String(i+1),x+sw/2,y+sh/2);
  }
  const sim=trajectory(count,winner??1,duration,seed);
+ // Collision-triggered shockwaves and sparks. Drawn only near actual simulation hits.
+ if(!reduced&&elapsed>0){
+  const recent=sim.collisions.filter(e=>elapsed>=e.ms&&elapsed-e.ms<380).slice(-9);
+  for(const hit of recent){
+   const index=Math.min(sim.frames.length-1,Math.floor(hit.ms/duration*(sim.frames.length-1)));
+   const [cx,cy]=sim.frames[index],u=(elapsed-hit.ms)/380,reach=9+u*38;
+   g.strokeStyle='rgba(112,233,249,'+(0.8*(1-u))+')';g.lineWidth=3*(1-u)+.5;
+   g.beginPath();g.arc(cx,cy,reach,0,Math.PI*2);g.stroke();
+   for(let k=0;k<11;k++){
+    const a=k*Math.PI*2/11+(index%12)*.14,d=reach*(.7+k%3*.15);
+    g.fillStyle=['#79e8f3','#f7dc8b','#d4a7ff'][k%3];
+    g.beginPath();g.arc(cx+Math.cos(a)*d,cy+Math.sin(a)*d,Math.max(.7,3*(1-u)),0,Math.PI*2);g.fill();
+   }
+  }
+  const combo=sim.collisions.filter(e=>e.ms<=elapsed&&e.ms>elapsed-2200).length;
+  if(combo>1){
+   g.fillStyle='#ffe2a4';g.font='bold 23px Arial';g.textAlign='left';
+   g.fillText('×'+combo+' COMBO!',62,64);
+  }
+ }
+
  const frame=sim.frames[Math.min(sim.frames.length-1,Math.floor(p*(sim.frames.length-1)))];
  let [x,y]=reduced&&p<1?[295,37]:frame;
  if(p>=1){x=sim.goalX;y=sim.goalY;}
