@@ -8,12 +8,22 @@ export function drawBallRace(canvas,count=40,elapsed=0,duration=8000,winner=null
  const W=600,H=450;ctx.clearRect(0,0,W,H);
  const p=raceProgress(elapsed,duration),end=winner!==null&&p>=1;
  const top=42,bottom=405,lh=(bottom-top)/count,finish=535,start=62,travel=finish-start-11;
- ctx.fillStyle='#1b2c41';ctx.fillRect(40,top-14,finish-22,bottom-top+30);
- ctx.strokeStyle='#536a82';ctx.lineWidth=1;
+ ctx.fillStyle='#102338';ctx.fillRect(0,0,W,H);
+ ctx.fillStyle='#173c53';ctx.fillRect(40,top-14,finish-22,bottom-top+30);
+ for(let j=0;j<8;j++){ctx.strokeStyle=j%2?'#20647a':'#25526d';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(45,top+j*52);ctx.lineTo(finish+14,top+j*52);ctx.stroke();}
+ ctx.fillStyle='#63d3d0';ctx.font='bold 15px Arial';ctx.textAlign='left';ctx.fillText('● BALL ARENA',47,23);
+ ctx.strokeStyle='#317189';ctx.lineWidth=1;
  for(let i=0;i<=count;i++){let y=top+i*lh;ctx.beginPath();ctx.moveTo(40,y);ctx.lineTo(finish+16,y);ctx.stroke();}
- ctx.fillStyle='#b6a274';ctx.fillRect(finish,top-14,4,bottom-top+30);
- ctx.fillStyle='#d0dbe6';ctx.font='bold 17px Arial';ctx.textAlign='center';ctx.fillText('GOAL',finish-22,23);
+ ctx.fillStyle='#36d8ca';ctx.fillRect(finish,top-14,4,bottom-top+30);
+ ctx.fillStyle='#a9f9fa';ctx.font='bold 17px Arial';ctx.textAlign='center';ctx.fillText('GOAL',finish-22,23);
  const candidate=winner??1,positions=[];
+ const burstCount=Math.min(count-1,Math.max(2,Math.floor(count*.13))),burstIds=[];
+ for(let k=0;k<burstCount;k++){
+  let n=1+((candidate*13+k*17+7)%count);
+  while(n===candidate||burstIds.includes(n))n=n%count+1;
+  burstIds.push(n);
+ }
+ const burstAt=n=>.28+.45*((n*37%89)/89);
  // Scenario is chosen once per draw; deterministic rendering prevents flicker.
  const rivalA=(candidate%count)+1,rivalB=((candidate+Math.floor(count/2))%count)+1;
  for(let i=0;i<count;i++){
@@ -42,13 +52,26 @@ export function drawBallRace(canvas,count=40,elapsed=0,duration=8000,winner=null
   fraction=Math.max(0,Math.min(n===candidate?1:.975,fraction));
   if(end&&n===candidate)fraction=1;
   if(reduced&&!end)fraction=0;
-  const x=start+travel*fraction;positions.push({n,x,y});const r=Math.max(1.5,Math.min(9,lh*.43));
+  const x=start+travel*fraction;const r=Math.max(1.5,Math.min(9,lh*.43));
+  const burst=burstIds.includes(n),at=burstAt(n),gone=burst&&p>=at;
+  if(!gone)positions.push({n,x,y});
+  if(gone){
+   if(!reduced&&p<at+.095){
+    const f=Math.min(1,(p-at)/.095);
+    for(let j=0;j<7;j++){
+     const a=j*Math.PI*2/7+n*.7;
+     ctx.fillStyle=['#f3d96d','#52d8e2','#f7b3cd'][j%3];
+     ctx.beginPath();ctx.arc(x+Math.cos(a)*f*22,y+Math.sin(a)*f*15,Math.max(.6,r*(1-f)*.55),0,Math.PI*2);ctx.fill();
+    }
+   }
+   ctx.fillStyle='#b3dce8';ctx.font='bold '+(count>50?7:10)+'px Arial';ctx.textAlign='right';ctx.textBaseline='middle';ctx.fillText(String(n),35,y);continue;
+  }
   ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);
   ctx.fillStyle=end&&n===candidate?'#d7bf82':i%2?'#8498ad':'#6e829a';ctx.fill();
   ctx.strokeStyle='#b6c3cf';ctx.lineWidth=.7;ctx.stroke();
   ctx.fillStyle='#cad6e2';ctx.font='bold '+(count>50?7:10)+'px Arial';ctx.textAlign='right';ctx.textBaseline='middle';ctx.fillText(String(n),35,y);
  }
  if(!reduced&&!end)drawRaceCamera(canvas,positions,p,'ball');
- if(winner!==null)drawRaceLeaderboard(canvas,positions,end);
+ drawRaceLeaderboard(canvas,positions,end);
  if(end){ctx.fillStyle='#e0c484';ctx.font='bold 25px Arial';ctx.textAlign='center';ctx.fillText(candidate+' 番 ゴール！',W/2,441);}
 }
