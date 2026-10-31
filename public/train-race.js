@@ -143,6 +143,12 @@ function draw(){
  });
  positions.sort((a,b)=>Number(a.p.type==='bridge')-Number(b.p.type==='bridge')||a.p.y-b.p.y);
  for(const {t,p} of positions)paint(t,p);
+ if(elapsed>0){
+   const leaders=[...trains].sort((a,b)=>b.p-a.p).slice(0,5);
+   g.fillStyle='rgba(19,36,43,.88)';g.beginPath();g.roundRect(820,16,365,48,10);g.fill();
+   g.fillStyle='#fff';g.textAlign='left';g.font='bold 17px system-ui';
+   g.fillText('先頭 '+leaders.map((v,i)=>`${i+1}位:${v.number}番`).join('  '),832,46);
+ }
 }
 function beep(freq=420){
  if(!enabled)return;
@@ -154,11 +160,12 @@ function frame(now){
  for(const v of trains){
   const local=Math.max(0,(sec-v.delay)/(35-v.delay));
   // Distinct speeds create visible leaders and trailers, without affecting the uniform draw.
-  const travel=local*(v.pace+v.boost*Math.sin(local*Math.PI*2));
+  const warpBonus=v.route.segments.some(s=>s.type==='warp')?Math.max(0,Math.min(.12,(local-.37)*.25)):0;
+  const travel=local*(v.pace+v.boost*Math.sin(local*Math.PI*2))+warpBonus;
   v.p=v.number===winner?(t<.78?Math.min(.75,local*.88):.70+.30*Math.pow(Math.max(0,(t-.78)/.22),1.55)):Math.min(.965,Math.max(0,travel));
  }
  meter.value=sec;clock.textContent=sec.toFixed(1)+' / 35秒';
- status.textContent=sec<8?'🚉 全列車が順次発車':sec<23?'🌀 ワープトンネルで意外な地点へ！':sec<31?'🚇 トンネルと立体交差を通過':'🏁 最終ポイントで大逆転！';
+ status.textContent=sec<8?'🚉 全列車が順次発車':sec<23?'🌀 黒いトンネルから別の場所へワープ！':sec<31?'🚂 先頭集団と後続の差に注目':'🏁 最終ポイントで大逆転！';
  const tick=Math.floor(sec/3);if(tick!==lastClick){lastClick=tick;beep(370+(tick%4)*90)}
  if(elapsed>=DURATION){
   playing=false;trains.find(t=>t.number===winner).p=1;draw();btn.disabled=false;countInput.disabled=false;
