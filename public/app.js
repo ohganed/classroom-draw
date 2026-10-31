@@ -7,7 +7,7 @@ import { drawLottery } from './lottery.js';
 import { drawRoulette, rouletteAngle, shuffledRoulette } from './roulette.js?v=72';
 import { drawBallRace, ballBurstIds, ballBurstAt, ballBurstProgress } from './ball-race.js?v=63';
 import { drawHorseRace } from './horse-race.js?v=61';
-import { drawPinball, getPinballCollisions } from './pinball.js';
+import { drawPinball, getPinballCollisions } from './pinball.js?v=72';
 import { playPinballBounce } from './pinball-audio.js';
 import { drawDie3D } from './die-3d.js';
 import { drawGalton, makeGaltonRound } from './galton.js';
