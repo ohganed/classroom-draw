@@ -231,3 +231,5 @@ body.numbers-mode #number{font-size:min(54vw,max(24px,calc(100cqh - 90px)))}
 #invaders-wrap{width:min(96vw,calc(62dvh * 600 / 480),650px);aspect-ratio:5/4;flex-shrink:1;z-index:1}#invaders-wrap[hidden]{display:none!important}#invaders{display:block;width:100%;height:100%}.result #invaders-wrap{width:min(76vw,calc(37dvh * 600 / 480),420px)}@media(max-width:600px){#invaders-wrap{width:min(96vw,calc(47dvh * 600 / 480))}}
 
 #barrelescape-wrap{width:min(96vw,calc(62dvh * 600 / 480),650px);aspect-ratio:5/4;flex-shrink:1;z-index:1}#barrelescape-wrap[hidden]{display:none!important}#barrelescape{display:block;width:100%;height:100%}.result #barrelescape-wrap{width:min(76vw,calc(37dvh * 600 / 480),420px)}@media(max-width:600px){#barrelescape-wrap{width:min(96vw,calc(47dvh * 600 / 480))}}
+
+#towerladders-wrap{width:min(96vw,calc(62dvh * 600 / 480),650px);aspect-ratio:5/4;flex-shrink:1;z-index:1}#towerladders-wrap[hidden]{display:none!important}#towerladders{display:block;width:100%;height:100%}.result #towerladders-wrap{width:min(76vw,calc(37dvh * 600 / 480),420px)}@media(max-width:600px){#towerladders-wrap{width:min(96vw,calc(47dvh * 600 / 480))}}
