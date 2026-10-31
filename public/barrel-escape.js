@@ -51,7 +51,7 @@ export function drawBarrel(canvas,round,elapsed=0,duration=13500,reduced=false){
   const danger=b&&sec>=b.start?Math.abs(barrelPosition(b)-h.x):Infinity;
   // All disappearances follow an actual barrel reaching the same x on the
   // same floor; the winner is the only runner who jumps clear of the impact.
-  const hit=!isWinner&&b&&sec>=b.impact&&danger<95;
+  const hit=!isWinner&&b&&sec>=b.impact;
   if(hit&&sec>h.lose+.25)continue;
   if(!hit)remaining++;
   const jump=isWinner&&b&&sec>=b.impact-.24&&sec<=b.impact+.28
