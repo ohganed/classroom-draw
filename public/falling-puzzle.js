@@ -34,7 +34,7 @@ export function makeFallingRound(count,winner,seed){
  const board=Array.from({length:H},()=>Array(W).fill(null)),events=[];
  let time=.12,nextId=1,bag=[],drops=0,chains=0,topout=false;
  const fresh=()=>{bag=Array.from({length:count},(_,i)=>i+1);for(let i=bag.length-1;i>0;i--){const j=Math.floor(rand()*(i+1));[bag[i],bag[j]]=[bag[j],bag[i]];}};
- const take=()=>{if(!bag.length)fresh();return bag.pop();};
+ const take=()=>bag.pop();
  const record=(kind,before,after,dur,more={})=>{events.push({kind,start:time,dur,before,after,...more});time+=dur;};
  // A completed bottom row becomes permanent gray foundation tiles.
  function lockCompletedRows(){
@@ -77,10 +77,9 @@ export function makeFallingRound(count,winner,seed){
    }
   }
  }
- // Normal rounds, followed by a guaranteed stacking finale. All numbered
- // drops come from balanced shuffled bags; colors remain separate from numbers.
- // At overtime we choose the least-conflicting color for the target column,
- // so the stack reaches the ceiling instead of endlessly clearing.
+ // Each eligible number enters the puzzle exactly once. No refilled bags.
+ // A random permutation assigns the numbers to physical pieces, so every
+ // number has the same probability of being the winning piece.
  const place=(n,color,col)=>{
   if(board[0][col])return false;
   let row=H-1;while(row>0&&board[row][col])row--;
@@ -89,35 +88,41 @@ export function makeFallingRound(count,winner,seed){
   record('drop',before,clone(board),.085,{n,color,col,row});
   drops++;lockCompletedRows();resolve(id);lockCompletedRows();return true;
  };
- for(let i=0;i<48;i++){
+ fresh();
+ let overflow=null;
+ while(bag.length){
   const n=take(),color=Math.floor(rand()*COLORS.length);
   const open=Array.from({length:W},(_,x)=>x).filter(x=>!board[0][x]);
-  if(!open.length)break;
-  const col=open[Math.floor(rand()*open.length)];
+  if(!open.length){overflow=n;break;}
+  // Towards the end, prefer tall stacks; the actual arrangement still
+  // determines whether a numbered piece reaches the ceiling.
+  const heights=open.map(x=>board.filter(row=>row[x]).length);
+  const maxH=Math.max(...heights),candidates=open.filter((x,i)=>heights[i]>=maxH-(drops<count*.55?3:1));
+  const col=candidates[Math.floor(rand()*candidates.length)];
   place(n,color,col);
  }
- // Final stage: deliberately aim at the tallest column. A color selected to
- // avoid matching neighboring blocks is still independent of the number.
- // This stage does not remove/overwrite existing tiles.
- const heights=Array.from({length:W},(_,x)=>board.filter(row=>row[x]).length);
- const target=heights.indexOf(Math.max(...heights));
- for(let k=0;k<H+8&&!board[0][target];k++){
-  const n=take();
-  let row=H-1;while(row>0&&board[row][target])row--;
-  const options=Array.from({length:COLORS.length},(_,i)=>i).map(color=>{
-   let risk=0;for(const dx of [-1,0,1])for(const dy of [-1,0,1]){
-    if(!dx&&!dy)continue;
-    const x=target+dx,y=row+dy;
-    if(x>=0&&x<W&&y>=0&&y<H&&board[y][x]?.color===color)risk++;
-   }
-   return {color,risk};
-  }).sort((a,b)=>a.risk-b.risk);
-  place(n,options[0].color,target);
+ let actualWinner,winningCell=null;
+ if(overflow!==null){
+  actualWinner=overflow;
+  record('topout',clone(board),clone(board),.5,{n:actualWinner});
+  topout=true;
+ }else{
+  // If all numbered pieces were placed, the highest surviving piece wins.
+  // Equal-height candidates are shuffled before selection.
+  const remaining=[];
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(board[y][x])remaining.push({x,y,n:board[y][x].n});
+  if(remaining.length){
+   const highest=Math.min(...remaining.map(p=>p.y));
+   const top=remaining.filter(p=>p.y===highest);
+   winningCell=top[Math.floor(rand()*top.length)];
+   actualWinner=winningCell.n;
+  }else{
+   // Rare full-clear round: the last piece to be placed is the winner.
+   actualWinner=events.filter(e=>e.kind==='drop').at(-1).n;
+  }
+  record('winner',clone(board),clone(board),.5,{n:actualWinner,cell:winningCell});
  }
- // The next number appears over the top of the completed stack.
- record('topout',clone(board),clone(board),.45,{n:winner,col:target});
- topout=!!board[0][target];
- return {winner,count,events,seconds:time+.8,drops,chains,topout};
+ return {winner:actualWinner,count,events,seconds:time+.65,drops,chains,topout};
 }
 export const fallingDuration=round=>Math.ceil((round?.seconds??40)*1000);
 function tiles(c,board,alpha=1,progress=1,kind='',before=null){
@@ -144,7 +149,7 @@ export function drawFalling(canvas,round,elapsed=0,duration=40000,reduced=false)
  const c=canvas.getContext('2d');if(!c)return;
  const sec=Math.max(0,elapsed/1000);
  c.fillStyle='#111d35';c.fillRect(0,0,600,480);
- c.fillStyle='#f7e5b9';c.textAlign='center';c.font='bold 21px Arial';c.fillText('落ちものパズル・５列の大連鎖！',300,32);
+ c.fillStyle='#f7e5b9';c.textAlign='center';c.font='bold 21px Arial';c.fillText('落ちものパズル・40個の行方',300,32);
  c.fillStyle='#263e59';c.beginPath();c.roundRect(168,58,266,360,9);c.fill();
  for(let y=0;y<H;y++)for(let x=0;x<W;x++){c.strokeStyle='#3b536e';c.strokeRect(177+x*50,70+y*43,46,39);}
  if(!round)return;
@@ -163,11 +168,12 @@ export function drawFalling(canvas,round,elapsed=0,duration=40000,reduced=false)
   tiles(c,matched,1-progress);
  }
  else if(ev.kind==='lock'){tiles(c,ev.after);}
+ else if(ev.kind==='winner'){tiles(c,ev.before);if(ev.cell){const px=178+ev.cell.x*50,py=70+ev.cell.y*43;c.strokeStyle='#ffe184';c.lineWidth=5;c.strokeRect(px-2,py-2,49,42);}}
  else if(ev.kind==='topout'){tiles(c,ev.before);const y=-40+52*ease(progress);c.fillStyle='#f7d57b';c.beginPath();c.roundRect(277,y,45,38,5);c.fill();c.fillStyle='#19283e';c.font='900 19px Arial';c.fillText(ev.n,299,y+26);}
  else tiles(c,board);
  c.fillStyle='#e6ebf7';c.font='bold 15px Arial';c.textAlign='center';
- c.fillText('同色で2個消去・最下段5個が並ぶとグレー固定',300,448);
+ c.fillText('同色で2個消去・1番号につき1ブロック',300,448);
  const ended=sec>=round.events[round.events.length-1].start+round.events[round.events.length-1].dur;
  c.fillStyle='#f5dda5';c.font='bold 19px Arial';
- c.fillText(ended?round.winner+'番が上限突破の次の番号！':ev.kind==='clear'?'同じ条件で接触！ 消える！':ev.kind==='gravity'?'すき間へ落下！ 連鎖は続く？':ev.kind==='lock'?'最下段がグレーの土台になった！':ev.kind==='topout'?'積み上がった！ 次の番号が当選！':'どんどん落ちてくる！',300,473);
+ c.fillText(ended?round.winner+'番が当選！':ev.kind==='clear'?'同じ条件で接触！ 消える！':ev.kind==='gravity'?'すき間へ落下！ 連鎖は続く？':ev.kind==='lock'?'最下段がグレーの土台になった！':ev.kind==='topout'?'積み上がった！ 当選！':'どんどん落ちてくる！',300,473);
 }
