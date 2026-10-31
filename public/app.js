@@ -354,7 +354,16 @@ $('sound').addEventListener('click', () => {
 reduced.addEventListener('change', () => { if (running) { $('number').textContent = '…'; if(mode==='die') drawDie(0,null);if(mode==='lottery') drawLottery(lotteryCanvas,0,duration,count,null,true);if(mode==='roulette')drawRoulette(rouletteCanvas,count,0,null);if(mode==='race')drawBallRace(raceCanvas,count,0,duration,null,true);if(mode==='horse')drawHorseRace(horseCanvas,count,0,duration,null,true);if(mode==='pinball')drawPinball(pinballCanvas,count,0,duration,null,true);if(mode==='galton')drawGalton(galtonCanvas,galtonRound,0,duration,true);if(mode==='maze')drawMaze(mazeCanvas,mazeRound,0,duration,true);if(mode==='crane')drawCrane(craneCanvas,craneRound,0,duration,true);if(mode==='machine')drawMachine(machineCanvas,machineRound,0,duration,true); } });
 document.addEventListener('visibilitychange', () => {
  if (document.hidden) { if(master) master.gain.setValueAtTime(0,context.currentTime); cancelAnimationFrame(raf); }
- else if (running) { if (performance.now()-started>=(mode==='alien'?10000:mode==='frog'?10000:mode==='trolley'?13000:duration)) finish(false); else { if(master && sound) master.gain.setValueAtTime(.18,context.currentTime); tick(); } }
+ else {
+  if (sound && context && master) {
+   master.gain.setValueAtTime(.18, context.currentTime);
+   if (context.state !== 'running') context.resume().catch(() => {});
+  }
+  if (running) {
+   if (performance.now()-started>=(mode==='alien'?10000:mode==='frog'?10000:mode==='trolley'?13000:duration)) finish(false);
+   else tick();
+  }
+ }
 });
 if (document.documentElement.requestFullscreen && document.fullscreenEnabled) {
  $('fullscreen').hidden=false;
