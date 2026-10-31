@@ -11,7 +11,7 @@ function buildTracks(){
  function connect(a,b,type){const k=[Math.min(a,b),Math.max(a,b)].join(':');if(found.has(k))return;found.add(k);tracks.push({a,b,type})}
  for(let r=0;r<ROW;r++)for(let x=0;x<COL;x++){
    const n=index(x,r);
-   if(x<COL-1)connect(n,index(x+1,r),(r===2||r===6)&&x>3&&x<11?'bridge':(r+x*2)%17===0?'tunnel':'rail');
+   if(x<COL-1)connect(n,index(x+1,r),(r===2||r===6)&&x>3&&x<11?'bridge':[3,8,11].includes(x)?'tunnel':'rail');
    if(r<ROW-1)connect(n,index(x,r+1),(x===5||x===10)&&r>1&&r<6?'bridge':'rail');
    if(x<COL-1&&r<ROW-1&&(x+2*r)%3===0)connect(n,index(x+1,r+1),'rail');
    if(x<COL-1&&r>0&&(x+3*r)%4===0)connect(n,index(x+1,r-1),'rail');
@@ -37,7 +37,7 @@ function route(){
  }
  if(!reachable.has(START))throw new Error('Rail graph has no route to the flower station');
  const portals=tracks.filter(e=>e.type==='tunnel'&&nodes[e.a].r===nodes[e.b].r);
- let at=START,segments=[],total=0,warpUsed=false;
+ let at=START,segments=[],total=0,warpCount=0;
  const add=(a,b,type)=>{
   const l=type==='warp'?100:Math.hypot(b.x-a.x,b.y-a.y);
   segments.push({a,b,l,start:total,type});total+=l;
@@ -48,19 +48,23 @@ function route(){
   // Favour gradual return to the flower station in the last few columns.
   const preferred=here.c>=10?choices.filter(o=>Math.abs(nodes[o.to].r-4)<Math.abs(here.r-4)):[];
   const pool=preferred.length?preferred:choices;
-  const chosen=pool[randomInt(pool.length)],dest=nodes[chosen.to],edge=chosen.edge;
-  const farther=portals.filter(e=>{
+  const tunnels=pool.filter(o=>o.edge.type==='tunnel');
+  const options=tunnels.length&&warpCount<2&&randomInt(100)<72?tunnels:pool;
+  const chosen=options[randomInt(options.length)],dest=nodes[chosen.to],edge=chosen.edge;
+  // Each black tunnel is an entrance. Its exit is a randomly chosen OTHER
+  // black tunnel, including ones behind us: a chance for a dramatic reversal.
+  const destinations=portals.filter(e=>{
    const p=nodes[e.a],q=nodes[e.b],exit=p.c<q.c?e.b:e.a;
-   return Math.min(p.c,q.c)>=here.c+3&&Math.max(p.c,q.c)<=11&&reachable.has(exit);
+   return e!==edge&&reachable.has(exit);
   });
-  if(!warpUsed&&edge.type==='tunnel'&&farther.length&&randomInt(100)<85){
-   const portal=farther[randomInt(farther.length)];
+  if(warpCount<2&&edge.type==='tunnel'&&destinations.length&&randomInt(100)<78){
+   const portal=destinations[randomInt(destinations.length)];
    const p=nodes[portal.a],q=nodes[portal.b];
    const midIn={x:(here.x+dest.x)/2,y:(here.y+dest.y)/2};
    const midOut={x:(p.x+q.x)/2,y:(p.y+q.y)/2};
    const exit=p.c<q.c?portal.b:portal.a;
    add(here,midIn,'tunnel');add(midIn,midOut,'warp');
-   add(midOut,nodes[exit],'tunnel');at=exit;warpUsed=true;
+   add(midOut,nodes[exit],'tunnel');at=exit;warpCount++;
   }else{add(here,dest,edge.type);at=chosen.to;}
  }
  return {segments,length:total};
