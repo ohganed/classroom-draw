@@ -1,78 +1,75 @@
-// One 40-lane jungle-gym amidakuji, traversed bottom-to-top.
-// Every bridge is a real exchange of neighboring lanes. Winner remains
-// uniformly selected by the host; the flower is placed at its actual exit.
-const C=['#f5d179','#86d7f2','#f3a2bb','#99dda8','#c4a2f1'];
-const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
-const LEVELS=22, TOP=76, BOTTOM=407, LEFT=33, RIGHT=567;
+// 7x7 three-dimensional amidakuji: 49 pillars, 40 randomly assigned players.
+// Each rung joins adjacent pillars east-west or north-south at a real height.
+const N=7,LEVELS=23,DURATION=13000;
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const index=(x,z)=>z*N+x;
+const coords=i=>({x:i%N,z:Math.floor(i/N)});
+const pal=['#f4d278','#89dced','#f0a4c5','#9cdd9a','#c6a6f1'];
+function shuffle(a,rand){for(let i=a.length-1;i>0;i--){const j=Math.floor(rand()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 export function makeAmidaRound(count,winner,seed){
  let s=seed>>>0||1;const rand=()=>((s=(Math.imul(s,1664525)+1013904223)>>>0)/4294967296);
- const rungs=Array.from({length:LEVELS},()=>[]);
+ const starts=shuffle(Array.from({length:49},(_,i)=>i),rand).slice(0,count);
+ const edges=[];
  for(let level=0;level<LEVELS;level++){
-  for(let x=0;x<count-1;x++){
-   if(rand()<.24){rungs[level].push(x);x++;}
+  // A matching at each height ensures only one path per pillar.
+  const available=shuffle(Array.from({length:49},(_,i)=>i),rand),used=new Set(),links=[];
+  for(const a of available){if(used.has(a))continue;
+   const {x,z}=coords(a),neighbors=[];
+   if(x>0)neighbors.push(index(x-1,z));
+   if(x<6)neighbors.push(index(x+1,z));
+   if(z>0)neighbors.push(index(x,z-1));
+   if(z<6)neighbors.push(index(x,z+1));
+   const choices=neighbors.filter(b=>!used.has(b));
+   if(choices.length&&rand()<.76){const b=choices[Math.floor(rand()*choices.length)];links.push([a,b]);used.add(a);used.add(b);}
   }
+  edges.push(links);
  }
- const members=[];
- for(let start=0;start<count;start++){
-  let lane=start;const route=[lane];
-  for(let level=0;level<LEVELS;level++){
-   const rung=rungs[level];
-   if(rung.includes(lane))lane++;
-   else if(rung.includes(lane-1))lane--;
-   route.push(lane);
-  }
-  members.push({n:start+1,start,exit:lane,route});
- }
- const chosen=members[winner-1];
- return {count,winner,rungs,members,flowerLane:chosen.exit,seconds:13};
+ const members=starts.map((start,i)=>{
+  let pillar=start;const route=[pillar];
+  for(const links of edges){const hit=links.find(([a,b])=>a===pillar||b===pillar);if(hit)pillar=hit[0]===pillar?hit[1]:hit[0];route.push(pillar);}
+  return {n:i+1,start,route,exit:pillar};
+ });
+ return {count,winner,starts,edges,members,flower:members[winner-1].exit};
 }
-export function drawAmida(canvas,round,elapsed=0,duration=13000,reduced=false){
- const c=canvas.getContext('2d');if(!c)return;const progress=clamp(elapsed/(duration*.89));
- c.fillStyle='#081426';c.fillRect(0,0,600,480);
- c.textAlign='center';c.textBaseline='alphabetic';c.fillStyle='#fae6ac';
- c.font='bold 21px Arial';c.fillText('ジャングルジム・一斉あみだくじ！',300,26);
+function project(p,h){
+ const {x,z}=coords(p);
+ // Isometric projection with a generous vertical tower and visible depth.
+ return {x:300+(x-z)*31.3,y:259+(x+z)*13.7-h*8.55};
+}
+export function drawAmida(canvas,round,elapsed=0,duration=DURATION,reduced=false){
+ const c=canvas.getContext('2d');if(!c)return;
+ const progress=clamp(elapsed/(duration*.89));
+ c.fillStyle='#0a152c';c.fillRect(0,0,600,480);
+ c.textAlign='center';c.textBaseline='alphabetic';c.fillStyle='#fae4ad';
+ c.font='bold 20px sans-serif';c.fillText('立体ジャングルジム・あみだくじ',300,27);
  if(!round)return;
- const count=round.count,dx=(RIGHT-LEFT)/Math.max(1,count-1);
- const xx=i=>count===1?300:LEFT+i*dx;
- const yy=i=>BOTTOM-(BOTTOM-TOP)*i/LEVELS;
- // Cage-like rails and frames; all participants share one connected structure.
- for(let i=0;i<count;i++){
-  const x=xx(i);
-  c.strokeStyle=i%5===0?'#7194bb':'#46668f';c.lineWidth=i%5===0?2:1.25;
-  c.beginPath();c.moveTo(x,TOP);c.lineTo(x,BOTTOM);c.stroke();
+ // Depth-sort solid 3D vertical pillars.
+ for(let depth=0;depth<=12;depth++)for(let z=0;z<7;z++){
+  const x=depth-z;if(x<0||x>6)continue;const p=index(x,z),a=project(p,0),b=project(p,LEVELS);
+  c.strokeStyle='#567eac';c.lineWidth=2.6;c.beginPath();c.moveTo(a.x,a.y);c.lineTo(b.x,b.y);c.stroke();
  }
- for(let i=0;i<=LEVELS;i+=4){
-  const y=yy(i);
-  c.strokeStyle='rgba(95,164,199,.18)';c.lineWidth=1;
-  c.beginPath();c.moveTo(LEFT-13,y-5);c.lineTo(RIGHT+13,y-5);c.stroke();
+ // Horizontal beams link only adjacent pillars at identical height.
+ for(let level=0;level<LEVELS;level++)for(const [a,b] of round.edges[level]){
+  const u=project(a,level+.5),v=project(b,level+.5);
+  c.strokeStyle='#e8be7b';c.lineWidth=2.7;c.beginPath();c.moveTo(u.x,u.y);c.lineTo(v.x,v.y);c.stroke();
  }
- for(let i=0;i<LEVELS;i++)for(const lane of round.rungs[i]){
-  const y=yy(i+.5);
-  c.strokeStyle='#eac477';c.lineWidth=3;
-  c.beginPath();c.moveTo(xx(lane),y);c.lineTo(xx(lane+1),y);c.stroke();
- }
- // The bouquet sits exactly above the exit reached by the fair winner.
- const flowerX=xx(round.flowerLane);
- c.font='27px sans-serif';c.textAlign='center';c.fillText('💐',flowerX,TOP-13);
- c.fillStyle='#f4d990';c.font='bold 13px Arial';c.fillText('GOAL',flowerX,TOP-42);
- const step=progress*LEVELS,j=Math.min(LEVELS-1,Math.floor(step)),u=step-j;
+ const goal=project(round.flower,LEVELS);
+ c.font='30px sans-serif';c.textAlign='center';c.fillText('💐',goal.x,goal.y-13);
+ // Trace the actual path: ascent, then horizontal move on each crosspiece.
  for(const m of round.members){
-  const crossing=clamp((u-.22)/.56),lane=m.route[j]+(m.route[j+1]-m.route[j])*crossing;
-  const x=xx(progress>=1?m.exit:lane),y=progress>=1?TOP:yy(j+u);
-  c.fillStyle=m.n===round.winner?'#ffe68e':C[(m.n-1)%5];
-  c.beginPath();c.arc(x,y,Math.max(5,Math.min(9,dx*.41)),0,Math.PI*2);c.fill();
-  if(count<=25||m.n===round.winner||progress<.06){
-   c.font='bold '+(count<=25?10:8)+'px Arial';
-   c.fillStyle='#132640';c.textAlign='center';c.textBaseline='middle';c.fillText(m.n,x,y+.4);
-  }
+  const step=progress*LEVELS,j=Math.min(LEVELS-1,Math.floor(step)),u=step-j;
+  const source=m.route[j],dest=m.route[j+1],from=project(source,j),to=project(dest,j+.5);
+  let position;
+  if(u<.48)position=project(source,j+u/.48*.5);
+  else if(u<.88){const a=project(source,j+.5),b=project(dest,j+.5),v=(u-.48)/.4;position={x:a.x+(b.x-a.x)*v,y:a.y+(b.y-a.y)*v};}
+  else position=project(dest,j+.5+(u-.88)/.12*.5);
+  if(progress>=1)position=project(m.exit,LEVELS);
+  c.fillStyle=pal[(m.n-1)%pal.length];c.beginPath();c.arc(position.x,position.y,7.5,0,2*Math.PI);c.fill();
+  c.fillStyle='#10223f';c.textAlign='center';c.textBaseline='middle';c.font='bold 9px Arial';c.fillText(m.n,position.x,position.y);
  }
- if(progress>=1){
-  c.strokeStyle='#ffdf8b';c.lineWidth=3;c.beginPath();c.arc(flowerX,TOP,15,0,Math.PI*2);c.stroke();
-  c.fillStyle='#ffe5a4';c.font='bold 20px Arial';c.fillText(round.winner+'番が花束に到着！',300,451);
- }else{
-  c.fillStyle='#f3dcab';c.font='bold 15px Arial';c.fillText('40人が下から一斉に登る！',300,451);
- }
- c.textBaseline='alphabetic';
+ if(progress>=1){c.strokeStyle='#f6d780';c.lineWidth=2.5;c.beginPath();c.arc(goal.x,goal.y,14,0,2*Math.PI);c.stroke();}
+ c.textBaseline='alphabetic';c.font='bold 18px Arial';c.fillStyle='#fae5ae';
+ c.fillText(progress>=1?round.winner+'番が花束に到着！':'40人が下から同時に登る！',300,458);
 }
 
 export function playAmidaBeat(ctx,master,step){
