@@ -243,3 +243,10 @@ body.numbers-mode #number{font-size:min(54vw,max(24px,calc(100cqh - 90px)))}
 .result #daruma-wrap{width:min(78vw,40dvh,500px)}
 @media(max-width:600px){#daruma-wrap{width:min(94vw,44dvh,450px)}.result #daruma-wrap{width:min(75vw,28dvh,340px)}}
 @media(prefers-reduced-motion:reduce){#daruma-wrap{animation:none!important}}
+
+/* Minesweeper draw: responsive, steady board with no flashing. */
+#minesweeper-wrap{width:min(96vw,calc(62dvh * 600 / 480),650px);aspect-ratio:5/4;flex-shrink:1;z-index:1;min-height:0}
+#minesweeper-wrap[hidden]{display:none!important}
+#minesweeper{display:block;width:100%;height:100%}
+.result #minesweeper-wrap{width:min(76vw,calc(39dvh * 600 / 480),430px)}
+@media(max-width:600px){#minesweeper-wrap{width:min(96vw,calc(48dvh * 600 / 480))}}
