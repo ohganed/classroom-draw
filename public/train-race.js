@@ -82,7 +82,7 @@ function init(){
  cancelAnimationFrame(raf);playing=false;elapsed=0;countInput.disabled=false;
  const n=Math.max(1,Math.min(99,Math.floor(Number(countInput.value)||40)));countInput.value=n;
  winner=randomInt(n)+1;buildTracks();
- trains=Array.from({length:n},(_,i)=>({number:i+1,route:route(),p:0,delay:i*.065,color:`hsl(${i*137.508%360} 72% 44%)`}));
+ trains=Array.from({length:n},(_,i)=>({number:i+1,route:route(),p:0,delay:i*.11,pace:.65+randomInt(31)/100,boost:(randomInt(21)-10)/100,color:`hsl(${i*137.508%360} 72% 44%)`}));
  btn.disabled=false;meter.value=0;clock.textContent='0.0 / 35秒';status.textContent='🚉 共通始発駅で待機中';result.textContent='💐 花束駅には誰が到着する？';draw();
 }
 function stroke(a,b,w,col){g.beginPath();g.moveTo(a.x,a.y);g.lineTo(b.x,b.y);g.strokeStyle=col;g.lineWidth=w;g.lineCap='round';g.stroke()}
@@ -153,7 +153,9 @@ function frame(now){
  elapsed=Math.min(DURATION,now-started);const t=elapsed/DURATION,sec=elapsed/1000;
  for(const v of trains){
   const local=Math.max(0,(sec-v.delay)/(35-v.delay));
-  v.p=v.number===winner?(t<.74?local*.88:.68+.32*Math.pow((t-.74)/.26,1.55)):Math.min(.965,local*(.87+(v.number%11)*.008));
+  // Distinct speeds create visible leaders and trailers, without affecting the uniform draw.
+  const travel=local*(v.pace+v.boost*Math.sin(local*Math.PI*2));
+  v.p=v.number===winner?(t<.78?Math.min(.75,local*.88):.70+.30*Math.pow(Math.max(0,(t-.78)/.22),1.55)):Math.min(.965,Math.max(0,travel));
  }
  meter.value=sec;clock.textContent=sec.toFixed(1)+' / 35秒';
  status.textContent=sec<8?'🚉 全列車が順次発車':sec<23?'🌀 ワープトンネルで意外な地点へ！':sec<31?'🚇 トンネルと立体交差を通過':'🏁 最終ポイントで大逆転！';
