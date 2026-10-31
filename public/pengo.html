@@ -1,0 +1,120 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#142838"><title>ペンギンの氷迷宮 | だれの番？</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#122b3b;color:#f4fafc;font-family:system-ui,-apple-system,sans-serif}main{max-width:1260px;margin:auto;padding:12px}.top,.actions,.settings{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.top{justify-content:space-between}a{color:#bdeaff}h1{font-size:clamp(22px,3vw,34px);margin:6px 0}.settings label{font-weight:700}input{width:75px;padding:8px;font-size:18px;border:0;border-radius:10px}button{cursor:pointer;background:#e1f4f5;color:#123040;border:0;border-radius:10px;padding:12px 18px;font-size:17px;font-weight:800}button.primary{background:#ffcf79}button:disabled{opacity:.5}canvas{width:100%;height:auto;display:block;background:#b4e3f0;border-radius:16px}.actions{margin-top:12px}progress{width:100%;height:11px;accent-color:#ffcf79}#status{font-size:clamp(17px,2.4vw,24px);font-weight:700;margin:12px 0}#result{min-height:55px;text-align:center;color:#ffda86;font-size:clamp(23px,4vw,42px);font-weight:900}.note{font-size:13px;color:#bcd2de;line-height:1.6}
+</style></head><body><main><div class="top"><div><a href="./">← だれの番？へ戻る</a><h1>🐧 ペンギンの氷迷宮</h1></div><div class="settings"><label>参加人数 <input id="count" type="number" min="1" max="40" value="40"></label><button id="sound" aria-pressed="false">♪ 音 OFF</button></div></div>
+<canvas id="field" width="1200" height="740" role="img" aria-label="番号付きのペンギンが氷のブロックを押して花束を目指す"></canvas>
+<div class="actions"><button id="start" class="primary">▶ スタート</button><button id="reset">↻ 氷を並べ替える</button><span id="clock">0.0 / 18秒</span></div><progress id="meter" max="18" value="0"></progress><p id="status" aria-live="polite">ペンギンたちが待機中</p><div id="result" aria-live="polite">💐 花束を手にするのは？</div>
+<p class="note">番号と配置は毎回ランダム。ペンギンは氷を押して通路を開き、滑る氷に当たると少し休みます。最初に花束へ着いた番号が当選です。点滅はありません。</p></main>
+<script>
+'use strict';
+const W=24,H=15,S=40,OX=120,OY=74,TOTAL=18000;
+const $=id=>document.getElementById(id),canvas=$('field'),g=canvas.getContext('2d');
+let round=null,playing=false,started=0,raf=0,lastSound=-1,sound=false,audio=null;
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+function seed32(){const a=new Uint32Array(1);crypto.getRandomValues(a);return a[0]||1;}
+function rng(seed){let s=seed>>>0;return ()=>{s^=s<<13;s^=s>>>17;s^=s<<5;return(s>>>0)/4294967296;};}
+function shuffle(a,r){for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function makeRound(n,seed){
+ const r=rng(seed),N=W*H,ice=new Uint8Array(N),goal={x:11+Math.floor(r()*3),y:7};
+ const border=[];for(let x=0;x<W;x++)border.push([x,0]);
+ for(let y=1;y<H-1;y++){border.push([0,y]);border.push([W-1,y]);}
+ for(let x=0;x<W;x++)border.push([x,H-1]);
+ shuffle(border,r);
+ const labels=shuffle(Array.from({length:n},(_,i)=>i+1),r);
+ const people=Array.from({length:n},(_,i)=>({x:border[i][0],y:border[i][1],stun:0,cool:Math.floor(r()*3),number:labels[i]}));
+ const blocked=new Set(people.map(p=>p.y*W+p.x));blocked.add(goal.y*W+goal.x);
+ for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){
+  if(Math.abs(x-goal.x)+Math.abs(y-goal.y)<2)continue;
+  if(!blocked.has(y*W+x)&&r()<.225)ice[y*W+x]=1;
+ }
+ const frames=[],events=[];let winner=null,steps=0;
+ const snap=()=>frames.push({ice:ice.slice(),people:people.map(p=>[p.x,p.y,p.stun])});snap();
+ const dirs=[[1,0],[-1,0],[0,1],[0,-1]];
+ for(let step=1;step<=650;step++){
+  const order=shuffle(Array.from({length:n},(_,i)=>i),r);
+  for(const id of order){
+   const p=people[id];if(p.stun){p.stun--;continue;}if(p.cool){p.cool--;continue;}
+   const occupants=new Map(people.map((q,j)=>[q.y*W+q.x,j]));
+   const options=[];
+   for(const [dx,dy] of dirs){
+    const x=p.x+dx,y=p.y+dy;if(x<0||x>=W||y<0||y>=H)continue;
+    if(occupants.has(y*W+x))continue;
+    let push=false;
+    if(ice[y*W+x]){
+     const bx=x+dx,by=y+dy;
+     if(bx<0||bx>=W||by<0||by>=H||ice[by*W+bx]||occupants.has(by*W+bx))continue;
+     push=true;
+    }
+    const score=Math.abs(goal.x-x)+Math.abs(goal.y-y)+r()*3+(push?.65:0);
+    options.push({x,y,dx,dy,score,push});
+   }
+   if(!options.length){p.cool=1;continue;}
+   options.sort((a,b)=>a.score-b.score);
+   const q=options[r()<.15&&options.length>1?1:0],idx=q.y*W+q.x;
+   if(q.push){
+    let bx=q.x,by=q.y,nextX=bx+q.dx,nextY=by+q.dy;
+    while(nextX>=0&&nextX<W&&nextY>=0&&nextY<H&&!ice[nextY*W+nextX]){
+     if(occupants.has(nextY*W+nextX)){
+      const hit=people[occupants.get(nextY*W+nextX)];if(hit!==p)hit.stun=2;
+      break;
+     }
+     bx=nextX;by=nextY;nextX+=q.dx;nextY+=q.dy;
+    }
+    ice[idx]=0;ice[by*W+bx]=1;
+    events.push({step,kind:'slide',x:bx,y:by});
+   }
+   p.x=q.x;p.y=q.y;p.cool=Math.floor(r()*2);
+   if(p.x===goal.x&&p.y===goal.y){winner=p.number;steps=step;break;}
+  }
+  snap();if(winner)break;
+ }
+ if(!winner)return makeRound(n,(seed+0x9e3779b9)>>>0);
+ return {frames,events,goal,n,numbers:labels,winner,steps};
+}
+function paint(frame,done=false){
+ g.clearRect(0,0,1200,740);g.fillStyle='#d8f2fa';g.fillRect(0,0,1200,740);
+ g.fillStyle='#8dc4d5';g.fillRect(OX-10,OY-10,W*S+20,H*S+20);
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+  const px=OX+x*S,py=OY+y*S;
+  g.fillStyle=(x+y)%2?'#b5e0eb':'#c7eaf2';g.fillRect(px,py,S-1,S-1);
+  if(frame.ice[y*W+x]){
+   g.fillStyle='#5daace';g.fillRect(px+2,py+2,S-4,S-4);
+   g.fillStyle='#a8e7fc';g.fillRect(px+5,py+5,S-12,8);
+   g.strokeStyle='#eafaff';g.lineWidth=2;g.strokeRect(px+3,py+3,S-6,S-6);
+  }
+ }
+ const gx=OX+round.goal.x*S+S/2,gy=OY+round.goal.y*S+S/2;
+ g.fillStyle='#fff2ad';g.beginPath();g.arc(gx,gy,24,0,7);g.fill();
+ g.font='29px system-ui';g.textAlign='center';g.textBaseline='middle';g.fillText('💐',gx,gy);
+ frame.people.forEach((p,i)=>{
+  const x=OX+p[0]*S+S/2,y=OY+p[1]*S+S/2,n=round.numbers[i];
+  g.fillStyle='rgba(31,62,80,.2)';g.beginPath();g.ellipse(x,y+14,15,5,0,0,7);g.fill();
+  g.fillStyle=p[2]?'#788b99':done&&n===round.winner?'#ffb542':'#233b4f';g.beginPath();g.ellipse(x,y,14,17,0,0,7);g.fill();
+  g.fillStyle='#f5f5f0';g.beginPath();g.ellipse(x,y+4,9,10,0,0,7);g.fill();
+  g.fillStyle='#f5b04a';g.beginPath();g.moveTo(x-4,y+3);g.lineTo(x+4,y+3);g.lineTo(x,y+9);g.fill();
+  g.fillStyle='#091e2b';g.font='bold 12px system-ui';g.fillText(n,x,y-5);
+ });
+ g.font='bold 22px system-ui';g.fillStyle='#183546';g.textAlign='left';g.fillText('氷を押すと、道が変わる！',OX,43);
+ if(done){g.fillStyle='rgba(12,40,54,.85)';g.fillRect(330,286,540,120);g.fillStyle='#ffda7b';g.font='bold 45px system-ui';g.textAlign='center';g.fillText(round.winner+' 番が花束を獲得！',600,348);}
+}
+function tone(freq,length=.11){if(!sound||!audio||audio.state!=='running'||document.hidden)return;const t=audio.currentTime,o=audio.createOscillator(),a=audio.createGain();o.type='triangle';o.frequency.value=freq;a.gain.setValueAtTime(.055,t);a.gain.exponentialRampToValueAtTime(.001,t+length);o.connect(a);a.connect(audio.destination);o.start(t);o.stop(t+length+.01);}
+function unlock(){if(!sound)return;try{audio??=new(window.AudioContext||window.webkitAudioContext)();audio.resume();const o=audio.createOscillator(),a=audio.createGain();a.gain.value=.0001;o.connect(a);a.connect(audio.destination);o.start();o.stop(audio.currentTime+.03);}catch{}}
+function prepare(){
+ cancelAnimationFrame(raf);playing=false;const n=clamp(Math.floor(Number($('count').value)||40),1,40);$('count').value=n;
+ round=makeRound(n,seed32());$('start').disabled=false;$('count').disabled=false;
+ $('clock').textContent='0.0 / 18秒';$('meter').value=0;$('status').textContent=n+'匹が待機中';$('result').textContent='💐 花束を手にするのは？';paint(round.frames[0]);
+}
+function tick(now){
+ if(!playing)return;const ms=Math.min(TOTAL,now-started),idx=Math.min(round.frames.length-1,Math.floor(ms/TOTAL*round.steps));
+ paint(round.frames[idx]);$('clock').textContent=(ms/1000).toFixed(1)+' / 18秒';$('meter').value=ms/1000;
+ $('status').textContent=ms<6000?'🐧 氷を押して進もう':ms<13500?'🧊 迷路がどんどん変わる！':'💐 花束が近い！';
+ const beat=Math.floor(ms/350);if(beat!==lastSound){lastSound=beat;if(beat%2===0)tone(300+(beat%5)*50,.045);}
+ if(ms>=TOTAL){playing=false;paint(round.frames.at(-1),true);$('status').textContent='花束に到着！';$('result').textContent=round.winner+' 番に決定！';$('start').disabled=false;$('count').disabled=false;[523,659,784].forEach((f,i)=>setTimeout(()=>tone(f,.18),i*170));return;}
+ raf=requestAnimationFrame(tick);
+}
+$('start').addEventListener('click',()=>{if(playing)return;prepare();unlock();playing=true;lastSound=-1;started=performance.now();$('start').disabled=true;$('count').disabled=true;raf=requestAnimationFrame(tick);});
+$('reset').addEventListener('click',prepare);$('count').addEventListener('change',prepare);
+$('sound').addEventListener('click',()=>{sound=!sound;$('sound').textContent='♪ 音 '+(sound?'ON':'OFF');$('sound').setAttribute('aria-pressed',String(sound));if(sound){unlock();tone(660,.15);}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&playing){cancelAnimationFrame(raf);playing=false;$('start').disabled=false;$('count').disabled=false;$('status').textContent='停止しました。もう一度スタートできます';}});
+prepare();
+</script></body></html>
