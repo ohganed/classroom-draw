@@ -70,6 +70,7 @@ function build(){
  }
  survivor=alive.size?[...alive][0]:coins.reduce((a,b)=>a.dropFrame>b.dropFrame?a:b).id;
  if(alive.size===0){const coin=coins[survivor];coin.dead=false;coin.y=580;const last=frames[frames.length-1];last.coins[survivor]=[coin.x,coin.y,false];}
+ // Shuffle the numbered medals independently from their random physical slots.
  const labels=shuffle(Array.from({length:count},(_,i)=>i+1));
  const people=coins.map(p=>({id:p.id,n:labels[p.id]}));
  return {people,frames,winner:labels[survivor],survivor};
@@ -94,6 +95,7 @@ function render(ms){
  if(t>=D){g.fillStyle='rgba(20,7,42,.91)';g.fillRect(258,268,684,170);g.strokeStyle='#fff07e';g.lineWidth=5;g.strokeRect(258,268,684,170);g.fillStyle='#ffe577';g.textAlign='center';g.font='bold 62px system-ui';g.fillText('🏆 '+round.winner+'番が優勝！',600,373)}
 }
 function frame(){const t=performance.now()-started,frameIndex=Math.min(round.frames.length-1,Math.floor(Math.min(D,t)/D*(round.frames.length-1))),fallen=round.frames[frameIndex].coins.filter(p=>p[2]).length;if(fallen>lastDrop){note(270+rnd(270),.13,.13);lastDrop=fallen}render(t);$('clock').textContent=(Math.min(t,D)/1000).toFixed(1)+' / 25秒';$('meter').value=Math.min(25,t/1000);$('status').textContent=t>17400?'🔥 SUPER PUSH! 最後の大逆転！':'🪙 押し板がメダルを押し出しています';if(t<D)raf=requestAnimationFrame(frame);else{$('start').disabled=false;$('result').textContent='🏆 '+round.winner+'番が最後まで残った！';[523,659,784,1047].forEach((n,i)=>setTimeout(()=>note(n,.23,.16),i*145))}}
-function reset(){cancelAnimationFrame(raf);count=Math.max(1,Math.min(40,Number($('count').value)||40));$('count').value=count;round=build();lastDrop=0;render(0);$('start').disabled=false;$('clock').textContent='0.0 / 25秒';$('meter').value=0;$('status').textContent='✨ メダルを押し出そう！';$('result').textContent='最後まで残るのは何番？'}
+function reset(){cancelAnimationFrame(raf);count=Math.max(1,Math.min(40,Number($('count').value)||40));$('count').value=count;round=build();lastDrop=0;render(0);$('start').disabled=false;$('clock').textContent='0.0 / 25秒';$('meter').value=0;const initial=round.frames[0].coins;const row=round.people.map(p=>({n:p.n,x:initial[p.id][0],y:initial[p.id][1]})).sort((a,b)=>a.y-b.y||a.x-b.x).slice(0,10).sort((a,b)=>a.x-b.x);
+ $('status').textContent='🎲 上段の番号（左から）：'+row.map(p=>p.n).join('・')+' ／ 並べ直すたびに変化';$('result').textContent='最後まで残るのは何番？'}
 $('start').onclick=()=>{reset();$('start').disabled=true;if(sound){ctx??=new(window.AudioContext||window.webkitAudioContext)();ctx.resume();note(700,.12)}started=performance.now();raf=requestAnimationFrame(frame)};
 $('reset').onclick=reset;$('count').onchange=reset;$('sound').onclick=()=>{sound=!sound;$('sound').textContent=sound?'♪ 音 ON':'♪ 音 OFF';if(sound){ctx??=new(window.AudioContext||window.webkitAudioContext)();ctx.resume();note(880,.12)}};reset();
