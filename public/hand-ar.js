@@ -46,8 +46,8 @@ function loop(){const now=performance.now();
 async function beginCamera(){if(cameraReady)return;$('camera').disabled=true;diagnostic='カメラ許可待ち';$('status').textContent='カメラの許可を確認しています…';
  try{if(!navigator.mediaDevices?.getUserMedia)throw Error('HTTPSとカメラ対応ブラウザが必要です');
   stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:'user',width:{ideal:1280},height:{ideal:720}}});video.srcObject=stream;await video.play();cameraReady=true;diagnostic='カメラ映像OK・認識モデル読込中';$('status').textContent='カメラ映像OK。手の認識モデルを読み込み中…';
-  diagnostic='同一サイトから手認識AIを読み込み中';
-  const {HandLandmarker,FilesetResolver}=await import('./vendor/mediapipe/vision_bundle.mjs');
+  diagnostic='手認識AI読み込み中（同じサイト・JS版）';
+  const {HandLandmarker,FilesetResolver}=await import('./vendor/mediapipe/vision_bundle.js?v=6');
   const vision=await FilesetResolver.forVisionTasks(new URL('./vendor/mediapipe/wasm',import.meta.url).href);
   diagnostic='AIモデル初期化中';const opts={baseOptions:{modelAssetPath:new URL('./vendor/mediapipe/hand_landmarker.task',import.meta.url).href,delegate:'GPU'},runningMode:'VIDEO',numHands:2};
   try{tracker=await HandLandmarker.createFromOptions(vision,opts)}catch{opts.baseOptions.delegate='CPU';tracker=await HandLandmarker.createFromOptions(vision,opts)}
