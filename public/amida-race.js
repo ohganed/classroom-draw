@@ -46,7 +46,7 @@ export function drawAmida(canvas,round,elapsed=0,duration=DURATION,reduced=false
  // Depth-sort solid 3D vertical pillars.
  for(let depth=0;depth<=12;depth++)for(let z=0;z<7;z++){
   const x=depth-z;if(x<0||x>6)continue;const p=index(x,z),a=project(p,0),b=project(p,LEVELS);
-  c.strokeStyle='#567eac';c.lineWidth=2.6;c.beginPath();c.moveTo(a.x,a.y);c.lineTo(b.x,b.y);c.stroke();
+  c.strokeStyle='rgba(122,172,213,'+(0.13+0.33*depth/12)+')';c.lineWidth=depth>7?1.9:1.25;c.beginPath();c.moveTo(a.x,a.y);c.lineTo(b.x,b.y);c.stroke();
  }
  // A square ground-plane grid makes the east-west / north-south depth visible.
  for(let z=0;z<7;z++)for(let x=0;x<7;x++){
@@ -56,7 +56,8 @@ export function drawAmida(canvas,round,elapsed=0,duration=DURATION,reduced=false
  // Horizontal beams link only adjacent pillars at identical height.
  for(let level=0;level<LEVELS;level++)for(const [a,b] of round.edges[level]){
   const u=project(a,level+.5),v=project(b,level+.5);
-  c.strokeStyle='#e8be7b';c.lineWidth=2.7;c.beginPath();c.moveTo(u.x,u.y);c.lineTo(v.x,v.y);c.stroke();
+  const depth=(coords(a).x+coords(a).z+coords(b).x+coords(b).z)/24;
+  c.strokeStyle='rgba(235,196,131,'+(0.12+0.40*depth)+')';c.lineWidth=depth>.60?2.0:1.2;c.beginPath();c.moveTo(u.x,u.y);c.lineTo(v.x,v.y);c.stroke();
  }
  const goal=project(round.flower,LEVELS);
  c.font='30px sans-serif';c.textAlign='center';c.fillText('💐',goal.x,goal.y-13);
@@ -69,9 +70,27 @@ export function drawAmida(canvas,round,elapsed=0,duration=DURATION,reduced=false
   else if(u<.88){const a=project(source,j+.5),b=project(dest,j+.5),v=(u-.48)/.4;position={x:a.x+(b.x-a.x)*v,y:a.y+(b.y-a.y)*v};}
   else position=project(dest,j+.5+(u-.88)/.12*.5);
   if(progress>=1)position=project(m.exit,LEVELS);
-  c.fillStyle=pal[(m.n-1)%pal.length];c.beginPath();c.arc(position.x,position.y,7.5,0,2*Math.PI);c.fill();
-  c.fillStyle='#10223f';c.textAlign='center';c.textBaseline='middle';c.font='bold 9px Arial';c.fillText(m.n,position.x,position.y);
+  c.fillStyle=pal[(m.n-1)%pal.length];c.beginPath();c.arc(position.x,position.y,9,0,2*Math.PI);c.fill();
+  c.strokeStyle='#10223f';c.lineWidth=2;c.stroke();
+  c.fillStyle='#10223f';c.textAlign='center';c.textBaseline='middle';c.font='900 10px Arial';c.fillText(m.n,position.x,position.y);
  }
+ // Synchronized top-down navigation inset. Dots show each member's current pillar.
+ const mx=469,my=55,cell=14.0;
+ c.save();c.fillStyle='rgba(8,22,40,.91)';c.beginPath();c.roundRect(mx-8,my-22,116,128,10);c.fill();
+ c.strokeStyle='rgba(207,226,231,.55)';c.lineWidth=1;c.stroke();
+ c.fillStyle='#e4ebde';c.textAlign='left';c.textBaseline='alphabetic';c.font='bold 12px sans-serif';c.fillText('2D 上面図',mx,my-6);
+ for(let z=0;z<N;z++)for(let x=0;x<N;x++){
+  c.strokeStyle='rgba(189,210,218,.22)';c.lineWidth=1;c.strokeRect(mx+x*cell,my+z*cell,cell,cell);
+ }
+ const stepIdx=Math.min(LEVELS,Math.floor(progress*LEVELS));
+ for(const m of round.members){
+  const {x,z}=coords(m.route[stepIdx]);
+  const px=mx+(x+.5)*cell,py=my+(z+.5)*cell;
+  c.fillStyle=m.n===round.winner&&progress>=1?'#ffdf77':pal[(m.n-1)%pal.length];
+  c.beginPath();c.arc(px,py,2.8,0,Math.PI*2);c.fill();
+ }
+ if(progress>=1){const {x,z}=coords(round.flower);c.strokeStyle='#ffdf77';c.lineWidth=2;c.strokeRect(mx+x*cell,my+z*cell,cell,cell);}
+ c.restore();
  if(progress>=1){c.strokeStyle='#f6d780';c.lineWidth=2.5;c.beginPath();c.arc(goal.x,goal.y,14,0,2*Math.PI);c.stroke();}
  c.textBaseline='alphabetic';c.font='bold 18px Arial';c.fillStyle='#fae5ae';
  c.fillText(progress>=1?round.winner+'番が花束に到着！':'40人が下から同時に登る！',300,458);
