@@ -42,10 +42,32 @@ function build(){
   oldPlate=plate;
  }
  // The last coin on the physical board wins. Names are assigned after simulation.
- const survivor=alive.size===1?[...alive][0]:[...alive].sort((a,b)=>coins[a].y-coins[b].y)[0]??coins.reduce((a,b)=>a.dropFrame>b.dropFrame?a:b).id;
- // If motion settles with several coins, do not falsely claim those coins fell.
- // Finish with a visible final elimination phase using repeated short pushing strokes.
- if(alive.size>1){const order=[...alive].sort((a,b)=>coins[b].y-coins[a].y);for(const id of order){if(id===survivor)continue;const coin=coins[id];for(let k=0;k<26;k++){coin.y=Math.min(624,coin.y+(624-coin.y)/Math.max(1,26-k));frames.push({plate:Math.min(487,177+(k%13)*20),coins:coins.map(p=>[p.x,p.y,p.dead])});}coin.dead=true;coin.dropFrame=7001;alive.delete(id);frames.push({plate:487,coins:coins.map(p=>[p.x,p.y,p.dead])});}}
+ let survivor;
+ // Final stronger mechanical push: advance the actual plate, then resolve coin contact.
+ // No coin is removed without crossing the visible front edge.
+ if(alive.size>1){
+  for(let extra=0;extra<340&&alive.size>1;extra++){
+   plate=Math.min(650,487+extra*1.8);
+   for(const p of coins){if(p.dead)continue;
+    if(p.y-34<=plate+2 && p.y+34>=plate-12){
+     p.y=Math.max(p.y,Math.min(plate+36,p.y+7));
+     p.vy=Math.max(p.vy,3.8);
+    }
+   }
+   for(let iteration=0;iteration<3;iteration++)for(let i=0;i<coins.length;i++){
+    const p=coins[i];if(p.dead)continue;
+    for(let j=i+1;j<coins.length;j++){const q=coins[j];if(q.dead)continue;
+     const dx=q.x-p.x,dy=q.y-p.y,dist=Math.hypot(dx,dy)||.001;
+     if(dist<58){const shift=(58-dist)*.48;p.x-=dx/dist*shift;q.x+=dx/dist*shift;p.y-=dy/dist*shift;q.y+=dy/dist*shift;}
+    }
+   }
+   for(const p of coins){if(p.dead)continue;p.y+=p.vy*.65;p.vy*=.68;
+    if(p.y>620){p.dead=true;p.dropFrame=7000+extra;alive.delete(p.id);}
+   }
+   frames.push({plate,coins:coins.map(p=>[p.x,p.y,p.dead])});
+  }
+ }
+ survivor=alive.size?[...alive][0]:coins.reduce((a,b)=>a.dropFrame>b.dropFrame?a:b).id;
  if(alive.size===0){const coin=coins[survivor];coin.dead=false;coin.y=580;const last=frames[frames.length-1];last.coins[survivor]=[coin.x,coin.y,false];}
  const labels=shuffle(Array.from({length:count},(_,i)=>i+1));
  const people=coins.map(p=>({id:p.id,n:labels[p.id]}));
