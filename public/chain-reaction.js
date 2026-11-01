@@ -25,7 +25,11 @@ function make(){
  // Distance is the only source of visible location and final ranking. All labels are exchangeable.
  function progress(p,t){const sec=Math.max(0,Math.min(27,t/1000));
   const d=p.base*sec+p.domino*Math.max(0,sec-4)*.36+p.seesaw*Math.max(0,sec-12)*.48+p.gate*Math.max(0,sec-20)*.7-p.offset;
-  return Math.min(LENGTH,Math.max(0,d));
+  // Crossing each device actually changes travel distance, not merely decoration.
+  const checkpoints=[950,1920,2880,3850,4800,5750];
+  const impulses=[p.domino*.34,p.seesaw*.28,p.gate*.20,p.domino*.19,p.seesaw*.22,p.gate*.32];
+  const deviceDelta=checkpoints.reduce((sum,mark,i)=>sum+(d>mark?impulses[i]*Math.min(1,(d-mark)/130):0),0);
+  return Math.min(LENGTH,Math.max(0,d+deviceDelta));
  }
  const standings=balls.slice().sort((a,b)=>progress(b,D)-progress(a,D)||a.id-b.id);
  return {balls,progress,winner:standings[0],standings};
@@ -38,14 +42,53 @@ function draw(time){const t=Math.min(D,Math.max(0,time));g.fillStyle='#f6f7e9';g
  g.lineCap='round';g.lineJoin='round';g.strokeStyle='#57747b';g.lineWidth=51;g.stroke();
  g.strokeStyle='#b9dfd1';g.lineWidth=41;g.stroke();
  g.strokeStyle='#eaf7e9';g.lineWidth=3;g.setLineDash([12,16]);g.stroke();g.setLineDash([]);
- for(let row=0;row<ROWS;row++){const y=TOP+row*STEP,dir=row%2===0?1:-1;
-  g.fillStyle='#447a79';g.font='bold 14px system-ui';g.textAlign='left';g.fillText('ZONE '+(row+1),25,y-28);
-  // Original chain-reaction devices on the shared path, not on separate courses.
-  const x=dir>0?290:900;
-  if(row%4===0){for(let k=0;k<6;k++){const u=Math.max(0,Math.min(1,(t-(2000+row*170+k*110))/460));g.save();g.translate(x+k*21*dir,y-19);g.rotate(dir*u*.9);g.fillStyle='#dcaa5d';g.fillRect(-5,-21,10,22);g.restore()}}
-  if(row%4===1){g.strokeStyle='#b97866';g.lineWidth=8;g.beginPath();g.moveTo(x-76,y);g.lineTo(x+76,y+Math.sin(t/550+row)*11);g.stroke()}
-  if(row%4===2){g.strokeStyle='#789eac';g.lineWidth=4;g.beginPath();g.arc(x,y,29,0,Math.PI*2);g.stroke();g.beginPath();g.moveTo(x,y);g.lineTo(x+28*Math.cos(t/380),y+28*Math.sin(t/380));g.stroke()}
-  if(row%4===3){g.fillStyle='#f6ba69';g.beginPath();g.moveTo(x-43,y+14);g.lineTo(x+43,y-14);g.lineTo(x+43,y+14);g.fill()}
+ const leadDist=Math.max(...round.balls.map(p=>round.progress(p,t)));
+ const gadgetNames=['ドミノ連鎖','落下ハンマー','巨大シーソー','振り子ゲート','歯車連動','跳ね上げ台','ゴール鐘'];
+ for(let row=0;row<ROWS;row++){
+  const y=TOP+row*STEP,dir=row%2===0?1:-1;
+  const milestone=cumulative[Math.min(cumulative.length-1,row*111+37)];
+  const u=Math.max(0,Math.min(1,(leadDist-milestone)/155));
+  const x=dir===1?550:640;
+  g.fillStyle='#356678';g.font='bold 14px system-ui';g.textAlign='left';g.fillText((row+1)+' '+gadgetNames[row],25,y-29);
+  // A ball arriving at the apparatus starts the next moving part.
+  if(row===0){
+   for(let k=0;k<12;k++){const phase=Math.max(0,Math.min(1,(u*12-k)/1.1));
+    g.save();g.translate(x-120+k*22,y-21);g.rotate(dir*phase*1.25);
+    g.fillStyle=phase>.9?'#d98f61':'#e9b964';g.fillRect(-6,-27,12,29);g.restore();}
+   g.fillStyle='#597d9c';g.fillRect(x+145,y-39,12,40);
+  }else if(row===1){
+   const angle=u*.85;
+   g.strokeStyle='#85676d';g.lineWidth=7;g.beginPath();g.moveTo(x,y-47);g.lineTo(x+Math.sin(angle)*70,y-47+Math.cos(angle)*53);g.stroke();
+   g.fillStyle='#cf8a5d';g.fillRect(x+Math.sin(angle)*70-30,y-47+Math.cos(angle)*53-7,60,20);
+   g.fillStyle='#f0c76d';g.fillRect(x-80,y+6,140,9);
+  }else if(row===2){
+   g.fillStyle='#846270';g.fillRect(x-5,y-13,10,32);
+   g.save();g.translate(x,y-11);g.rotate((u-.25)*.35);
+   g.fillStyle='#e6b26e';g.fillRect(-116,-10,232,18);
+   g.fillStyle='#e4a0af';g.beginPath();g.arc(-86,-23,18,0,Math.PI*2);g.fill();
+   g.restore();
+  }else if(row===3){
+   const angle=u?Math.sin(u*Math.PI*2)*.8:0;
+   g.strokeStyle='#657b8d';g.lineWidth=6;g.beginPath();g.moveTo(x,y-48);g.lineTo(x+100*Math.sin(angle),y-48+100*Math.cos(angle));g.stroke();
+   g.fillStyle='#f4bd65';g.beginPath();g.arc(x+100*Math.sin(angle),y-48+100*Math.cos(angle),23,0,Math.PI*2);g.fill();
+  }else if(row===4){
+   for(let k=0;k<3;k++){const cx=x+(k-1)*73;
+    g.strokeStyle='#7394ab';g.lineWidth=7;g.beginPath();g.arc(cx,y-20,34,0,Math.PI*2);g.stroke();
+    for(let j=0;j<8;j++){const v=j*Math.PI/4+u*Math.PI*(k%2?-2:2);g.strokeStyle='#d19b5b';g.lineWidth=8;g.beginPath();g.moveTo(cx+22*Math.cos(v),y-20+22*Math.sin(v));g.lineTo(cx+39*Math.cos(v),y-20+39*Math.sin(v));g.stroke();}
+   }
+  }else if(row===5){
+   g.save();g.translate(x,y-5);g.rotate(-.4+u*.8);
+   g.fillStyle='#6cb7b4';g.fillRect(-120,-10,240,20);
+   g.fillStyle='#f6c15b';g.fillRect(-125,-22,20,16);g.restore();
+   g.strokeStyle='#d88e6e';g.lineWidth=5;g.beginPath();g.moveTo(x-52,y+24);g.lineTo(x,y+44-u*18);g.lineTo(x+52,y+24);g.stroke();
+  }else{
+   g.strokeStyle='#6c8e99';g.lineWidth=5;g.beginPath();g.moveTo(x,y-48);g.lineTo(x,y-2);g.stroke();
+   g.fillStyle=u>.5?'#ffd86a':'#b5c8cf';g.beginPath();g.arc(x,y-3,36,Math.PI,0);g.lineTo(x+36,y+3);g.lineTo(x-36,y+3);g.closePath();g.fill();
+   if(u>.5){g.fillStyle='#e9a85d';g.font='bold 20px system-ui';g.textAlign='center';g.fillText('♪',x+60,y-27)}
+  }
+  // Transfer rails and colorful mechanisms make the course visually dense.
+  g.fillStyle='#df9980';g.fillRect(dir===1?105:1000,y-17,75,5);
+  g.fillStyle=u>0?'#89cfa3':'#d5bea3';g.beginPath();g.arc(dir===1?195:987,y-14,8,0,Math.PI*2);g.fill();
  }
  const sorted=round.balls.slice().sort((a,b)=>round.progress(b,t)-round.progress(a,t));
  // Draw trailing balls first, so the frontrunner remains visible.
