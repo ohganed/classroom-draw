@@ -13,15 +13,21 @@ function make(){
 function tone(f,d=.11,type='triangle',v=.1){if(!sound||!audio)return;try{const at=audio.currentTime,o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.setValueAtTime(f,at);g.gain.setValueAtTime(.0001,at);g.gain.exponentialRampToValueAtTime(v,at+.008);g.gain.exponentialRampToValueAtTime(.0001,at+d);o.connect(g);g.connect(audio.destination);o.start(at);o.stop(at+d+.02)}catch{}}
 function draw(t){
  t=Math.min(D,t);const dead=new Set(round.events.filter(e=>e.t<=t).map(e=>e.id));
- const active=round.events.find(e=>t>=e.t-340&&t<e.t+240);
+ const active=round.events.find(e=>t>=e.t-750&&t<e.t+240);
  c.fillStyle='#191038';c.fillRect(0,0,1200,760);c.textAlign='center';c.fillStyle='#ffe49c';c.font='bold 34px system-ui';c.fillText('✦ PYRAMID JUMP FEVER ✦',600,53);
  for(let id=0;id<tiles.length;id++){const q=tiles[id],isDanger=active?.tile===id,fallen=round.events.some(e=>e.tile===id&&e.t<t);
  c.beginPath();c.moveTo(q.x,q.y-24);c.lineTo(q.x+45,q.y);c.lineTo(q.x,q.y+24);c.lineTo(q.x-45,q.y);c.closePath();
- c.fillStyle=fallen?'#33294f':isDanger&&t>=active.t-130?'#ff657e':['#28d7d1','#ffce69','#967aff','#ff7dc6'][q.r%4];c.fill();
+ c.fillStyle=fallen?'#33294f':isDanger&&t>=active.t-180?'#ff657e':['#28d7d1','#ffce69','#967aff','#ff7dc6'][q.r%4];c.fill();
  c.strokeStyle=fallen?'#635478':'#f5ebff';c.lineWidth=3;c.stroke();
  c.fillStyle='rgba(16,10,44,.42)';c.beginPath();c.moveTo(q.x-45,q.y);c.lineTo(q.x,q.y+24);c.lineTo(q.x,q.y+38);c.lineTo(q.x-45,q.y+12);c.closePath();c.fill()}
- for(const p of round.people){if(dead.has(p.id))continue;const q=tiles[p.tile],near=active?.id===p.id,pre=near?Math.max(0,Math.min(1,(t-(active.t-340))/340)):0;
- let x=q.x,y=q.y-25-Math.sin(pre*Math.PI)*34;
+ for(const p of round.people){if(dead.has(p.id))continue;const q=tiles[p.tile],near=active?.id===p.id;
+ // Ordinary safe hops happen throughout the early game. A fatal jump lands first,
+ // then the tile turns red after a short suspense beat; only then does it collapse.
+ const safePhase=((t/1150+p.id*.37)%(Math.PI*2));
+ const safeHop=Math.max(0,Math.sin(safePhase))*15;
+ const jumpPhase=near?Math.max(0,Math.min(1,(t-(active.t-750))/490)):0;
+ const fatalHop=near&&t<active.t-260?Math.sin(jumpPhase*Math.PI)*37:0;
+ let x=q.x,y=q.y-25-(near?fatalHop:safeHop);
  if(t>21000&&p.id===round.survivor){const u=Math.min(1,(t-21000)/2800);x=q.x+(600-q.x)*u;y=q.y-25+(105-q.y)*u-Math.sin(u*Math.PI)*65;}
  c.fillStyle=['#f9b6c9','#acf3a5','#bbd5ff','#dec0ff'][p.n%4];c.beginPath();c.arc(x,y,21,0,Math.PI*2);c.fill();c.strokeStyle='#221745';c.lineWidth=3;c.stroke();
  c.fillStyle='#201844';c.font='900 19px system-ui';c.textBaseline='middle';c.fillText(p.n,x,y+1)}
