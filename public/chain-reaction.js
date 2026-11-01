@@ -21,7 +21,7 @@ const seg=[],cumulative=[0];for(let i=1;i<P.length;i++){const d=Math.hypot(P[i].
 function point(d){const v=Math.max(0,Math.min(LENGTH,d));let lo=0,hi=cumulative.length-1;while(lo+1<hi){const mid=(lo+hi)>>1;if(cumulative[mid]<=v)lo=mid;else hi=mid}const q=seg[lo]?Math.max(0,Math.min(1,(v-cumulative[lo])/seg[lo])):0,a=P[lo],b=P[Math.min(P.length-1,lo+1)];return {x:a.x+(b.x-a.x)*q,y:a.y+(b.y-a.y)*q}}
 function make(){
  const labels=shuffle(Array.from({length:count},(_,i)=>i+1));
- const balls=Array.from({length:count},(_,id)=>({id,n:labels[id],base:252+rnd(70),domino:18+rnd(70),seesaw:20+rnd(100),gate:rnd(150)-35,offset:id*19}));
+ const balls=Array.from({length:count},(_,id)=>({id,n:labels[id],base:164+rnd(76),domino:10+rnd(45),seesaw:15+rnd(55),gate:rnd(160)-25,offset:id*19}));
  // Distance is the only source of visible location and final ranking. All labels are exchangeable.
  function progress(p,t){const sec=Math.max(0,Math.min(27,t/1000));
   const d=p.base*sec+p.domino*Math.max(0,sec-4)*.36+p.seesaw*Math.max(0,sec-12)*.48+p.gate*Math.max(0,sec-20)*.7-p.offset;
