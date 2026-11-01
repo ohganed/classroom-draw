@@ -29,6 +29,8 @@ jobs:
           curl -fLSs --retry 3 --max-time 180 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task' -o "$GITHUB_WORKSPACE/public/vendor/mediapipe/hand_landmarker.task"
           test -s "$GITHUB_WORKSPACE/public/vendor/mediapipe/vision_bundle.mjs"
           test -s "$GITHUB_WORKSPACE/public/vendor/mediapipe/vision_bundle.js"
+          curl -fLSs --retry 3 --max-time 180 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task' -o "$GITHUB_WORKSPACE/public/vendor/mediapipe/pose_landmarker.task"
+          test -s "$GITHUB_WORKSPACE/public/vendor/mediapipe/pose_landmarker.task"
           test -s "$GITHUB_WORKSPACE/public/vendor/mediapipe/hand_landmarker.task"
           find "$GITHUB_WORKSPACE/public/vendor/mediapipe/wasm" -name '*.wasm' | grep -q .
       - name: Commit vendored browser assets
