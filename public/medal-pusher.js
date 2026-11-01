@@ -12,7 +12,8 @@ function build(){
  // Stronger strokes as the tray empties, but never move a coin without contact.
  for(let frame=0;frame<7000&&alive.size>1;frame++){
   const cycle=frame%86,forward=cycle<52,stroke=cycle/52;
-  plate=forward?177+Math.min(1,stroke)*310:487-(cycle-52)/34*310;
+  const advance=Math.min(145,frame*.075); // The whole push cycle gradually approaches the front rim.
+  plate=forward?177+advance+Math.min(1,stroke)*310:487+advance-(cycle-52)/34*310;
   const speed=Math.max(0,plate-oldPlate);
   const power=1+Math.floor(frame/600)*.08;
   if(forward&&speed>0)for(const p of coins){
@@ -37,7 +38,7 @@ function build(){
    p.y+=p.vy*.72;p.vy*=.73;
    p.x=Math.max(143,Math.min(1057,p.x));
    // A coin falls only when its centre crosses the FRONT rim, not because a timer expires.
-   if(p.y>620){p.dead=true;p.dropFrame=frame;alive.delete(p.id);}
+   if(p.y>620&&alive.size>1){p.dead=true;p.dropFrame=frame;alive.delete(p.id);}
   }
   if(frame%3===0||alive.size===1)frames.push({plate,coins:coins.map(p=>[p.x,p.y,p.dead])});
   oldPlate=plate;
@@ -48,7 +49,7 @@ function build(){
  // No coin is removed without crossing the visible front edge.
  if(alive.size>1){
   for(let extra=0;extra<340&&alive.size>1;extra++){
-   plate=Math.min(650,487+extra*1.8);
+   plate=Math.min(650,487+145+extra*.6);
    for(const p of coins){if(p.dead)continue;
     if(p.y-34<=plate+2 && p.y+34>=plate-12){
      p.y=Math.max(p.y,Math.min(plate+36,p.y+7));
@@ -63,7 +64,7 @@ function build(){
     }
    }
    for(const p of coins){if(p.dead)continue;p.y+=p.vy*.65;p.vy*=.68;
-    if(p.y>620){p.dead=true;p.dropFrame=7000+extra;alive.delete(p.id);}
+    if(p.y>620&&alive.size>1){p.dead=true;p.dropFrame=7000+extra;alive.delete(p.id);}
    }
    frames.push({plate,coins:coins.map(p=>[p.x,p.y,p.dead])});
   }
