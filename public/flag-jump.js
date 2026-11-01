@@ -20,13 +20,25 @@ function actorState(p,t){const begin=700+p.wave*2720,u=(t-begin)/2720,base=laneY
  else{visible=false;x=1060;y=base-39-p.power;}
  return {x,y,visible,jumping};
 }
-function draw(ms){const t=clamp(ms,0,D);g.fillStyle='#8bcdf1';g.fillRect(0,0,1200,760);
- for(let i=0;i<12;i++){g.fillStyle='#edfcff';g.beginPath();g.ellipse((i*137+80)%1200,32+i%3*21,40,12,0,0,7);g.fill()}
- g.fillStyle='#23466a';g.textAlign='center';g.font='bold 30px system-ui';g.fillText('FLAG JUMP CHAMPIONSHIP  •  EPISODE 04',600,43);
- for(let lane=0;lane<5;lane++){const y=laneY(lane);g.fillStyle=lane%2?'#bfe9b9':'#d0f3c4';g.fillRect(28,y-94,1144,113);g.fillStyle='#679d60';g.fillRect(28,y+10,1144,8);
+function draw(ms){const t=clamp(ms,0,D);
+ // Episode 4: sunset night-stadium stage, deliberately distinct from episode 1's blue sky and grass.
+ const sky=g.createLinearGradient(0,0,0,760);
+ sky.addColorStop(0,'#241638');sky.addColorStop(.44,'#7b3659');sky.addColorStop(.80,'#d07a56');sky.addColorStop(1,'#271b3b');
+ g.fillStyle=sky;g.fillRect(0,0,1200,760);
+ g.fillStyle='#f2b16b';g.beginPath();g.arc(930,106,63,0,Math.PI*2);g.fill();
+ for(let side=0;side<2;side++){
+  const sx=side===0?16:1160;g.fillStyle='#26243d';g.fillRect(sx,62,25,620);
+  for(let i=0;i<6;i++){const yy=84+i*102;
+   g.fillStyle='#fff0bd';g.fillRect(sx-10,yy,46,11);g.fillStyle='#f5b978';g.fillRect(sx-10,yy+13,46,4)}
+ }
+ // Stadium stands and spectators behind the competition tracks.
+ for(let r=0;r<5;r++){const y=165+r*95;g.fillStyle=r%2?'#3c2e4c':'#49324b';g.fillRect(0,y,1200,70);
+  for(let j=0;j<45;j++){const x=13+j*27,y2=y+15+(j%3)*13;g.fillStyle=['#ea9aa4','#7a98d3','#e6c482','#a8bbca'][j%4];g.beginPath();g.arc(x,y2,4,0,Math.PI*2);g.fill()}}
+ g.fillStyle='#fff2cd';g.textAlign='center';g.font='bold 30px system-ui';g.fillText('FLAG JUMP CHAMPIONSHIP  •  EPISODE 04',600,43);
+ for(let lane=0;lane<5;lane++){const y=laneY(lane);g.fillStyle=lane%2?'rgba(46,35,75,.86)':'rgba(56,39,85,.86)';g.fillRect(28,y-94,1144,113);g.fillStyle='#dfaf78';g.fillRect(28,y+10,1144,8);
  for(let step=0;step<5;step++){const x=575+step*43;g.fillStyle='#b77c56';g.fillRect(x,y-step*5,44,10+step*5);g.strokeStyle='#684b47';g.strokeRect(x,y-step*5,44,10+step*5)}
  g.strokeStyle='#4b6776';g.lineWidth=5;g.beginPath();g.moveTo(1054,y+9);g.lineTo(1054,y-98);g.stroke();g.fillStyle='#ff8179';g.beginPath();g.moveTo(1057,y-96);g.lineTo(1110,y-80);g.lineTo(1057,y-62);g.closePath();g.fill();
- g.fillStyle='#26485d';g.textAlign='left';g.font='bold 16px system-ui';g.fillText('LANE '+(lane+1),36,y-62);
+ g.fillStyle='#fff1d2';g.textAlign='left';g.font='bold 16px system-ui';g.fillText('LANE '+(lane+1),36,y-62);
  for(let h=20;h<=100;h+=20){g.fillStyle='rgba(42,79,78,.3)';g.fillRect(1019,y-39-h,26,1)}}
  const completed=round.people.filter(p=>t>=700+p.wave*2720+2720*.85);
  for(const p of round.people){const s=actorState(p,t);if(!s.visible)continue;
