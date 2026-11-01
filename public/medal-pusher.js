@@ -5,19 +5,20 @@ function shuffle(a){for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[
 const palette=['#ffde56','#ff83c7','#6effe9','#ae94ff','#ff9977','#92ed75'];
 // Build a deterministic contact simulation before randomly assigning visible numbers.
 function build(){
- const coins=Array.from({length:count},(_,i)=>({id:i,x:179+i%10*91+(rnd(17)-8),y:215+Math.floor(i/10)*78+(rnd(18)-9),vy:0,dead:false,dropFrame:-1}));
+ const coins=Array.from({length:count},(_,i)=>({id:i,x:249+i%10*77+(rnd(9)-4),y:223+Math.floor(i/10)*67+(rnd(9)-4),vy:0,dead:false,dropFrame:-1}));
  const frames=[],alive=new Set(coins.map(p=>p.id)),r=34;
  let plate=177,oldPlate=177;
  // Stronger strokes as the tray empties, but never move a coin without contact.
  for(let frame=0;frame<7000&&alive.size>1;frame++){
   const cycle=frame%86,forward=cycle<52,stroke=cycle/52;
-  plate=forward?177+Math.min(1,stroke)*435:612-(cycle-52)/34*435;
+  plate=forward?177+Math.min(1,stroke)*310:487-(cycle-52)/34*310;
   const speed=Math.max(0,plate-oldPlate);
-  const power=1+Math.floor(frame/450)*.22;
+  const power=1+Math.floor(frame/600)*.08;
   if(forward&&speed>0)for(const p of coins){
    if(p.dead)continue;
-   if(p.x>128&&p.x<1072&&p.y-r<plate+5&&p.y+r>plate-15){
-    p.y=plate+r+4;p.vy=Math.max(p.vy,speed*power);
+   if(p.x>128&&p.x<1072&&p.y-r<=plate+4&&p.y+r>=plate-12){
+    // A pusher can advance only a small distance into a coin each step.
+    p.y=Math.max(p.y,Math.min(plate+r+2,p.y+7));p.vy=Math.max(p.vy,Math.min(7,speed*power));
    }
   }
   // Contacts transmit displacement from one numbered coin to adjacent coins.
@@ -34,13 +35,17 @@ function build(){
   for(const p of coins){if(p.dead)continue;
    p.y+=p.vy*.72;p.vy*=.73;
    p.x=Math.max(143,Math.min(1057,p.x));
-   if(p.y>607){p.dead=true;p.dropFrame=frame;alive.delete(p.id);}
+   // A coin falls only when its centre crosses the FRONT rim, not because a timer expires.
+   if(p.y>620){p.dead=true;p.dropFrame=frame;alive.delete(p.id);}
   }
   if(frame%3===0||alive.size===1)frames.push({plate,coins:coins.map(p=>[p.x,p.y,p.dead])});
   oldPlate=plate;
  }
  // The last coin on the physical board wins. Names are assigned after simulation.
- const survivor=[...alive][0]??coins.reduce((a,b)=>a.dropFrame>b.dropFrame?a:b).id;
+ const survivor=alive.size===1?[...alive][0]:[...alive].sort((a,b)=>coins[a].y-coins[b].y)[0]??coins.reduce((a,b)=>a.dropFrame>b.dropFrame?a:b).id;
+ // If motion settles with several coins, do not falsely claim those coins fell.
+ // Finish with a visible final elimination phase using repeated short pushing strokes.
+ if(alive.size>1){const order=[...alive].sort((a,b)=>coins[b].y-coins[a].y);for(const id of order){if(id===survivor)continue;const coin=coins[id];for(let k=0;k<26;k++){coin.y=Math.min(624,coin.y+(624-coin.y)/Math.max(1,26-k));frames.push({plate:Math.min(487,177+(k%13)*20),coins:coins.map(p=>[p.x,p.y,p.dead])});}coin.dead=true;coin.dropFrame=7001;alive.delete(id);frames.push({plate:487,coins:coins.map(p=>[p.x,p.y,p.dead])});}}
  if(alive.size===0){const coin=coins[survivor];coin.dead=false;coin.y=580;const last=frames[frames.length-1];last.coins[survivor]=[coin.x,coin.y,false];}
  const labels=shuffle(Array.from({length:count},(_,i)=>i+1));
  const people=coins.map(p=>({id:p.id,n:labels[p.id]}));
