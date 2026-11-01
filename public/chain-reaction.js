@@ -19,17 +19,43 @@ for(let row=0;row<ROWS;row++){
 }
 const seg=[],cumulative=[0];for(let i=1;i<P.length;i++){const d=Math.hypot(P[i].x-P[i-1].x,P[i].y-P[i-1].y);seg.push(d);cumulative.push(cumulative[i-1]+d)}const LENGTH=cumulative[cumulative.length-1];
 function point(d){const v=Math.max(0,Math.min(LENGTH,d));let lo=0,hi=cumulative.length-1;while(lo+1<hi){const mid=(lo+hi)>>1;if(cumulative[mid]<=v)lo=mid;else hi=mid}const q=seg[lo]?Math.max(0,Math.min(1,(v-cumulative[lo])/seg[lo])):0,a=P[lo],b=P[Math.min(P.length-1,lo+1)];return {x:a.x+(b.x-a.x)*q,y:a.y+(b.y-a.y)*q}}
+const DEVICES=Array.from({length:6},(_,i)=>cumulative[Math.min(cumulative.length-1,i*111+37)]);
+const EFFECTS=['boost','brake','back','forward','boost','back'];
 function make(){
  const labels=shuffle(Array.from({length:count},(_,i)=>i+1));
- const balls=Array.from({length:count},(_,id)=>({id,n:labels[id],base:164+rnd(76),domino:10+rnd(45),seesaw:15+rnd(55),gate:rnd(160)-25,offset:id*19}));
- // Distance is the only source of visible location and final ranking. All labels are exchangeable.
- function progress(p,t){const sec=Math.max(0,Math.min(27,t/1000));
-  const d=p.base*sec+p.domino*Math.max(0,sec-4)*.36+p.seesaw*Math.max(0,sec-12)*.48+p.gate*Math.max(0,sec-20)*.7-p.offset;
-  // Crossing each device actually changes travel distance, not merely decoration.
-  const checkpoints=[950,1920,2880,3850,4800,5750];
-  const impulses=[p.domino*.34,p.seesaw*.28,p.gate*.20,p.domino*.19,p.seesaw*.22,p.gate*.32];
-  const deviceDelta=checkpoints.reduce((sum,mark,i)=>sum+(d>mark?impulses[i]*Math.min(1,(d-mark)/130):0),0);
-  return Math.min(LENGTH,Math.max(0,d+deviceDelta));
+ const balls=Array.from({length:count},(_,id)=>({id,n:labels[id],speed:155+rnd(115),offset:id*13,events:[],frames:[]}));
+ // Simulate each ball independently. Devices trigger only when it actually reaches their place.
+ const DT=.05,steps=Math.ceil(27/DT);
+ for(const p of balls){
+  let distance=Math.max(0,40-p.offset),velocity=p.speed,boostEnd=0,brakeEnd=0;
+  const used=new Set();
+  p.frames.push(distance);
+  for(let i=1;i<=steps;i++){
+   const t=i*DT,rate=t<boostEnd?velocity*1.9:t<brakeEnd?velocity*.38:velocity;
+   const previous=distance;distance=Math.min(LENGTH,distance+rate*DT);
+   for(let k=0;k<DEVICES.length;k++){
+    if(used.has(k)||previous>DEVICES[k]||distance<DEVICES[k])continue;
+    used.add(k);
+    // The mechanism determines how the ball moves, with its own reproducible outcome.
+    let kind=EFFECTS[k];
+    // Each ball gets its own outcome; some are boosted, some slowed, some sent backward or ahead.
+    const variation=rnd(4);
+    if(variation===0)kind='boost';
+    if(variation===1)kind='brake';
+    if(variation===2)kind='back';
+    if(variation===3)kind='forward';
+    let before=distance;
+    if(kind==='boost')boostEnd=t+2.6;
+    if(kind==='brake')brakeEnd=t+2.3;
+    if(kind==='back')distance=Math.max(0,distance-(210+rnd(430)));
+    if(kind==='forward')distance=Math.min(LENGTH,distance+(240+rnd(470)));
+    p.events.push({t:t*1000,kind,at:DEVICES[k],from:before,to:distance,index:k});
+   }
+   p.frames.push(distance);
+  }
+ }
+ function progress(p,t){const index=Math.max(0,Math.min(steps,t/(DT*1000)));const j=Math.floor(index),u=index-j;
+  return p.frames[j]+((p.frames[Math.min(steps,j+1)]-p.frames[j])*u);
  }
  const standings=balls.slice().sort((a,b)=>progress(b,D)-progress(a,D)||a.id-b.id);
  return {balls,progress,winner:standings[0],standings};
@@ -46,7 +72,7 @@ function draw(time){const t=Math.min(D,Math.max(0,time));g.fillStyle='#f6f7e9';g
  const gadgetNames=['ドミノ連鎖','落下ハンマー','巨大シーソー','振り子ゲート','歯車連動','跳ね上げ台','ゴール鐘'];
  for(let row=0;row<ROWS;row++){
   const y=TOP+row*STEP,dir=row%2===0?1:-1;
-  const milestone=cumulative[Math.min(cumulative.length-1,row*111+37)];
+  const milestone=DEVICES[Math.min(row,DEVICES.length-1)];
   const u=Math.max(0,Math.min(1,(leadDist-milestone)/155));
   const x=dir===1?550:640;
   g.fillStyle='#356678';g.font='bold 14px system-ui';g.textAlign='left';g.fillText((row+1)+' '+gadgetNames[row],25,y-29);
@@ -90,6 +116,17 @@ function draw(time){const t=Math.min(D,Math.max(0,time));g.fillStyle='#f6f7e9';g
   g.fillStyle='#df9980';g.fillRect(dir===1?105:1000,y-17,75,5);
   g.fillStyle=u>0?'#89cfa3':'#d5bea3';g.beginPath();g.arc(dir===1?195:987,y-14,8,0,Math.PI*2);g.fill();
  }
+ // Mechanism consequences are visible above the exact ball they affect.
+ const activeEvents=round.balls.flatMap(p=>p.events.filter(e=>t>=e.t&&t<e.t+1050).map(e=>({p,e})));
+ for(const {p,e} of activeEvents){const q=point(round.progress(p,t));
+  const labels={boost:'加速 ▶▶',brake:'減速 ▪',back:'↶ 後戻り',forward:'≫ 大ジャンプ'};
+  g.fillStyle=e.kind==='back'?'#d65f5d':e.kind==='brake'?'#8a718e':'#2f9675';
+  g.fillRect(q.x-54,q.y-43,108,22);g.textAlign='center';g.fillStyle='#fff';g.font='bold 13px system-ui';
+  g.fillText(labels[e.kind],q.x,q.y-27);
+  if(e.kind==='back'||e.kind==='forward'){const from=point(e.from),to=point(e.to);
+   g.strokeStyle=e.kind==='back'?'#d65f5d':'#4fbb89';g.lineWidth=3;g.setLineDash([7,5]);
+   g.beginPath();g.moveTo(from.x,from.y);g.lineTo(to.x,to.y);g.stroke();g.setLineDash([])}
+ }
  const sorted=round.balls.slice().sort((a,b)=>round.progress(b,t)-round.progress(a,t));
  // Draw trailing balls first, so the frontrunner remains visible.
  for(const p of sorted.slice().reverse()){const q=point(round.progress(p,t));
@@ -100,7 +137,7 @@ function draw(time){const t=Math.min(D,Math.max(0,time));g.fillStyle='#f6f7e9';g
  g.textAlign='right';g.fillText(t>20000?'⚡ 最終ゲートで大逆転！':'40個が一本のコースで競争！',1170,740);
  if(t>=D){g.fillStyle='rgba(27,54,65,.96)';g.fillRect(245,268,710,173);g.strokeStyle='#f4d67c';g.lineWidth=5;g.strokeRect(245,268,710,173);g.fillStyle='#fff0ad';g.font='bold 52px system-ui';g.textAlign='center';g.fillText('🏆 '+round.winner.n+'番が最先着！',600,375)}
 }
-function tick(){const t=performance.now()-began,stage=t>20000?3:t>12000?2:t>4000?1:0;if(stage>lastCue){lastCue=stage;beep(420+stage*140,.13);setTimeout(()=>beep(630+stage*100,.12),140)}draw(t);$('clock').textContent=(Math.min(D,t)/1000).toFixed(1)+' / 27秒';$('meter').value=Math.min(D,t)/1000;$('status').textContent=t>20000?'⚡ 最終ゲート！ 誰が逆転する？':'⚙ 全員が一本の曲がりくねったコースを走行中';if(t<D)raf=requestAnimationFrame(tick);else{$('start').disabled=false;$('result').textContent='🏆 '+round.winner.n+'番が当選！';[523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,.23),i*150))}}
+function tick(){const t=performance.now()-began,stage=t>20000?3:t>12000?2:t>4000?1:0;if(stage>lastCue){lastCue=stage;beep(420+stage*140,.13);setTimeout(()=>beep(630+stage*100,.12),140)}draw(t);$('clock').textContent=(Math.min(D,t)/1000).toFixed(1)+' / 27秒';$('meter').value=Math.min(D,t)/1000;$('status').textContent=t>20000?'⚡ 後戻り・先送りで順位が激変！':'⚙ 仕掛けで加速・減速・後戻り・先送り！';if(t<D)raf=requestAnimationFrame(tick);else{$('start').disabled=false;$('result').textContent='🏆 '+round.winner.n+'番が当選！';[523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,.23),i*150))}}
 function reset(){cancelAnimationFrame(raf);count=Math.max(1,Math.min(40,Number($('count').value)||40));$('count').value=count;round=make();lastCue=-1;draw(0);$('meter').value=0;$('clock').textContent='0.0 / 27秒';$('status').textContent='一本の蛇行コース：ドミノ → 坂道 → シーソー → 回転ゲート';$('result').textContent='最も先へ進む番号は？';$('start').disabled=false}
 $('start').onclick=()=>{reset();$('start').disabled=true;if(sound){audio??=new(window.AudioContext||window.webkitAudioContext)();audio.resume();beep(800)}began=performance.now();raf=requestAnimationFrame(tick)};
 $('reset').onclick=reset;$('count').onchange=reset;$('sound').onclick=()=>{sound=!sound;$('sound').textContent=sound?'♪ 音 ON':'♪ 音 OFF';if(sound){audio??=new(window.AudioContext||window.webkitAudioContext)();audio.resume();beep(930)}};reset();
