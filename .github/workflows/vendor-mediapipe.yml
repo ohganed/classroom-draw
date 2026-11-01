@@ -1,0 +1,39 @@
+name: Vendor MediaPipe for offline same-origin loading
+on:
+  push:
+    paths:
+      - '.github/workflows/vendor-mediapipe.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Download and install fixed MediaPipe web assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p public/vendor/mediapipe/wasm
+          cd "$(mktemp -d)"
+          npm pack @mediapipe/tasks-vision@0.10.22 --silent
+          tar -xzf mediapipe-tasks-vision-0.10.22.tgz
+          cp package/vision_bundle.mjs "$GITHUB_WORKSPACE/public/vendor/mediapipe/"
+          cp -R package/wasm/. "$GITHUB_WORKSPACE/public/vendor/mediapipe/wasm/"
+          curl -fLSs --retry 3 --max-time 180 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task' -o "$GITHUB_WORKSPACE/public/vendor/mediapipe/hand_landmarker.task"
+          test -s "$GITHUB_WORKSPACE/public/vendor/mediapipe/vision_bundle.mjs"
+          test -s "$GITHUB_WORKSPACE/public/vendor/mediapipe/hand_landmarker.task"
+          find "$GITHUB_WORKSPACE/public/vendor/mediapipe/wasm" -name '*.wasm' | grep -q .
+      - name: Commit vendored browser assets
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/vendor/mediapipe
+          if ! git diff --staged --quiet; then
+            git commit -m 'Vendor MediaPipe hand tracking browser model and wasm assets'
+            git push
+          fi
