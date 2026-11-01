@@ -870,4 +870,10 @@ if (document.documentElement.requestFullscreen && document.fullscreenEnabled) {
  document.addEventListener('fullscreenchange',()=>{ $('fullscreen').textContent=document.fullscreenElement?'全画面を終了':'全画面'; });
 }
 updateSound();
+// Open a selected tile from the illustrated arcade gallery.
+const galleryMode=new URLSearchParams(location.search).get('mode');
+if(galleryMode&&Array.from($('mode').options).some(o=>o.value===galleryMode)){
+ $('mode').value=galleryMode;
+ $('mode').dispatchEvent(new Event('change',{bubbles:true}));
+}
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{ $('hint').textContent='オフライン準備ができませんでした。通信中は利用できます。'; });
