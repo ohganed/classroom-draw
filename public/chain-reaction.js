@@ -130,7 +130,7 @@ function draw(time){const t=Math.min(D,Math.max(0,time));g.fillStyle='#f6f7e9';g
  const sorted=round.balls.slice().sort((a,b)=>round.progress(b,t)-round.progress(a,t));
  // Draw trailing balls first, so the frontrunner remains visible.
  for(const p of sorted.slice().reverse()){const q=point(round.progress(p,t));
-  g.fillStyle=colors[p.n%5];g.beginPath();g.arc(q.x,q.y,13,0,Math.PI*2);g.fill();g.strokeStyle='#294d5d';g.lineWidth=2;g.stroke();g.fillStyle='#153c4c';g.font='900 13px system-ui';g.textAlign='center';g.textBaseline='middle';g.fillText(p.n,q.x,q.y);g.textBaseline='alphabetic'}
+  g.fillStyle=colors[p.n%5];g.beginPath();g.arc(q.x,q.y,23,0,Math.PI*2);g.fill();g.strokeStyle='#294d5d';g.lineWidth=2.5;g.stroke();g.fillStyle='#153c4c';g.font='900 26px system-ui';g.textAlign='center';g.textBaseline='middle';g.fillText(p.n,q.x,q.y);g.textBaseline='alphabetic'}
  // A single start and a single finish, at opposite ends of the serpentine route.
  const finish=point(LENGTH);g.fillStyle='#db796c';g.fillRect(finish.x-28,finish.y-22,56,7);g.fillStyle='#295765';g.font='bold 18px system-ui';g.textAlign='center';g.fillText('GOAL',finish.x,finish.y+45);
  g.fillStyle='#315b65';g.fillRect(0,704,1200,56);g.fillStyle='#fff0b9';g.textAlign='left';g.font='bold 22px system-ui';g.fillText('先頭 '+sorted[0].n+'番　進行 '+Math.floor(round.progress(sorted[0],t))+' / '+Math.floor(LENGTH),28,740);
