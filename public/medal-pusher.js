@@ -41,6 +41,7 @@ function build(){
  }
  // The last coin on the physical board wins. Names are assigned after simulation.
  const survivor=[...alive][0]??coins.reduce((a,b)=>a.dropFrame>b.dropFrame?a:b).id;
+ if(alive.size===0){const coin=coins[survivor];coin.dead=false;coin.y=580;const last=frames[frames.length-1];last.coins[survivor]=[coin.x,coin.y,false];}
  const labels=shuffle(Array.from({length:count},(_,i)=>i+1));
  const people=coins.map(p=>({id:p.id,n:labels[p.id]}));
  return {people,frames,winner:labels[survivor],survivor};
