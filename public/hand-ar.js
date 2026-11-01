@@ -46,22 +46,10 @@ function loop(){const now=performance.now();
 async function beginCamera(){if(cameraReady)return;$('camera').disabled=true;diagnostic='カメラ許可待ち';$('status').textContent='カメラの許可を確認しています…';
  try{if(!navigator.mediaDevices?.getUserMedia)throw Error('HTTPSとカメラ対応ブラウザが必要です');
   stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:'user',width:{ideal:1280},height:{ideal:720}}});video.srcObject=stream;await video.play();cameraReady=true;diagnostic='カメラ映像OK・認識モデル読込中';$('status').textContent='カメラ映像OK。手の認識モデルを読み込み中…';
-  let visionModule=null,importProblems=[];
-  const moduleUrls=[
-   'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/+esm',
-   'https://esm.sh/@mediapipe/tasks-vision@0.10.22',
-   'https://unpkg.com/@mediapipe/tasks-vision@0.10.22/vision_bundle.mjs'
-  ];
-  for(let i=0;i<moduleUrls.length;i++){
-   diagnostic='手認識ライブラリ読み込み '+(i+1)+'/3';
-   $('status').textContent=diagnostic;
-   try{visionModule=await import(/* @vite-ignore */ moduleUrls[i]);if(visionModule.HandLandmarker&&visionModule.FilesetResolver)break;throw Error('必要な機能を読み込めません');}
-   catch(error){visionModule=null;importProblems.push((i+1)+': '+String(error.message||error));}
-  }
-  if(!visionModule)throw Error('AIライブラリを読み込めません: '+importProblems.join(' / '));
-  const {HandLandmarker,FilesetResolver}=visionModule;
-  const vision=await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/wasm');
-  diagnostic='AIモデル初期化中';const opts={baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',delegate:'GPU'},runningMode:'VIDEO',numHands:2};
+  diagnostic='同一サイトから手認識AIを読み込み中';
+  const {HandLandmarker,FilesetResolver}=await import('./vendor/mediapipe/vision_bundle.mjs');
+  const vision=await FilesetResolver.forVisionTasks(new URL('./vendor/mediapipe/wasm',import.meta.url).href);
+  diagnostic='AIモデル初期化中';const opts={baseOptions:{modelAssetPath:new URL('./vendor/mediapipe/hand_landmarker.task',import.meta.url).href,delegate:'GPU'},runningMode:'VIDEO',numHands:2};
   try{tracker=await HandLandmarker.createFromOptions(vision,opts)}catch{opts.baseOptions.delegate='CPU';tracker=await HandLandmarker.createFromOptions(vision,opts)}
   diagnostic='認識準備完了・手を映してください';$('status').textContent='手の追跡が使えます。緑色の手の輪郭が表示されたら、手をボールに重ねてください。';
  }catch(e){diagnostic='起動失敗: '+String(e.message||e).slice(0,170);$('status').textContent='カメラ・手追跡を開始できません：'+e.message+'。画面のタップで遊べます。'}
