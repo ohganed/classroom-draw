@@ -24,9 +24,11 @@ jobs:
           tar -xzf "$ARCHIVE"
           ls -lah package/vision_bundle.mjs package/wasm
           cp package/vision_bundle.mjs "$GITHUB_WORKSPACE/public/vendor/mediapipe/"
+          cp package/vision_bundle.mjs "$GITHUB_WORKSPACE/public/vendor/mediapipe/vision_bundle.js"
           cp -R package/wasm/. "$GITHUB_WORKSPACE/public/vendor/mediapipe/wasm/"
           curl -fLSs --retry 3 --max-time 180 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task' -o "$GITHUB_WORKSPACE/public/vendor/mediapipe/hand_landmarker.task"
           test -s "$GITHUB_WORKSPACE/public/vendor/mediapipe/vision_bundle.mjs"
+          test -s "$GITHUB_WORKSPACE/public/vendor/mediapipe/vision_bundle.js"
           test -s "$GITHUB_WORKSPACE/public/vendor/mediapipe/hand_landmarker.task"
           find "$GITHUB_WORKSPACE/public/vendor/mediapipe/wasm" -name '*.wasm' | grep -q .
       - name: Commit vendored browser assets
