@@ -16,7 +16,7 @@ function render(){const now=performance.now();
  else{const grad=ctx.createLinearGradient(0,0,W,H);grad.addColorStop(0,'#174969');grad.addColorStop(1,'#22214d');ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);ctx.fillStyle='rgba(255,255,255,.09)';for(let i=0;i<14;i++){ctx.beginPath();ctx.arc((i*137)%W,(i*101)%H,30+i%3*22,0,7);ctx.fill()}}
  ctx.fillStyle='rgba(10,22,46,.65)';ctx.fillRect(0,0,W,52);
  ctx.textAlign='center';ctx.fillStyle='#fff6b3';ctx.font='bold 29px system-ui';ctx.fillText('HAND AR  •  TOUCH TO ERASE',W/2,36);ctx.font='bold 19px system-ui';ctx.textAlign='left';ctx.fillStyle='#b6ffda';ctx.fillText('認識状態: '+diagnostic,18,78);
- for(const b of balls){if(!b.alive)continue;ctx.fillStyle=['#f7b4c6','#ffe195','#ade9f6','#c8f2b8','#e2bdf9'][b.num%5];ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#1a3650';ctx.lineWidth=4;ctx.stroke();ctx.fillStyle='#142941';ctx.font='900 37px system-ui';ctx.textBaseline='middle';ctx.fillText(b.num,b.x,b.y);ctx.textBaseline='alphabetic'}
+ for(const b of balls){if(!b.alive)continue;ctx.fillStyle=['#f7b4c6','#ffe195','#ade9f6','#c8f2b8','#e2bdf9'][b.num%5];ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#1a3650';ctx.lineWidth=4;ctx.stroke();ctx.fillStyle='#142941';ctx.font='900 31px system-ui';ctx.textBaseline='middle';ctx.fillText(b.num,b.x,b.y,64);ctx.textBaseline='alphabetic'}
  if(justHit&&now-justHit.t<460){const z=(now-justHit.t)/460;ctx.strokeStyle='rgba(255,222,111,'+(1-z)+')';ctx.lineWidth=8;ctx.beginPath();ctx.arc(justHit.x,justHit.y,42+z*45,0,7);ctx.stroke()}
  for(const shape of handShapes){const outline=[0,1,2,3,4,3,2,5,6,7,8,7,6,9,10,11,12,11,10,13,14,15,16,15,14,17,18,19,20,19,18,17,0];
   ctx.beginPath();for(let i=0;i<outline.length;i++){const p=shape[outline[i]];if(p){if(i===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y)}}ctx.strokeStyle='#52ffe0';ctx.lineWidth=6;ctx.lineJoin='round';ctx.stroke();
@@ -46,12 +46,25 @@ function loop(){const now=performance.now();
 async function beginCamera(){if(cameraReady)return;$('camera').disabled=true;diagnostic='カメラ許可待ち';$('status').textContent='カメラの許可を確認しています…';
  try{if(!navigator.mediaDevices?.getUserMedia)throw Error('HTTPSとカメラ対応ブラウザが必要です');
   stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:'user',width:{ideal:1280},height:{ideal:720}}});video.srcObject=stream;await video.play();cameraReady=true;diagnostic='カメラ映像OK・認識モデル読込中';$('status').textContent='カメラ映像OK。手の認識モデルを読み込み中…';
-  const {HandLandmarker,FilesetResolver}=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/vision_bundle.mjs');
+  let visionModule=null,importProblems=[];
+  const moduleUrls=[
+   'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/+esm',
+   'https://esm.sh/@mediapipe/tasks-vision@0.10.22',
+   'https://unpkg.com/@mediapipe/tasks-vision@0.10.22/vision_bundle.mjs'
+  ];
+  for(let i=0;i<moduleUrls.length;i++){
+   diagnostic='手認識ライブラリ読み込み '+(i+1)+'/3';
+   $('status').textContent=diagnostic;
+   try{visionModule=await import(/* @vite-ignore */ moduleUrls[i]);if(visionModule.HandLandmarker&&visionModule.FilesetResolver)break;throw Error('必要な機能を読み込めません');}
+   catch(error){visionModule=null;importProblems.push((i+1)+': '+String(error.message||error));}
+  }
+  if(!visionModule)throw Error('AIライブラリを読み込めません: '+importProblems.join(' / '));
+  const {HandLandmarker,FilesetResolver}=visionModule;
   const vision=await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/wasm');
   diagnostic='AIモデル初期化中';const opts={baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',delegate:'GPU'},runningMode:'VIDEO',numHands:2};
   try{tracker=await HandLandmarker.createFromOptions(vision,opts)}catch{opts.baseOptions.delegate='CPU';tracker=await HandLandmarker.createFromOptions(vision,opts)}
   diagnostic='認識準備完了・手を映してください';$('status').textContent='手の追跡が使えます。緑色の手の輪郭が表示されたら、手をボールに重ねてください。';
- }catch(e){diagnostic='起動失敗: '+String(e.message||e).slice(0,70);$('status').textContent='カメラ・手追跡を開始できません：'+e.message+'。画面のタップで遊べます。'}
+ }catch(e){diagnostic='起動失敗: '+String(e.message||e).slice(0,170);$('status').textContent='カメラ・手追跡を開始できません：'+e.message+'。画面のタップで遊べます。'}
  finally{$('camera').disabled=false}}
 $('camera').onclick=beginCamera;
 $('start').onclick=()=>{reset();playing=true;lastShuffle=performance.now();$('start').disabled=true;$('status').textContent=cameraReady?'手でボールに触れて消してください。':'ボールをタップして消してください。';if(sound){audio??=new(window.AudioContext||window.webkitAudioContext)();audio.resume();beep(650)}};
