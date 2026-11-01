@@ -1,4 +1,5 @@
 const $=id=>document.getElementById(id),canvas=$('scene'),ctx=canvas.getContext('2d'),video=$('camera-feed'),W=1200,H=675;
+let diagnostic='未開始',lastDiagnostic=0,detectedFrames=0;
 let n=40,balls=[],playing=false,won=false,stream=null,tracker=null,cameraReady=false,detecting=false,lastVideo=-1,lastShuffle=0,lastHit=0,handPoints=[],handShapes=[],sound=false,audio=null,frame=0,justHit=null;
 function randomInt(n){const a=new Uint32Array(1),lim=Math.floor(4294967296/n)*n;do{crypto.getRandomValues(a)}while(a[0]>=lim);return a[0]%n}
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=randomInt(i+1);[a[i],a[j]]=[a[j],a[i]]}return a}
@@ -13,8 +14,8 @@ function eliminate(x,y){if(!playing||won||performance.now()-lastHit<210)return;l
 function render(){const now=performance.now();
  if(cameraReady&&video.readyState>=2){ctx.save();ctx.translate(W,0);ctx.scale(-1,1);ctx.drawImage(video,0,0,W,H);ctx.restore();}
  else{const grad=ctx.createLinearGradient(0,0,W,H);grad.addColorStop(0,'#174969');grad.addColorStop(1,'#22214d');ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);ctx.fillStyle='rgba(255,255,255,.09)';for(let i=0;i<14;i++){ctx.beginPath();ctx.arc((i*137)%W,(i*101)%H,30+i%3*22,0,7);ctx.fill()}}
- ctx.fillStyle='rgba(10,22,46,.35)';ctx.fillRect(0,0,W,52);
- ctx.textAlign='center';ctx.fillStyle='#fff6b3';ctx.font='bold 29px system-ui';ctx.fillText('HAND AR  •  TOUCH TO ERASE',W/2,36);
+ ctx.fillStyle='rgba(10,22,46,.65)';ctx.fillRect(0,0,W,52);
+ ctx.textAlign='center';ctx.fillStyle='#fff6b3';ctx.font='bold 29px system-ui';ctx.fillText('HAND AR  •  TOUCH TO ERASE',W/2,36);ctx.font='bold 19px system-ui';ctx.textAlign='left';ctx.fillStyle='#b6ffda';ctx.fillText('認識状態: '+diagnostic,18,78);
  for(const b of balls){if(!b.alive)continue;ctx.fillStyle=['#f7b4c6','#ffe195','#ade9f6','#c8f2b8','#e2bdf9'][b.num%5];ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#1a3650';ctx.lineWidth=4;ctx.stroke();ctx.fillStyle='#142941';ctx.font='900 37px system-ui';ctx.textBaseline='middle';ctx.fillText(b.num,b.x,b.y);ctx.textBaseline='alphabetic'}
  if(justHit&&now-justHit.t<460){const z=(now-justHit.t)/460;ctx.strokeStyle='rgba(255,222,111,'+(1-z)+')';ctx.lineWidth=8;ctx.beginPath();ctx.arc(justHit.x,justHit.y,42+z*45,0,7);ctx.stroke()}
  for(const shape of handShapes){const outline=[0,1,2,3,4,3,2,5,6,7,8,7,6,9,10,11,12,11,10,13,14,15,16,15,14,17,18,19,20,19,18,17,0];
@@ -26,7 +27,7 @@ function render(){const now=performance.now();
 function loop(){const now=performance.now();
  if(playing&&now-lastShuffle>=1000){reassignNumbers();lastShuffle=now;}
  if(cameraReady&&tracker&&video.readyState>=2&&video.currentTime!==lastVideo){lastVideo=video.currentTime;try{
-  const result=tracker.detectForVideo(video,now);handShapes=(result.landmarks||[]).map(shape=>shape.map(p=>({x:(1-p.x)*W,y:p.y*H})));
+  const result=tracker.detectForVideo(video,now);handShapes=(result.landmarks||[]).map(shape=>shape.map(p=>({x:(1-p.x)*W,y:p.y*H})));detectedFrames++;diagnostic=handShapes.length?'手を'+handShapes.length+'つ認識':'映像解析中・手は未検出';
   $('status').textContent=handShapes.length?'✋ 手を'+handShapes.length+'つ認識中。ボールに重ねてください。':'手をカメラに映してください。認識すると緑色の線が現れます。';
   if(playing)for(const shape of handShapes){
    // Sample every joint and all the finger/palm edges, so contact is not limited to five fingertips.
@@ -40,17 +41,17 @@ function loop(){const now=performance.now();
     if(onEdge||inside){eliminate(ball.x,ball.y);break}
    }
   }
- }catch(e){$('status').textContent='手の検出に問題が発生しました。画面タップでも操作できます。';tracker=null;handShapes=[]}}
+ }catch(e){$('status').textContent='手の検出に問題が発生しました。画面タップでも操作できます。';diagnostic='認識エラー: '+String(e.message||e).slice(0,70);tracker=null;handShapes=[]}}
  render()}
-async function beginCamera(){if(cameraReady)return;$('camera').disabled=true;$('status').textContent='カメラと手の検出モデルを準備しています…';
+async function beginCamera(){if(cameraReady)return;$('camera').disabled=true;diagnostic='カメラ許可待ち';$('status').textContent='カメラの許可を確認しています…';
  try{if(!navigator.mediaDevices?.getUserMedia)throw Error('HTTPSとカメラ対応ブラウザが必要です');
-  stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:'user',width:{ideal:1280},height:{ideal:720}}});video.srcObject=stream;await video.play();cameraReady=true;
-  const {HandLandmarker,FilesetResolver}=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/+esm');
+  stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:'user',width:{ideal:1280},height:{ideal:720}}});video.srcObject=stream;await video.play();cameraReady=true;diagnostic='カメラ映像OK・認識モデル読込中';$('status').textContent='カメラ映像OK。手の認識モデルを読み込み中…';
+  const {HandLandmarker,FilesetResolver}=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/vision_bundle.mjs');
   const vision=await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/wasm');
-  const opts={baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',delegate:'GPU'},runningMode:'VIDEO',numHands:2};
+  diagnostic='AIモデル初期化中';const opts={baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',delegate:'GPU'},runningMode:'VIDEO',numHands:2};
   try{tracker=await HandLandmarker.createFromOptions(vision,opts)}catch{opts.baseOptions.delegate='CPU';tracker=await HandLandmarker.createFromOptions(vision,opts)}
-  $('status').textContent='手の追跡が使えます。緑色の手の輪郭が表示されたら、手をボールに重ねてください。';
- }catch(e){$('status').textContent='カメラ・手追跡を開始できません：'+e.message+'。画面のタップで遊べます。'}
+  diagnostic='認識準備完了・手を映してください';$('status').textContent='手の追跡が使えます。緑色の手の輪郭が表示されたら、手をボールに重ねてください。';
+ }catch(e){diagnostic='起動失敗: '+String(e.message||e).slice(0,70);$('status').textContent='カメラ・手追跡を開始できません：'+e.message+'。画面のタップで遊べます。'}
  finally{$('camera').disabled=false}}
 $('camera').onclick=beginCamera;
 $('start').onclick=()=>{reset();playing=true;lastShuffle=performance.now();$('start').disabled=true;$('status').textContent=cameraReady?'手でボールに触れて消してください。':'ボールをタップして消してください。';if(sound){audio??=new(window.AudioContext||window.webkitAudioContext)();audio.resume();beep(650)}};
