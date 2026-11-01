@@ -19,8 +19,10 @@ jobs:
           set -euo pipefail
           mkdir -p public/vendor/mediapipe/wasm
           cd "$(mktemp -d)"
-          npm pack @mediapipe/tasks-vision@0.10.22 --silent
-          tar -xzf mediapipe-tasks-vision-0.10.22.tgz
+          ARCHIVE=$(npm pack @mediapipe/tasks-vision@0.10.35 --silent)
+          echo "Downloaded: $ARCHIVE"
+          tar -xzf "$ARCHIVE"
+          ls -lah package/vision_bundle.mjs package/wasm
           cp package/vision_bundle.mjs "$GITHUB_WORKSPACE/public/vendor/mediapipe/"
           cp -R package/wasm/. "$GITHUB_WORKSPACE/public/vendor/mediapipe/wasm/"
           curl -fLSs --retry 3 --max-time 180 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task' -o "$GITHUB_WORKSPACE/public/vendor/mediapipe/hand_landmarker.task"
