@@ -12,6 +12,7 @@ export function makeAmidaRound(count,winner,seed){
  const edges=[];
  for(let level=0;level<LEVELS;level++){
   // A matching at each height ensures only one path per pillar.
+  // The final six levels contain more switches: genuine last-minute route changes.
   const available=shuffle(Array.from({length:49},(_,i)=>i),rand),used=new Set(),links=[];
   for(const a of available){if(used.has(a))continue;
    const {x,z}=coords(a),neighbors=[];
@@ -20,7 +21,7 @@ export function makeAmidaRound(count,winner,seed){
    if(z>0)neighbors.push(index(x,z-1));
    if(z<6)neighbors.push(index(x,z+1));
    const choices=neighbors.filter(b=>!used.has(b));
-   if(choices.length&&rand()<.76){const b=choices[Math.floor(rand()*choices.length)];links.push([a,b]);used.add(a);used.add(b);}
+   if(choices.length&&rand()<(level>=LEVELS-6?.98:.76)){const b=choices[Math.floor(rand()*choices.length)];links.push([a,b]);used.add(a);used.add(b);}
   }
   edges.push(links);
  }
@@ -75,10 +76,10 @@ export function drawAmida(canvas,round,elapsed=0,duration=DURATION,reduced=false
   c.fillStyle='#10223f';c.textAlign='center';c.textBaseline='middle';c.font='900 10px Arial';c.fillText(m.n,position.x,position.y);
  }
  // Synchronized top-down navigation inset. Dots show each member's current pillar.
- const mx=469,my=55,cell=14.0;
- c.save();c.fillStyle='rgba(8,22,40,.91)';c.beginPath();c.roundRect(mx-8,my-22,116,128,10);c.fill();
+ const mx=429,my=68,cell=21;
+ c.save();c.fillStyle='rgba(8,22,40,.91)';c.beginPath();c.roundRect(mx-10,my-29,168,190,10);c.fill();
  c.strokeStyle='rgba(207,226,231,.55)';c.lineWidth=1;c.stroke();
- c.fillStyle='#e4ebde';c.textAlign='left';c.textBaseline='alphabetic';c.font='bold 12px sans-serif';c.fillText('2D 上面図',mx,my-6);
+ c.fillStyle='#e4ebde';c.textAlign='left';c.textBaseline='alphabetic';c.font='bold 14px sans-serif';c.fillText('2D 上面図・番号',mx,my-11);
  for(let z=0;z<N;z++)for(let x=0;x<N;x++){
   c.strokeStyle='rgba(189,210,218,.22)';c.lineWidth=1;c.strokeRect(mx+x*cell,my+z*cell,cell,cell);
  }
@@ -87,13 +88,14 @@ export function drawAmida(canvas,round,elapsed=0,duration=DURATION,reduced=false
   const {x,z}=coords(m.route[stepIdx]);
   const px=mx+(x+.5)*cell,py=my+(z+.5)*cell;
   c.fillStyle=m.n===round.winner&&progress>=1?'#ffdf77':pal[(m.n-1)%pal.length];
-  c.beginPath();c.arc(px,py,2.8,0,Math.PI*2);c.fill();
+  c.beginPath();c.arc(px,py,9,0,Math.PI*2);c.fill();
+  c.fillStyle='#122338';c.font='900 11px Arial';c.textAlign='center';c.textBaseline='middle';c.fillText(m.n,px,py);
  }
  if(progress>=1){const {x,z}=coords(round.flower);c.strokeStyle='#ffdf77';c.lineWidth=2;c.strokeRect(mx+x*cell,my+z*cell,cell,cell);}
  c.restore();
  if(progress>=1){c.strokeStyle='#f6d780';c.lineWidth=2.5;c.beginPath();c.arc(goal.x,goal.y,14,0,2*Math.PI);c.stroke();}
  c.textBaseline='alphabetic';c.font='bold 18px Arial';c.fillStyle='#fae5ae';
- c.fillText(progress>=1?round.winner+'番が花束に到着！':'40人が下から同時に登る！',300,458);
+ c.fillText(progress>=1?round.winner+'番が花束に到着！':progress>.73?'終盤！ 連続分岐で大逆転！':'40人が下から同時に登る！',300,458);
 }
 
 export function playAmidaBeat(ctx,master,step){
