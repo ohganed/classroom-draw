@@ -5,19 +5,41 @@ function rand(n){const a=new Uint32Array(1),limit=Math.floor(4294967296/n)*n;do{
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=rand(i+1);[a[i],a[j]]=[a[j],a[i]]}return a}
 const xy=i=>({x:i%COL,y:Math.floor(i/COL)});
 function center(i){const p=xy(i);return {x:OX+p.x*S+S/2,y:OY+p.y*S+S/2}}
-function build(){const winner=1+rand(count),slots=shuffle(Array.from({length:COL*ROW},(_,i)=>i)),people=Array.from({length:count},(_,i)=>({n:i+1,cell:slots[i]}));
- const walls=new Set();for(let y=0;y<ROW;y++)for(let x=0;x<COL;x++){if(x<COL-1&&rand(100)<30)walls.add([y*COL+x,y*COL+x+1].join(':'));if(y<ROW-1&&rand(100)<30)walls.add([y*COL+x,(y+1)*COL+x].join(':'))}
- const protectedCell=people[winner-1].cell;for(const d of [-COL,COL,-1,1]){const k=protectedCell+d;if(k>=0&&k<COL*ROW&&Math.abs(xy(k).x-xy(protectedCell).x)+Math.abs(xy(k).y-xy(protectedCell).y)===1)walls.add([Math.min(k,protectedCell),Math.max(k,protectedCell)].join(':'))}
- const path=cell=>{const reached=new Set([cell]);for(const d of [-COL,COL,-1,1]){const j=cell+d;const p=xy(cell),q=xy(j);if(j<0||j>=COL*ROW||Math.abs(p.x-q.x)+Math.abs(p.y-q.y)!==1)continue;const key=[Math.min(cell,j),Math.max(cell,j)].join(':');if(!walls.has(key))reached.add(j)}return [...reached]};
- const winnerCell=people[winner-1].cell,remaining=new Map(people.map(p=>[p.cell,p.n])),events=[];
- // Choose each real bomb so that its visual cross blasts actual occupants, never the winner.
- let time=2600;while(remaining.size>1){const victims=[...remaining.entries()].filter(([,n])=>n!==winner),picked=victims[rand(victims.length)],bombCell=picked[0];
- let cells=path(bombCell); // Solid walls physically stop blast rays before the protected cell
- const hit=cells.filter(cell=>remaining.has(cell));for(const cell of hit)remaining.delete(cell);
- events.push({t:time,cell:bombCell,cells,hit:hit.map(cell=>people[0]&&people.find(p=>p.cell===cell).n)});
- time+=Math.min(450,18000/Math.max(1,count-1));
+function build(){
+ // Generate the board before assigning any number. Geometry cannot reveal the winning number.
+ const slots=shuffle(Array.from({length:COL*ROW},(_,i)=>i)).slice(0,count);
+ const walls=new Set();
+ for(let y=0;y<ROW;y++)for(let x=0;x<COL;x++){
+  if(x<COL-1&&rand(100)<30)walls.add([y*COL+x,y*COL+x+1].join(':'));
+  if(y<ROW-1&&rand(100)<30)walls.add([y*COL+x,(y+1)*COL+x].join(':'));
  }
- return {winner,people,walls,events};}
+ const path=cell=>{
+  const reached=[cell];
+  for(const d of [-COL,COL,-1,1]){
+   const j=cell+d;if(j<0||j>=COL*ROW)continue;
+   const p=xy(cell),q=xy(j);
+   if(Math.abs(p.x-q.x)+Math.abs(p.y-q.y)!==1)continue;
+   const key=[Math.min(cell,j),Math.max(cell,j)].join(':');
+   if(!walls.has(key))reached.push(j);
+  }
+  return reached;
+ };
+ const remaining=new Set(slots),raw=[];
+ while(remaining.size>1){
+  // A bomb is placed on one occupied cell, then the actual blast removes everyone it reaches.
+  const choices=[...remaining],bombCell=choices[rand(choices.length)];
+  const cells=path(bombCell),hit=cells.filter(cell=>remaining.has(cell));
+  for(const cell of hit)remaining.delete(cell);
+  raw.push({cell:bombCell,cells,hit});
+ }
+ // Number labels are shuffled AFTER gameplay is simulated: no geometry-based number bias.
+ const labels=shuffle(Array.from({length:count},(_,i)=>i+1));
+ const people=slots.map((cell,i)=>({cell,n:labels[i]}));
+ const byCell=new Map(people.map(p=>[p.cell,p.n]));
+ const winner=byCell.get([...remaining][0]);
+ const events=raw.map((e,i)=>({...e,t:2600+(i+1)*(18800/(raw.length+1)),hit:e.hit.map(cell=>byCell.get(cell))}));
+ return {winner,people,walls,events};
+}
 function beep(f,d=.12,type='square',vol=.12){if(!sound||!ctx)return;try{const t=ctx.currentTime,o=ctx.createOscillator(),a=ctx.createGain();o.type=type;o.frequency.value=f;a.gain.setValueAtTime(.0001,t);a.gain.exponentialRampToValueAtTime(vol,t+.007);a.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(a);a.connect(ctx.destination);o.start(t);o.stop(t+d+.02)}catch{}}
 function render(ms){const t=Math.min(DURATION,ms),dead=new Set(),active=[];for(const e of round.events){if(t>=e.t)for(const n of e.hit)dead.add(n);if(t>=e.t-480&&t<e.t+310)active.push(e)}
  g.fillStyle='#121f36';g.fillRect(0,0,1200,750);g.fillStyle='#e7f1ff';g.font='bold 29px system-ui';g.textAlign='center';g.fillText('💣 爆弾迷宮バトル',600,42);
