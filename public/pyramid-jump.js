@@ -7,13 +7,20 @@ function make(){
  const locations=shuffle(tiles.map((_,i)=>i)).slice(0,count);
  const survivor=rand(count),losers=shuffle(locations.map((_,i)=>i).filter(i=>i!==survivor));
  const events=losers.map((id,i)=>({id,t:1700+(i+1)*19200/Math.max(1,losers.length),tile:locations[id]}));
+ // Many clearly visible SAFE jumps: the landing tile keeps its original color.
+ const safeEvents=[];
+ for(let t=900;t<19900;t+=650){
+  const eligible=locations.map((_,id)=>id).filter(id=>!events.some(e=>e.id===id&&e.t<=t+850));
+  if(eligible.length)safeEvents.push({id:eligible[rand(eligible.length)],t});
+ }
  const labels=shuffle(Array.from({length:count},(_,i)=>i+1));
- return {people:locations.map((tile,id)=>({id,tile,n:labels[id]})),events,winner:labels[survivor],survivor};
+ return {people:locations.map((tile,id)=>({id,tile,n:labels[id]})),events,safeEvents,winner:labels[survivor],survivor};
 }
 function tone(f,d=.11,type='triangle',v=.1){if(!sound||!audio)return;try{const at=audio.currentTime,o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.setValueAtTime(f,at);g.gain.setValueAtTime(.0001,at);g.gain.exponentialRampToValueAtTime(v,at+.008);g.gain.exponentialRampToValueAtTime(.0001,at+d);o.connect(g);g.connect(audio.destination);o.start(at);o.stop(at+d+.02)}catch{}}
 function draw(t){
  t=Math.min(D,t);const dead=new Set(round.events.filter(e=>e.t<=t).map(e=>e.id));
  const active=round.events.find(e=>t>=e.t-750&&t<e.t+240);
+ const safeActive=round.safeEvents.filter(e=>t>=e.t&&t<e.t+550);
  c.fillStyle='#191038';c.fillRect(0,0,1200,760);c.textAlign='center';c.fillStyle='#ffe49c';c.font='bold 34px system-ui';c.fillText('✦ PYRAMID JUMP FEVER ✦',600,53);
  for(let id=0;id<tiles.length;id++){const q=tiles[id],isDanger=active?.tile===id,fallen=round.events.some(e=>e.tile===id&&e.t<t);
  c.beginPath();c.moveTo(q.x,q.y-24);c.lineTo(q.x+45,q.y);c.lineTo(q.x,q.y+24);c.lineTo(q.x-45,q.y);c.closePath();
@@ -21,13 +28,12 @@ function draw(t){
  c.strokeStyle=fallen?'#635478':'#f5ebff';c.lineWidth=3;c.stroke();
  c.fillStyle='rgba(16,10,44,.42)';c.beginPath();c.moveTo(q.x-45,q.y);c.lineTo(q.x,q.y+24);c.lineTo(q.x,q.y+38);c.lineTo(q.x-45,q.y+12);c.closePath();c.fill()}
  for(const p of round.people){if(dead.has(p.id))continue;const q=tiles[p.tile],near=active?.id===p.id;
- // Ordinary safe hops happen throughout the early game. A fatal jump lands first,
- // then the tile turns red after a short suspense beat; only then does it collapse.
- const safePhase=((t/1150+p.id*.37)%(Math.PI*2));
- const safeHop=Math.max(0,Math.sin(safePhase))*15;
+ const safe=safeActive.find(e=>e.id===p.id);
+ const safeU=safe?Math.max(0,Math.min(1,(t-safe.t)/550)):0;
+ const safeHop=safe?Math.sin(Math.PI*safeU)*48:0;
  const jumpPhase=near?Math.max(0,Math.min(1,(t-(active.t-750))/490)):0;
  const fatalHop=near&&t<active.t-260?Math.sin(jumpPhase*Math.PI)*37:0;
- let x=q.x,y=q.y-25-(near?fatalHop:safeHop);
+ let x=q.x,y=q.y-25-Math.max(fatalHop,safeHop);
  if(t>21000&&p.id===round.survivor){const u=Math.min(1,(t-21000)/2800);x=q.x+(600-q.x)*u;y=q.y-25+(105-q.y)*u-Math.sin(u*Math.PI)*65;}
  c.fillStyle=['#f9b6c9','#acf3a5','#bbd5ff','#dec0ff'][p.n%4];c.beginPath();c.arc(x,y,21,0,Math.PI*2);c.fill();c.strokeStyle='#221745';c.lineWidth=3;c.stroke();
  c.fillStyle='#201844';c.font='900 19px system-ui';c.textBaseline='middle';c.fillText(p.n,x,y+1)}
