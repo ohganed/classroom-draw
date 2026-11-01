@@ -5,7 +5,8 @@ function shuffle(a){for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[
 const palette=['#ffde56','#ff83c7','#6effe9','#ae94ff','#ff9977','#92ed75'];
 // Build a deterministic contact simulation before randomly assigning visible numbers.
 function build(){
- const coins=Array.from({length:count},(_,i)=>({id:i,x:249+i%10*77+(rnd(9)-4),y:223+Math.floor(i/10)*67+(rnd(9)-4),vy:0,dead:false,dropFrame:-1}));
+ const slots=shuffle(Array.from({length:40},(_,i)=>i)).slice(0,count);
+ const coins=Array.from({length:count},(_,i)=>{const slot=slots[i];return {id:i,x:249+slot%10*77+(rnd(9)-4),y:223+Math.floor(slot/10)*67+(rnd(9)-4),vy:0,dead:false,dropFrame:-1};});
  const frames=[],alive=new Set(coins.map(p=>p.id)),r=34;
  let plate=177,oldPlate=177;
  // Stronger strokes as the tray empties, but never move a coin without contact.
