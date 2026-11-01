@@ -7,11 +7,12 @@ const xy=i=>({x:i%COL,y:Math.floor(i/COL)});
 function center(i){const p=xy(i);return {x:OX+p.x*S+S/2,y:OY+p.y*S+S/2}}
 function build(){const winner=1+rand(count),slots=shuffle(Array.from({length:COL*ROW},(_,i)=>i)),people=Array.from({length:count},(_,i)=>({n:i+1,cell:slots[i]}));
  const walls=new Set();for(let y=0;y<ROW;y++)for(let x=0;x<COL;x++){if(x<COL-1&&rand(100)<30)walls.add([y*COL+x,y*COL+x+1].join(':'));if(y<ROW-1&&rand(100)<30)walls.add([y*COL+x,(y+1)*COL+x].join(':'))}
+ const protectedCell=people[winner-1].cell;for(const d of [-COL,COL,-1,1]){const k=protectedCell+d;if(k>=0&&k<COL*ROW&&Math.abs(xy(k).x-xy(protectedCell).x)+Math.abs(xy(k).y-xy(protectedCell).y)===1)walls.add([Math.min(k,protectedCell),Math.max(k,protectedCell)].join(':'))}
  const path=cell=>{const reached=new Set([cell]);for(const d of [-COL,COL,-1,1]){const j=cell+d;const p=xy(cell),q=xy(j);if(j<0||j>=COL*ROW||Math.abs(p.x-q.x)+Math.abs(p.y-q.y)!==1)continue;const key=[Math.min(cell,j),Math.max(cell,j)].join(':');if(!walls.has(key))reached.add(j)}return [...reached]};
  const winnerCell=people[winner-1].cell,remaining=new Map(people.map(p=>[p.cell,p.n])),events=[];
  // Choose each real bomb so that its visual cross blasts actual occupants, never the winner.
  let time=2600;while(remaining.size>1){const victims=[...remaining.entries()].filter(([,n])=>n!==winner),picked=victims[rand(victims.length)],bombCell=picked[0];
- let cells=path(bombCell);if(cells.includes(winnerCell))cells=[bombCell]; // stone cover / compact blast when winner is adjacent
+ let cells=path(bombCell); // Solid walls physically stop blast rays before the protected cell
  const hit=cells.filter(cell=>remaining.has(cell));for(const cell of hit)remaining.delete(cell);
  events.push({t:time,cell:bombCell,cells,hit:hit.map(cell=>people[0]&&people.find(p=>p.cell===cell).n)});
  time+=Math.min(450,18000/Math.max(1,count-1));
