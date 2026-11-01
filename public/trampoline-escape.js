@@ -5,15 +5,19 @@ function shuffle(a){for(let i=a.length-1;i>0;i--){const j=rand(i+1);[a[i],a[j]]=
 const X=145,Y=668,dx=113,dy=112,platform=(col,floor)=>({x:X+col*dx,y:Y-floor*dy});
 function build(){
  const slots=shuffle(Array.from({length:40},(_,i)=>i)),loserIds=shuffle(Array.from({length:count},(_,i)=>i));
- const survivor=loserIds.pop(),events=loserIds.map((id,i)=>({id,t:6900+(i+1)*14600/Math.max(1,count-1)}));
+ const survivor=loserIds.pop();
+ // 3–5 participants jump together per wave, with a final solo survivor.
+ const events=[];let wave=0;
+ for(let i=0;i<loserIds.length;){const size=Math.min(loserIds.length-i,3+rand(3));const t=6900+wave*14200/Math.max(1,Math.ceil((count-1)/4)-1);for(let j=0;j<size;j++)events.push({id:loserIds[i+j],t});i+=size;wave++;}
  const players=slots.slice(0,count).map((slot,id)=>({id,col:slot%8,floor:Math.floor(slot/8),phase:rand(1000)/1000}));
  const safeEvents=[];
  // Every player gets at least one complete, harmless landing before any trampoline breaks.
- for(let i=0;i<count;i++)safeEvents.push({id:i,t:700+(i%10)*350+Math.floor(i/10)*125});
+ const safeIds=shuffle(Array.from({length:count},(_,i)=>i));
+ for(let i=0;i<count;i++)safeEvents.push({id:safeIds[i],t:650+Math.floor(i/5)*560});
  // Extra safe bounces make harmless landings common even later in the round.
- for(let t=5300;t<20500;t+=380){
+ for(let t=5200;t<20500;t+=740){
   const eligible=Array.from({length:count},(_,i)=>i).filter(id=>!events.some(e=>e.id===id&&e.t<=t+1000));
-  if(eligible.length)safeEvents.push({id:eligible[rand(eligible.length)],t});
+  shuffle(eligible);for(const id of eligible.slice(0,Math.min(eligible.length,3+rand(3))))safeEvents.push({id,t});
  }
  const labels=shuffle(Array.from({length:count},(_,i)=>i+1));return {players:players.map(p=>({...p,n:labels[p.id]})),events,safeEvents,survivor,winner:labels[survivor]};
 }
