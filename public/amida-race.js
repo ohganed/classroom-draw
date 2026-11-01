@@ -39,11 +39,14 @@ function project(p,h){
 }
 export function drawAmida(canvas,round,elapsed=0,duration=DURATION,reduced=false){
  const c=canvas.getContext('2d');if(!c)return;
+ if(canvas.width!==1120||canvas.height!==740){canvas.width=1120;canvas.height=740;}
  const progress=clamp(elapsed/(duration*.89));
- c.fillStyle='#0a152c';c.fillRect(0,0,600,480);
+ c.fillStyle='#0a152c';c.fillRect(0,0,1120,740);
  c.textAlign='center';c.textBaseline='alphabetic';c.fillStyle='#fae4ad';
- c.font='bold 20px sans-serif';c.fillText('立体7×7ジャングルジム あみだ！',300,27);
+ c.font='bold 32px sans-serif';c.fillText('立体7×7ジャングルジム あみだ！',560,45);
  if(!round)return;
+ // Dedicated left viewport: the existing 3D geometry is drawn at exactly 150% scale.
+ c.save();c.translate(70,112);c.scale(1.5,1.5);
  // Depth-sort solid 3D vertical pillars.
  for(let depth=0;depth<=12;depth++)for(let z=0;z<7;z++){
   const x=depth-z;if(x<0||x>6)continue;const p=index(x,z),a=project(p,0),b=project(p,LEVELS);
@@ -75,11 +78,12 @@ export function drawAmida(canvas,round,elapsed=0,duration=DURATION,reduced=false
   c.strokeStyle='#10223f';c.lineWidth=2;c.stroke();
   c.fillStyle='#10223f';c.textAlign='center';c.textBaseline='middle';c.font='900 10px Arial';c.fillText(m.n,position.x,position.y);
  }
- // Synchronized top-down navigation inset. Dots show each member's current pillar.
- const mx=429,my=68,cell=21;
- c.save();c.fillStyle='rgba(8,22,40,.91)';c.beginPath();c.roundRect(mx-10,my-29,168,190,10);c.fill();
+ c.restore();
+ // Dedicated right viewport: double the previous 21px top-down cells.
+ const mx=750,my=125,cell=42;
+ c.save();c.fillStyle='rgba(8,22,40,.91)';c.beginPath();c.roundRect(mx-18,my-57,336,376,14);c.fill();
  c.strokeStyle='rgba(207,226,231,.55)';c.lineWidth=1;c.stroke();
- c.fillStyle='#e4ebde';c.textAlign='left';c.textBaseline='alphabetic';c.font='bold 14px sans-serif';c.fillText('2D 上面図・番号',mx,my-11);
+ c.fillStyle='#e4ebde';c.textAlign='left';c.textBaseline='alphabetic';c.font='bold 23px sans-serif';c.fillText('2D 上面図・番号',mx,my-22);
  for(let z=0;z<N;z++)for(let x=0;x<N;x++){
   c.strokeStyle='rgba(189,210,218,.22)';c.lineWidth=1;c.strokeRect(mx+x*cell,my+z*cell,cell,cell);
  }
@@ -88,14 +92,14 @@ export function drawAmida(canvas,round,elapsed=0,duration=DURATION,reduced=false
   const {x,z}=coords(m.route[stepIdx]);
   const px=mx+(x+.5)*cell,py=my+(z+.5)*cell;
   c.fillStyle=m.n===round.winner&&progress>=1?'#ffdf77':pal[(m.n-1)%pal.length];
-  c.beginPath();c.arc(px,py,9,0,Math.PI*2);c.fill();
-  c.fillStyle='#122338';c.font='900 11px Arial';c.textAlign='center';c.textBaseline='middle';c.fillText(m.n,px,py);
+  c.beginPath();c.arc(px,py,16.5,0,Math.PI*2);c.fill();
+  c.fillStyle='#122338';c.font='900 20px Arial';c.textAlign='center';c.textBaseline='middle';c.fillText(m.n,px,py);
  }
  if(progress>=1){const {x,z}=coords(round.flower);c.strokeStyle='#ffdf77';c.lineWidth=2;c.strokeRect(mx+x*cell,my+z*cell,cell,cell);}
  c.restore();
- if(progress>=1){c.strokeStyle='#f6d780';c.lineWidth=2.5;c.beginPath();c.arc(goal.x,goal.y,14,0,2*Math.PI);c.stroke();}
+ if(progress>=1){c.strokeStyle='#f6d780';c.lineWidth=3;c.beginPath();c.arc(70+goal.x*1.5,112+goal.y*1.5,22,0,2*Math.PI);c.stroke();}
  c.textBaseline='alphabetic';c.font='bold 18px Arial';c.fillStyle='#fae5ae';
- c.fillText(progress>=1?round.winner+'番が花束に到着！':progress>.73?'終盤！ 連続分岐で大逆転！':'40人が下から同時に登る！',300,458);
+ c.font='bold 26px Arial';c.fillText(progress>=1?round.winner+'番が花束に到着！':progress>.73?'終盤！ 連続分岐で大逆転！':round.count+'人が下から同時に登る！',560,706);
 }
 
 export function playAmidaBeat(ctx,master,step){
