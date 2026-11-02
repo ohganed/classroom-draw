@@ -34,7 +34,7 @@ function combat(now,force=false){
   const hitChance=Math.min(.94,(.28+strike*.46)*exposure*(feint?1.38:1)/p.evade);
   const hit=random(10000)/10000<hitChance;
   const defense=dodge?.54:1;
-  const damage=hit?(.045+strike*.085)*(feint?1.32:1)*defense/p.guard:0;
+  const damage=hit?(.045+strike*.085)*exposure*(feint?1.32:1)*defense/p.guard:0;
   p.hp-=damage;
   p.shift=Math.max(0,p.shift*.75+(hit?damage:0));
   if(p.hp<=0&&alive.length-removed>1){p.alive=false;p.exit=now;fading.push(p);removed++;}
