@@ -1,5 +1,5 @@
 // Five-column cascade puzzle. Every visible clear is produced by actual adjacency.
-// Random number stream is balanced by shuffled full bags; app independently picks winner.
+// Three shuffled number bags allow up to three appearances per number.
 const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
 const ease=x=>{x=clamp(x);return x*x*(3-2*x)};
 const COLORS=['#ed847c','#72b9e2','#efc56e','#92cb8f','#bd9fe9','#77d2c8'];
@@ -32,9 +32,17 @@ function gravity(board){
 export function makeFallingRound(count,winner,seed){
  let s=seed>>>0||1;const rand=()=>((s=(Math.imul(s,1664525)+1013904223)>>>0)/4294967296);
  const board=Array.from({length:H},()=>Array(W).fill(null)),events=[];
- let time=.12,nextId=1,bag=[],drops=0,chains=0,topout=false;
- const fresh=()=>{bag=Array.from({length:count},(_,i)=>i+1);for(let i=bag.length-1;i>0;i--){const j=Math.floor(rand()*(i+1));[bag[i],bag[j]]=[bag[j],bag[i]];}};
- const take=()=>bag.pop();
+ let time=.12,nextId=1,drops=0,chains=0,topout=false;
+ const stream=[],previousColor=Array(count+1).fill(-1);
+ let previousDropColor=-1;
+ for(let cycle=0;cycle<3;cycle++){
+  const bag=Array.from({length:count},(_,i)=>i+1);
+  for(let i=bag.length-1;i>0;i--){const j=Math.floor(rand()*(i+1));[bag[i],bag[j]]=[bag[j],bag[i]];}
+  if(stream.length&&bag.length>1&&bag[0]===stream[stream.length-1]){
+   const j=1+Math.floor(rand()*(bag.length-1));[bag[0],bag[j]]=[bag[j],bag[0]];
+  }
+  stream.push(...bag);
+ }
  const record=(kind,before,after,dur,more={})=>{events.push({kind,start:time,dur,before,after,...more});time+=dur;};
  // A completed bottom row becomes permanent gray foundation tiles.
  function lockCompletedRows(){
@@ -77,9 +85,8 @@ export function makeFallingRound(count,winner,seed){
    }
   }
  }
- // Each eligible number enters the puzzle exactly once. No refilled bags.
- // A random permutation assigns the numbers to physical pieces, so every
- // number has the same probability of being the winning piece.
+ // Each number can appear up to three times, once in each shuffled bag.
+ // Color is assigned independently of the number, and changes between repeats.
  const place=(n,color,col)=>{
   if(board[0][col])return false;
   let row=H-1;while(row>0&&board[row][col])row--;
@@ -88,10 +95,11 @@ export function makeFallingRound(count,winner,seed){
   record('drop',before,clone(board),.085,{n,color,col,row});
   drops++;lockCompletedRows();resolve(id);lockCompletedRows();return true;
  };
- fresh();
  let overflow=null;
- while(bag.length){
-  const n=take(),color=Math.floor(rand()*COLORS.length);
+ for(const n of stream){
+  const available=COLORS.map((_,i)=>i).filter(i=>i!==previousColor[n]&&i!==previousDropColor);
+  const color=available[Math.floor(rand()*available.length)];
+  previousColor[n]=color;previousDropColor=color;
   const open=Array.from({length:W},(_,x)=>x).filter(x=>!board[0][x]);
   if(!open.length){overflow=n;break;}
   // Towards the end, prefer tall stacks; the actual arrangement still
@@ -122,9 +130,17 @@ export function makeFallingRound(count,winner,seed){
   }
   record('winner',clone(board),clone(board),.5,{n:actualWinner,cell:winningCell});
  }
- return {winner:actualWinner,count,events,seconds:time+.65,drops,chains,topout};
+ // Stretch every real event proportionally: the visible fall remains slow and
+ // the clear/gravity effects are not hidden between instant drops.
+ const targetEnd=43.5,initial=.12;
+ const scale=(targetEnd-initial)/Math.max(.001,time-initial);
+ for(const event of events){
+  event.start=initial+(event.start-initial)*scale;
+  event.dur*=scale;
+ }
+ return {winner:actualWinner,count,events,seconds:45,drops,chains,topout};
 }
-export const fallingDuration=round=>Math.ceil((round?.seconds??40)*1000);
+export const fallingDuration=round=>Math.ceil((round?.seconds??45)*1000);
 function tiles(c,board,alpha=1,progress=1,kind='',before=null){
  if(!board)return;
  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
@@ -145,11 +161,11 @@ function tiles(c,board,alpha=1,progress=1,kind='',before=null){
   c.restore();
  }
 }
-export function drawFalling(canvas,round,elapsed=0,duration=40000,reduced=false){
+export function drawFalling(canvas,round,elapsed=0,duration=45000,reduced=false){
  const c=canvas.getContext('2d');if(!c)return;
  const sec=Math.max(0,elapsed/1000);
  c.fillStyle='#111d35';c.fillRect(0,0,600,480);
- c.fillStyle='#f7e5b9';c.textAlign='center';c.font='bold 21px Arial';c.fillText('落ちものパズル・40個の行方',300,32);
+ c.fillStyle='#f7e5b9';c.textAlign='center';c.font='bold 21px Arial';c.fillText('落ちものパズル・番号は最大3回登場',300,32);
  c.fillStyle='#263e59';c.beginPath();c.roundRect(168,58,266,360,9);c.fill();
  for(let y=0;y<H;y++)for(let x=0;x<W;x++){c.strokeStyle='#3b536e';c.strokeRect(177+x*50,70+y*43,46,39);}
  if(!round)return;
@@ -172,7 +188,7 @@ export function drawFalling(canvas,round,elapsed=0,duration=40000,reduced=false)
  else if(ev.kind==='topout'){tiles(c,ev.before);const y=-40+52*ease(progress);c.fillStyle='#f7d57b';c.beginPath();c.roundRect(277,y,45,38,5);c.fill();c.fillStyle='#19283e';c.font='900 19px Arial';c.fillText(ev.n,299,y+26);}
  else tiles(c,board);
  c.fillStyle='#e6ebf7';c.font='bold 15px Arial';c.textAlign='center';
- c.fillText('同色で2個消去・1番号につき1ブロック',300,448);
+ c.fillText('同色で2個消去・同じ番号は最大3回',300,448);
  const ended=sec>=round.events[round.events.length-1].start+round.events[round.events.length-1].dur;
  c.fillStyle='#f5dda5';c.font='bold 19px Arial';
  c.fillText(ended?round.winner+'番が当選！':ev.kind==='clear'?'同じ条件で接触！ 消える！':ev.kind==='gravity'?'すき間へ落下！ 連鎖は続く？':ev.kind==='lock'?'最下段がグレーの土台になった！':ev.kind==='topout'?'積み上がった！ 当選！':'どんどん落ちてくる！',300,473);
