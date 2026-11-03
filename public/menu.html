@@ -9,7 +9,7 @@ const levels=[
  {title:'基本の抽選',kind:'plain',modes:['numbers','die','lottery','roulette','galton']},
  {title:'レトロゲーム',kind:'small',modes:['slot','pengo','dig','minesweeper','daruma','pinball','maze','crane','invaders','mazechase','fallingpuzzle','brickbreaker','amidarace','towerladders','gorilla','barrelescape','castlefinale','drumarcade','chestnut','tortoisehare','catcoin','gourd','kappa','dogstick','lovedog','digdog','monkey','detour','botamochi','ghost','treasure2','pirate','penguin','balloon','bowling','alien','frog','trolley','pipe','question','fire','flag','speedloop','qix','medal','bomb']},
  {title:'体感ゲーム',kind:'motion',modes:['handar','egggrow','papersumo','kusudama','frogmotion','piratestorm','volcano','balloonmotion','washermotion','magicclaw','blackhole','robotmotion','ufomotion','mirrordance','funkyrobot','puppetdance','airdancer','ninjadance','wobblydance','darumapose','piratetilt','marble','trampoline','ice','elevator','pyramid','gold','obstacle','road','robot','baby','washer','pirate']},
- {title:'ディープ・アーケード',kind:'deep',modes:['train','race','horse','hyperrun','hammerarcade','ultrabattle','medal','qix','machine','karakuri','chain','road','bomb','pyramid','gold','pipe','question','fire','flag','speedloop','obstacle','trolley','robot','baby','starquintet','catcoin','tortoisehare','chestnut','gourd','kappa','dogstick','lovedog','digdog','monkey','detour','botamochi','washer','ghost','treasure2','pirate','penguin','balloon','bowling','alien','frog','gorilla','barrelescape','castlefinale','drumarcade','fallingpuzzle','brickbreaker','amidarace','towerladders','invaders','mazechase','crane','pinball','maze','pengo','dig','minesweeper','daruma','slot','marble']}
+ {title:'ディープ・アーケード',kind:'deep',modes:[]}
 ];
 let options=[],level=0;
 const crumb=document.getElementById('crumb'),section=document.getElementById('section-name');
@@ -20,6 +20,7 @@ try{
  const doc=new DOMParser().parseFromString(await res.text(),'text/html');
  options=Array.from(doc.querySelectorAll('#mode option')).map(o=>({value:o.value,name:o.textContent.trim()}));
  options.unshift({value:'ultrabattle',name:'光の巨人 VS 40大怪獣'},{value:'hyperrun',name:'ハイパー・モーションラン'},{value:'hammerarcade',name:'ハンマー先生！'});
+const alreadyPlaced=new Set(levels.slice(0,3).flatMap(x=>x.modes));levels[3].modes=options.map(x=>x.value).filter(id=>!alreadyPlaced.has(id));
 }catch{grid.textContent='ゲーム一覧を読み込めませんでした。オンラインで開き直してください。'}
 const known=new Set(levels.slice(0,3).flatMap(x=>x.modes));
 levels[3].modes=options.map(x=>x.value).filter(id=>!known.has(id));
