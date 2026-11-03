@@ -4,7 +4,7 @@
 
 /* Keep controls below the iPhone status bar / Dynamic Island in standalone mode. */
 @media(max-width:700px){main{padding-top:max(76px,calc(env(safe-area-inset-top) + 20px));padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right))}.top{position:relative;z-index:5}.settings button,.settings input{touch-action:manipulation}}
-</style></head><body><main><div class="top"><div><a href="./menu.html?v=4">← だれの番？へ戻る</a><h1>🐧 ペンギンの氷迷宮</h1></div><div class="settings"><label>参加人数 <input id="count" type="number" min="1" max="40" value="40"></label><button id="sound" aria-pressed="false">♪ 音 OFF</button></div></div>
+</style></head><body><main><div class="top"><div><a href="./menu.html?stage=1">← レトロゲーム一覧へ戻る</a><h1>🐧 ペンギンの氷迷宮</h1></div><div class="settings"><label>参加人数 <input id="count" type="number" min="1" max="40" value="40"></label><button id="sound" aria-pressed="false">♪ 音 OFF</button></div></div>
 <canvas id="field" width="1200" height="740" role="img" aria-label="番号付きのペンギンが氷のブロックを押して花束を目指す"></canvas>
 <div class="actions"><button id="start" class="primary">▶ スタート</button><button id="reset">↻ 氷を並べ替える</button><span id="clock">0.0 / 18秒</span></div><progress id="meter" max="18" value="0"></progress><p id="status" aria-live="polite">ペンギンたちが待機中</p><div id="result" aria-live="polite">💐 花束を手にするのは？</div>
 <p class="note">番号と配置は毎回ランダム。ペンギンは氷を押して通路を開き、滑る氷に当たると少し休みます。最初に花束へ着いた番号が当選です。点滅はありません。</p></main>
