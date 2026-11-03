@@ -10,14 +10,25 @@ export function darumaPosition(round,n,elapsed) {
  const t=Math.max(0,Math.min(DARUMA_DURATION,elapsed));
  const final=t>=DARUMA_DURATION;
  if(final)return n===round.winner?1:Math.min(.965,.69+hash(round.seed,n,99)*.24);
- const phase=Math.min(8,Math.floor(t/3500));
- const local=(t-phase*3500)/3500;
- const move=local<.71?smooth(local/.71):1;
- const base=phase*.085 + move*.085;
- const variance=(hash(round.seed,n,phase)-.5)*.10;
- const penalty=phase>0&&hash(round.seed,n,phase-1)<.38?(.055+hash(round.seed,n,phase,8)*.075):0;
- let position=Math.max(.025,base+variance-penalty);
- // A deliberately surprising late surge; visual storytelling never chooses the winner.
+
+ // Each contestant keeps a fixed lane and accumulates progress from completed
+ // movement phases. A phase change never re-rolls their current position.
+ const phaseLength=3500,moveLength=2485,phaseCount=8;
+ const phase=Math.min(phaseCount-1,Math.floor(t/phaseLength));
+ const local=t-phase*phaseLength;
+ let position=0;
+ for(let k=0;k<phaseCount;k++){
+   const stride=.070+hash(round.seed,n,k)*.025;
+   const stumble=hash(round.seed,n,k,8)<.22?.42:1;
+   const step=stride*stumble;
+   if(k<phase) position+=step;
+   else if(k===phase) position+=step*smooth(Math.min(1,local/moveLength));
+ }
+ // A brief stumble slows progress but never moves a contestant backwards.
+ position=Math.max(0,position);
+
+ // The selected winner is still predetermined; the late comeback is smooth
+ // and does not alter the contestant's lane or identity.
  if(n===round.winner){
    if(t<23500)position=Math.min(position,.43);
    else position=.43+smooth((t-23500)/6500)*.57;
