@@ -34,8 +34,13 @@
  const select=document.getElementById('mode');
  const basic=new Set(['numbers','die','lottery','roulette','galton']);
  const requested=new URLSearchParams(location.search).get('mode');
- const keep=new Set(basic);if(requested)keep.add(requested);
+ const keep=new Set(basic);if(requested&&[...select.options].some(o=>o.value===requested))keep.add(requested);
  for(const option of [...select.options])if(!keep.has(option.value))option.remove();
+ // 過去の使用モードによる自動復帰を防止。直接指定時のみ深いモードを許可。
+ if(!requested||!keep.has(requested)){
+   try{localStorage.removeItem('classroom-draw-mode')}catch{}
+   select.value='numbers';
+ }
 })();
 </script>
 <script type="module" src="./app.js?v=218"></script>
