@@ -66,27 +66,33 @@ export function drawDaruma(canvas,round,elapsed,{reduced=false,finished=false}={
  for(let i=0;i<round.count;i++){
    const n=i+1,col=i%cols;
    const eliminated=fallen.find(e=>e.n===n);
-   if(eliminated && elapsed>=eliminated.at+900)continue;
+   if(eliminated && elapsed>=eliminated.at+1200)continue;
    const stagger=(Math.floor(i/cols)%2)*.46;
    const x=11+dx*(col+.5)+ (stagger-.23)*dx*.3;
    const p=reduced&&!finished?0:darumaPosition(round,n,finished?DARUMA_DURATION:elapsed);
    const y=startY-p*(startY-finishY-12);
    const radius=Math.min(17,dx*.28);
-   let shake=0,fall=0;
+   let shake=0,fall=0,tilt=0,age=-1;
    if(eliminated&&!finished){
-     const age=elapsed-eliminated.at;
-     if(age>=0&&age<900){
-       shake=age<560?(1-age/700)*Math.sin(age*.095)*5:0;
-       fall=age<560?0:Math.min(1,(age-560)/340);
+     age=elapsed-eliminated.at;
+     if(age>=0&&age<1200){
+       shake=age<820?Math.sin(age*.13)*11*(1-age/1100):0;
+       tilt=age<820?Math.sin(age*.13+1)*.32:Math.min(1,(age-820)/380)*1.05;
+       fall=age<820?0:Math.min(1,(age-820)/380);
      }
    }
-   const drawX=x+shake,drawY=y+fall*22;
+   const drawX=x+shake,drawY=y+fall*25;
    c.save();
-   if(eliminated&&!finished&&elapsed>=eliminated.at&&elapsed<eliminated.at+900)c.globalAlpha=1-Math.max(0,elapsed-eliminated.at-560)/340;
-   c.translate(drawX,drawY);if(fall>0)c.rotate(fall*.95);
+   if(age>=820&&age<1200)c.globalAlpha=1-(age-820)/380;
+   c.translate(drawX,drawY);c.rotate(tilt);
+   if(age>=0&&age<820){
+     c.beginPath();c.arc(0,0,radius+5+Math.sin(age*.08)*2,0,Math.PI*2);
+     c.strokeStyle='#ff675f';c.lineWidth=3;c.stroke();
+     c.fillStyle='#ffdf75';c.textAlign='center';c.font='bold 16px system-ui';c.fillText('!',0,-radius-7);
+   }
    c.beginPath();c.arc(0,0,radius,0,Math.PI*2);
-   c.fillStyle=eliminated&&!finished&&elapsed>=eliminated.at?'#c7a7a0':n===round.winner&&finished?'#ffcf68':['#8bc8e8','#cda9e9','#92d1b8','#edb68e'][i%4];
-   c.fill();c.strokeStyle='#0e2530';c.lineWidth=2;c.stroke();
+   c.fillStyle=age>=0?'#e9a39a':n===round.winner&&finished?'#ffcf68':['#8bc8e8','#cda9e9','#92d1b8','#edb68e'][i%4];
+   c.fill();c.strokeStyle=age>=0?'#ff5148':'#0e2530';c.lineWidth=age>=0?3:2;c.stroke();
    c.fillStyle='#102238';c.textAlign='center';c.font='bold 14px system-ui';c.fillText(String(n),0,5);
    c.restore();
  }
