@@ -43,6 +43,24 @@ export function makeFallingRound(count,winner,seed){
   }
   stream.push(...bag);
  }
+ // Draw a smaller, balanced sample from three shuffled bags.
+ for(let i=stream.length-1;i>0;i--){const j=Math.floor(rand()*(i+1));[stream[i],stream[j]]=[stream[j],stream[i]];}
+ const maxPieces=Math.min(stream.length,Math.max(12,Math.round(count*1.1)));
+ const chosen=stream.slice(0,maxPieces);
+ // Order numbers so two consecutive falling pieces do not look identical.
+ const remains=new Map();
+ for(const n of chosen)remains.set(n,(remains.get(n)||0)+1);
+ const sequence=[];
+ while(sequence.length<chosen.length){
+  const last=sequence[sequence.length-1];
+  const options=[...remains].filter(([n,v])=>v>0&&(n!==last||remains.size===1));
+  // In rare impossible layouts (one number left), still finish gracefully.
+  const choices=options.length?options:[...remains].filter(([,v])=>v>0);
+  const max=Math.max(...choices.map(([,v])=>v));
+  const candidates=choices.filter(([,v])=>v===max);
+  const next=candidates[Math.floor(rand()*candidates.length)][0];
+  sequence.push(next);remains.set(next,remains.get(next)-1);
+ }
  const record=(kind,before,after,dur,more={})=>{events.push({kind,start:time,dur,before,after,...more});time+=dur;};
  // A completed bottom row becomes permanent gray foundation tiles.
  function lockCompletedRows(){
@@ -96,7 +114,7 @@ export function makeFallingRound(count,winner,seed){
   drops++;lockCompletedRows();resolve(id);lockCompletedRows();return true;
  };
  let overflow=null;
- for(const n of stream){
+ for(const n of sequence){
   const available=COLORS.map((_,i)=>i).filter(i=>i!==previousColor[n]&&i!==previousDropColor);
   const color=available[Math.floor(rand()*available.length)];
   previousColor[n]=color;previousDropColor=color;
