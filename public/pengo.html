@@ -71,7 +71,12 @@ function makeRound(n,seed){
   }
   snap();if(winner)break;
  }
- if(!winner)return makeRound(n,(seed+0x9e3779b9)>>>0);
+ if(!winner){
+  const p=people[0];winner=p.number;
+  while(p.x!==goal.x){p.x+=p.x<goal.x?1:-1;ice[p.y*W+p.x]=0;snap();}
+  while(p.y!==goal.y){p.y+=p.y<goal.y?1:-1;ice[p.y*W+p.x]=0;snap();}
+  steps=Math.max(steps+1,frames.length-1);
+ }
  return {frames,events,goal,n,numbers:labels,winner,steps};
 }
 function paint(frame,done=false){
@@ -103,9 +108,15 @@ function paint(frame,done=false){
 function tone(freq,length=.11){if(!sound||!audio||audio.state!=='running'||document.hidden)return;const t=audio.currentTime,o=audio.createOscillator(),a=audio.createGain();o.type='triangle';o.frequency.value=freq;a.gain.setValueAtTime(.055,t);a.gain.exponentialRampToValueAtTime(.001,t+length);o.connect(a);a.connect(audio.destination);o.start(t);o.stop(t+length+.01);}
 function unlock(onReady){if(!sound)return;try{audio??=new(window.AudioContext||window.webkitAudioContext)();const o=audio.createOscillator(),a=audio.createGain();a.gain.value=.0001;o.connect(a);a.connect(audio.destination);o.start();o.stop(audio.currentTime+.03);const ready=()=>{if(sound&&audio?.state==='running'&&onReady)onReady();};const resumed=audio.resume();if(audio.state==='running')ready();else Promise.resolve(resumed).then(ready).catch(()=>{});}catch{}}
 function prepare(){
- cancelAnimationFrame(raf);playing=false;const n=clamp(Math.floor(Number($('count').value)||40),1,40);$('count').value=n;
- round=makeRound(n,seed32());$('start').disabled=false;$('count').disabled=false;
- $('clock').textContent='0.0 / 18秒';$('meter').value=0;$('status').textContent=n+'匹が待機中';$('result').textContent='💐 花束を手にするのは？';paint(round.frames[0]);
+ cancelAnimationFrame(raf);playing=false;
+ try{
+  const n=clamp(Math.floor(Number($('count').value)||40),1,40);$('count').value=n;
+  round=makeRound(n,seed32());$('start').disabled=false;$('count').disabled=false;
+  $('clock').textContent='0.0 / 18秒';$('meter').value=0;$('status').textContent=n+'匹が待機中';$('result').textContent='💐 花束を手にするのは？';paint(round.frames[0]);
+ }catch(error){
+  $('start').disabled=false;$('status').textContent='盤面の準備に失敗しました: '+(error?.message||error);
+  $('result').textContent='「氷を並べ替える」を押して再試行してください';console.error('Pengo prepare failed',error);
+ }
 }
 function tick(now){
  if(!playing)return;const ms=Math.min(TOTAL,now-started),idx=Math.min(round.frames.length-1,Math.floor(ms/TOTAL*round.steps));
@@ -115,7 +126,7 @@ function tick(now){
  if(ms>=TOTAL){playing=false;paint(round.frames.at(-1),true);$('status').textContent='花束に到着！';$('result').textContent=round.winner+' 番に決定！';$('start').disabled=false;$('count').disabled=false;[523,659,784].forEach((f,i)=>setTimeout(()=>tone(f,.18),i*170));return;}
  raf=requestAnimationFrame(tick);
 }
-$('start').addEventListener('click',()=>{if(playing)return;prepare();unlock();playing=true;lastSound=-1;started=performance.now();$('start').disabled=true;$('count').disabled=true;raf=requestAnimationFrame(tick);});
+$('start').addEventListener('click',()=>{if(playing)return;prepare();if(!round)return;unlock();playing=true;lastSound=-1;started=performance.now();$('start').disabled=true;$('count').disabled=true;raf=requestAnimationFrame(tick);});
 $('reset').addEventListener('click',prepare);$('count').addEventListener('change',prepare);
 $('sound').addEventListener('click',()=>{sound=!sound;$('sound').textContent='♪ 音 '+(sound?'ON':'OFF');$('sound').setAttribute('aria-pressed',String(sound));if(sound)unlock(()=>tone(660,.15));});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&playing){cancelAnimationFrame(raf);playing=false;$('start').disabled=false;$('count').disabled=false;$('status').textContent='停止しました。もう一度スタートできます';}});
