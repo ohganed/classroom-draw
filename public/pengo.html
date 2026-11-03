@@ -119,14 +119,32 @@ function prepare(){
  }
 }
 function tick(now){
- if(!playing)return;const ms=Math.min(TOTAL,now-started),idx=Math.min(round.frames.length-1,Math.floor(ms/TOTAL*round.steps));
- paint(round.frames[idx]);$('clock').textContent=(ms/1000).toFixed(1)+' / 18秒';$('meter').value=ms/1000;
- $('status').textContent=ms<6000?'🐧 氷を押して進もう':ms<13500?'🧊 迷路がどんどん変わる！':'💐 花束が近い！';
- const beat=Math.floor(ms/350);if(beat!==lastSound){lastSound=beat;if(beat%2===0)tone(300+(beat%5)*50,.045);}
- if(ms>=TOTAL){playing=false;paint(round.frames.at(-1),true);$('status').textContent='花束に到着！';$('result').textContent=round.winner+' 番に決定！';$('start').disabled=false;$('count').disabled=false;[523,659,784].forEach((f,i)=>setTimeout(()=>tone(f,.18),i*170));return;}
- raf=requestAnimationFrame(tick);
+ if(!playing||!round)return;
+ try{
+  const ms=Math.min(TOTAL,Math.max(0,now-started));
+  const frames=round.frames;
+  if(!Array.isArray(frames)||!frames.length)throw new Error('アニメーション用の盤面データがありません');
+  // Use the actual frame count, not the simulation step counter, to avoid an invalid frame index.
+  const idx=Math.min(frames.length-1,Math.floor((ms/TOTAL)*(frames.length-1)));
+  const frame=frames[idx];
+  if(!frame||!frame.ice||!frame.people)throw new Error('盤面フレームが不完全です (frame '+idx+')');
+  paint(frame);
+  $('clock').textContent=(ms/1000).toFixed(1)+' / 18秒';$('meter').value=ms/1000;
+  $('status').textContent=ms<6000?'🐧 氷を押して進もう':ms<13500?'🧊 迷路がどんどん変わる！':'💐 花束が近い！';
+  const beat=Math.floor(ms/350);if(beat!==lastSound){lastSound=beat;if(beat%2===0)tone(300+(beat%5)*50,.045);}
+  if(ms>=TOTAL){
+   playing=false;paint(frames[frames.length-1],true);$('status').textContent='花束に到着！';$('result').textContent=round.winner+' 番に決定！';$('start').disabled=false;$('count').disabled=false;
+   [523,659,784].forEach((f,i)=>setTimeout(()=>tone(f,.18),i*170));return;
+  }
+  raf=requestAnimationFrame(tick);
+ }catch(error){
+  console.error('Pengo animation failed',error);playing=false;cancelAnimationFrame(raf);
+  $('start').disabled=false;$('count').disabled=false;
+  $('status').textContent='動作を停止しました: '+(error?.message||error);
+  $('result').textContent='「氷を並べ替える」を押して再試行してください';
+ }
 }
-$('start').addEventListener('click',()=>{if(playing)return;prepare();if(!round)return;unlock();playing=true;lastSound=-1;started=performance.now();$('start').disabled=true;$('count').disabled=true;raf=requestAnimationFrame(tick);});
+$('start').addEventListener('click',()=>{if(playing)return;if(!round)prepare();if(!round)return;unlock();playing=true;lastSound=-1;started=performance.now();$('start').disabled=true;$('count').disabled=true;paint(round.frames[0]);raf=requestAnimationFrame(tick);});
 $('reset').addEventListener('click',prepare);$('count').addEventListener('change',prepare);
 $('sound').addEventListener('click',()=>{sound=!sound;$('sound').textContent='♪ 音 '+(sound?'ON':'OFF');$('sound').setAttribute('aria-pressed',String(sound));if(sound)unlock(()=>tone(660,.15));});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&playing){cancelAnimationFrame(raf);playing=false;$('start').disabled=false;$('count').disabled=false;$('status').textContent='停止しました。もう一度スタートできます';}});
