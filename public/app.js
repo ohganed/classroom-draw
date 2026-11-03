@@ -876,4 +876,14 @@ if(galleryMode&&Array.from($('mode').options).some(o=>o.value===galleryMode)){
  $('mode').value=galleryMode;
  $('mode').dispatchEvent(new Event('change',{bubbles:true}));
 }
+// Retro games return to the retro-game directory, not the first menu tier.
+const RETRO_MODES=new Set(["slot","pengo","dig","minesweeper","daruma","pinball","maze","crane","invaders","mazechase","fallingpuzzle","brickbreaker","amidarace","towerladders","gorilla","barrelescape","castlefinale","drumarcade","chestnut","tortoisehare","catcoin","gourd","kappa","dogstick","lovedog","digdog","monkey","detour","botamochi","ghost","treasure2","pirate","penguin","balloon","bowling","alien","frog","trolley","pipe","question","fire","flag","speedloop","qix","medal","bomb"]);
+function updateReturnDestination(){
+ const back=$('pickOther');if(!back)return;
+ const retro=RETRO_MODES.has($('mode').value);
+ back.textContent=retro?'↩ 前画面に戻る':'🎮 別のゲームを選ぶ';
+ back.href=retro?'./menu.html?stage=1':'./menu.html';
+}
+$('mode').addEventListener('change',updateReturnDestination);
+updateReturnDestination();
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{ $('hint').textContent='オフライン準備ができませんでした。通信中は利用できます。'; });
