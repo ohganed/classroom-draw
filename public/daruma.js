@@ -66,7 +66,7 @@ export function drawDaruma(canvas,round,elapsed,{reduced=false,finished=false}={
  for(let i=0;i<round.count;i++){
    const n=i+1,col=i%cols;
    const eliminated=fallen.find(e=>e.n===n);
-   if(eliminated && elapsed>=eliminated.at+900 && !finished)continue;
+   if(eliminated && elapsed>=eliminated.at+900)continue;
    const stagger=(Math.floor(i/cols)%2)*.46;
    const x=11+dx*(col+.5)+ (stagger-.23)*dx*.3;
    const p=reduced&&!finished?0:darumaPosition(round,n,finished?DARUMA_DURATION:elapsed);
