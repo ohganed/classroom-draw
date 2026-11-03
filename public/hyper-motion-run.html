@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#101e38">
+<title>🏃 ハイパー・モーションラン | だれの番？</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% -20%,#3e549c,#101728 65%);color:#f3f7ff;font-family:system-ui,-apple-system,sans-serif}main{max-width:1300px;margin:auto;padding:12px}a{color:#a8f1ff}h1{font-size:clamp(24px,4vw,40px);margin:9px 0}button{border:0;border-radius:13px;min-height:44px;background:#fbe397;color:#192640;font-weight:900;font-size:17px;padding:10px 13px;cursor:pointer;touch-action:manipulation}button:disabled{opacity:.5}.controls{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:11px 0}input{width:66px;font-size:18px;border-radius:6px;border:1px solid #abb9de;padding:6px}.controls label{font-weight:800}#stage{display:block;width:100%;height:auto;background:#121e36;border:3px solid #79c5fb;border-radius:16px}.hud{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-around;gap:9px;background:#0d162a;border:1px solid #6a91c4;border-radius:12px;padding:10px;margin:10px 0;font-weight:900}.hud strong{color:#ffec8c}#status{font-weight:800;color:#c7e9ff;min-height:30px}#result{font-size:clamp(23px,5vw,44px);font-weight:1000;text-align:center;min-height:52px}.moves{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0}.moves button{padding:14px 6px;background:#a8e5ff}.moves button:active{transform:translateY(3px)}p{line-height:1.65;color:#d9e1f6}kbd{color:#ffe89b}@media(prefers-reduced-motion:reduce){.moves button:active{transform:none}}
+</style></head>
+<body><main><a href="./menu.html">← 🎮 ゲームメニュー</a><h1>🏃 ハイパー・モーションラン</h1><video id="feed" autoplay muted playsinline hidden></video><canvas id="stage" width="1200" height="740" aria-label="40人のキャラクターが同時に走るアーケードレース"></canvas>
+<div class="hud"><span>🕹️ ARCADE RACE</span><span>RUN <strong id="running">0%</strong></span><span>TIME <strong id="clock">0.0</strong></span><span id="phase">READY</span><span id="remaining">参加40人</span></div>
+<div class="controls"><label>参加人数 <input id="count" type="number" min="2" max="40" value="40"></label><button id="camera">📷 上半身カメラ</button><button id="start">▶ 一斉スタート</button><button id="auto">▶ オート操作</button><button id="sound">♪ 音 ON</button><button id="reset">↻ リセット</button><button id="full">⛶ 全画面</button></div>
+<div class="moves"><button id="run">🏃 腕を振る！</button><button id="jump">⬆️ 頭を上げる＝ジャンプ</button><button id="duck">⬇️ 頭を下げる＝しゃがむ</button></div>
+<div id="status" role="status">カメラで腕を交互に振り、頭を上下に動かして障害物を越えよう。</div><div id="result" aria-live="polite">最初にゴールする番号は？</div>
+<p>40人が同時スタート！ <b>腕を交互に振る</b>と全員の加速量が増し、<b>頭を上げる</b>とジャンプ、<b>頭を下げる</b>としゃがみます。障害物には跳び越えるものとくぐるものがあり、タイミングが合うと加速、失敗すると減速。キャラクターごとに反応速度・走力・障害物が異なるため、先生の操作で順位が変わります。ボタンでも操作でき、オート操作もあります。番号と能力は毎回独立にランダム割当て。カメラ映像は端末内で処理されます。</p>
+</main><script type="module">
+const $=id=>document.getElementById(id),cv=$('stage'),g=cv.getContext('2d'),v=$('feed'),W=1200,H=740;
+const FINISH=.999,MAX_TIME=42,STATIONS=[.18,.39,.61,.82],POSE_COOLDOWN=650;
+let runners=[],active=false,champion=null,stream=null,pose=null,ready=false,seen=false,previousVideo=-1,raf=0,previousFrame=0,startAt=0,auto=false,sound=true,ac=null,runEnergy=0,action='run',actionUntil=0,lastAction=0,headPrev=null,headReference=null,armPrev=null,lastWave=0,runDirection=0,finishAt=0,fx=[],sampleAt=0;
+const rint=n=>{const a=new Uint32Array(1),limit=Math.floor(4294967296/n)*n;do{crypto.getRandomValues(a)}while(a[0]>=limit);return a[0]%n};
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=rint(i+1);[a[i],a[j]]=[a[j],a[i]]}return a}
+function beep(freq=400,duration=.11){if(!sound||!ac)return;const o=ac.createOscillator(),gain=ac.createGain(),t=ac.currentTime;o.type='triangle';o.frequency.setValueAtTime(freq,t);o.frequency.exponentialRampToValueAtTime(Math.max(60,freq*.55),t+duration);gain.gain.setValueAtTime(.09,t);gain.gain.exponentialRampToValueAtTime(.001,t+duration);o.connect(gain);gain.connect(ac.destination);o.start(t);o.stop(t+duration+.01)}
+function audio(){if(!sound)return;ac??=new(window.AudioContext||window.webkitAudioContext)();ac.resume().catch(()=>{})}
+function reset(){const n=Math.max(2,Math.min(40,Number($('count').value)||40));$('count').value=n;const nums=shuffle(Array.from({length:n},(_,i)=>i+1));runners=nums.map((number,i)=>({number,progress:0,speed:.021+rint(90)/10000,reaction:.78+rint(45)/100,ability:.77+rint(50)/100,stations:STATIONS.map(()=>rint(2)===0?'jump':'duck'),passed:new Set(),penalty:0,boost:0,phase:rint(100)/14,finishTime:Infinity}));active=false;champion=null;auto=false;previousFrame=0;startAt=0;finishAt=0;runEnergy=0;action='run';actionUntil=0;lastAction=0;headPrev=null;headReference=null;armPrev=null;lastWave=0;runDirection=0;fx=[];$('auto').textContent='▶ オート操作';$('start').disabled=false;$('result').textContent='最初にゴールする番号は？';$('remaining').textContent='参加'+n+'人';$('running').textContent='0%';$('clock').textContent='0.0';$('phase').textContent='READY';$('status').textContent='準備完了。全員一斉スタート！'}
+function start(){reset();active=true;startAt=performance.now();previousFrame=startAt;$('start').disabled=true;audio();beep(660,.23);$('status').textContent='GO! 腕を振って加速、頭の上下で障害物をクリア！';$('phase').textContent='GO!'}
+function command(name,now=performance.now()){if(!active)return;if(name==='run'){runEnergy=Math.min(1,runEnergy+.19);lastWave=now;action='run';return}if(now-lastAction<POSE_COOLDOWN)return;action=name;actionUntil=now+700;lastAction=now;fx.push({type:name,at:now});beep(name==='jump'?770:290,.15)}
+function sample(points,now){const ids=[0,11,12,13,14,15,16];if(!ids.every(i=>points[i]?.visibility>.3))return;seen=true;const [nose,ls,rs,le,re,lw,rw]=ids.map(i=>points[i]);const sw=Math.max(.07,Math.hypot(ls.x-rs.x,ls.y-rs.y)),shoulderY=(ls.y+rs.y)/2;
+const head=(nose.y-shoulderY)/sw;
+if(headReference===null)headReference=head;else if(now-lastAction>800)headReference=headReference*.997+head*.003;
+if(headPrev&&now-headPrev.time>70&&now-headPrev.time<450){const delta=head-headPrev.value;
+ if(delta<-.12&&head<headReference-.14)command('jump',now);
+ if(delta>.12&&head>headReference+.11)command('duck',now)}
+headPrev={value:head,time:now};
+const arms=((lw.y-ls.y)-(rw.y-rs.y))/sw;
+if(armPrev&&now-armPrev.time>60&&now-armPrev.time<430){const delta=arms-armPrev.value;const dir=Math.sign(delta);if(Math.abs(delta)>.15&&dir!==0&&dir!==runDirection){runDirection=dir;command('run',now)}}
+armPrev={value:arms,time:now};
+}
+function update(now,dt){if(!active)return;const elapsed=(now-startAt)/1000;
+ if(auto&&now-sampleAt>430){sampleAt=now;if(rint(6)===0)command(rint(2)?'jump':'duck',now);else command('run',now)}
+ runEnergy=Math.max(0,runEnergy-dt*.13);
+ if(action!=='run'&&now>actionUntil)action='run';
+ const finished=[];
+ for(const racer of runners){if(racer.finishTime!==Infinity)continue;
+  racer.penalty=Math.max(0,racer.penalty-dt*.30);racer.boost=Math.max(0,racer.boost-dt*.25);
+  const speed=(racer.speed+runEnergy*.011*racer.reaction+racer.boost*.008)*(1-Math.min(.7,racer.penalty));
+  const before=racer.progress;racer.progress=Math.min(1,racer.progress+speed*dt);
+  for(let i=0;i<STATIONS.length;i++){if(racer.passed.has(i)||racer.progress<STATIONS[i])continue;racer.passed.add(i);
+    const success=action===racer.stations[i]&&now<=actionUntil;
+    if(success){racer.boost=.75*racer.ability;fx.push({type:'good',at:now,number:racer.number});}
+    else{racer.penalty=.5/racer.ability;fx.push({type:'miss',at:now,number:racer.number})}
+  }
+  if(before<FINISH&&racer.progress>=FINISH){racer.finishTime=elapsed-(racer.progress-FINISH)/Math.max(.0001,speed);finished.push(racer)}
+ }
+ if(finished.length||elapsed>=MAX_TIME){const order=(elapsed>=MAX_TIME?runners:finished).slice().sort((a,b)=>elapsed>=MAX_TIME?b.progress-a.progress||a.finishTime-b.finishTime:a.finishTime-b.finishTime);
+  // 同時にゴールした場合でも連番優先しない。初期配列順は独立にシャッフル済み。
+  champion=order[0];active=false;auto=false;finishAt=now;$('auto').textContent='▶ オート操作';$('start').disabled=false;$('result').textContent='🏆 '+champion.number+'番が当選！';$('status').textContent='FINISH! '+champion.number+'番が先着！';$('phase').textContent='FINISH';beep(900,.4)}
+ $('clock').textContent=Math.min(elapsed,MAX_TIME).toFixed(1);$('running').textContent=Math.round(runEnergy*100)+'%';
+ if(active)$('phase').textContent=action==='run'?'🏃 DASH':action==='jump'?'⬆️ JUMP':'⬇️ DUCK';
+}
+function draw(now){const sky=g.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#192f58');sky.addColorStop(.8,'#162544');sky.addColorStop(1,'#0d162b');g.fillStyle=sky;g.fillRect(0,0,W,H);
+g.fillStyle='#121b33';g.fillRect(0,0,W,78);g.fillStyle='#ffef98';g.textAlign='center';g.font='900 35px system-ui';g.fillText('🏃 HYPER MOTION RUN',600,47);
+const x0=75,trackW=810,rowH=14.3,y0=102;g.fillStyle='#263954';g.fillRect(65,86,830,590);
+for(let i=0;i<runners.length;i++){const p=runners[i],y=y0+i*rowH;if(i%2===0){g.fillStyle='#ffffff0a';g.fillRect(72,y-7,818,rowH)}g.strokeStyle='#ffffff17';g.lineWidth=1;g.beginPath();g.moveTo(72,y+7);g.lineTo(891,y+7);g.stroke();
+ const x=x0+p.progress*trackW;g.fillStyle='#f0eac0';g.font='900 13px system-ui';g.textAlign='right';g.fillText(String(p.number).padStart(2,'0'),69,y+4);
+ for(let j=0;j<4;j++){const ox=x0+STATIONS[j]*trackW;g.fillStyle=p.stations[j]==='jump'?'#ed9c56':'#6ed1ea';g.fillRect(ox-2,y-5,4,10)}
+ g.fillStyle='hsl('+((p.number*67)%360)+' 75% 65%)';g.beginPath();g.arc(x,y,5.2,0,Math.PI*2);g.fill();g.fillStyle='#f9f4e8';g.beginPath();g.arc(x+2,y-3,2,0,Math.PI*2);g.fill();}
+g.fillStyle='#ffe694';g.fillRect(x0+trackW,90,5,582);
+g.textAlign='left';g.fillStyle='#ffffff';g.font='bold 20px system-ui';g.fillText('TOP 6',930,115);const order=[...runners].sort((a,b)=>b.progress-a.progress||a.finishTime-b.finishTime).slice(0,6);
+for(let i=0;i<order.length;i++){const p=order[i],y=155+i*70;g.fillStyle=i===0?'#ffefb7':'#c9e7ff';g.font='900 32px system-ui';g.fillText((i+1)+'.  '+p.number+'番',932,y);g.fillStyle='#ffffff25';g.fillRect(935,y+8,228,10);g.fillStyle=i===0?'#f6d77d':'#78d9ee';g.fillRect(935,y+8,228*p.progress,10)}
+g.fillStyle='#c8e6f9';g.font='bold 19px system-ui';g.fillText('⬆️ JUMP = 橙障害物',928,616);g.fillText('⬇️ DUCK = 青障害物',928,643);g.fillText('🏃 RUN = 全員加速',928,670);
+g.fillStyle='#102039';g.fillRect(0,692,W,48);g.fillStyle='#b3ebff';g.textAlign='center';g.font='bold 23px system-ui';g.fillText(seen?'📷 頭・両腕を認識中':'🎮 カメラ / ボタン / オート対応',600,722);
+fx=fx.filter(e=>now-e.at<750);
+if(champion){g.fillStyle='#0c1736ed';g.fillRect(240,230,720,240);g.lineWidth=5;g.strokeStyle='#ffe397';g.strokeRect(240,230,720,240);g.textAlign='center';g.fillStyle='#ffeda3';g.font='900 56px system-ui';g.fillText('🏆 '+champion.number+'番 WINNER!',600,369)}
+}
+function frame(now){const dt=Math.min(.08,Math.max(0,(now-(previousFrame||now))/1000));previousFrame=now;
+ if(ready&&pose&&v.readyState>=2&&v.currentTime!==previousVideo){previousVideo=v.currentTime;try{const result=pose.detectForVideo(v,now),points=result.landmarks?.[0];if(points)sample(points,now);else{seen=false;headPrev=null;armPrev=null}}catch(e){seen=false;$('status').textContent='姿勢認識エラー：'+e.message}}
+ update(now,dt);draw(now);raf=requestAnimationFrame(frame)}
+async function startCamera(){$('camera').disabled=true;$('status').textContent='カメラ準備中…';try{stream??=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:640},height:{ideal:480}},audio:false});v.srcObject=stream;await v.play();const {PoseLandmarker,FilesetResolver}=await import('./vendor/mediapipe/vision_bundle.js?v=6');const files=await FilesetResolver.forVisionTasks(new URL('./vendor/mediapipe/wasm',import.meta.url).href);const opts={baseOptions:{modelAssetPath:new URL('./vendor/mediapipe/pose_landmarker.task',import.meta.url).href,delegate:'GPU'},runningMode:'VIDEO',numPoses:1};try{pose=await PoseLandmarker.createFromOptions(files,opts)}catch{opts.baseOptions.delegate='CPU';pose=await PoseLandmarker.createFromOptions(files,opts)}ready=true;$('status').textContent='🟢 認識準備完了。肩幅・頭・両手首がカメラに映るようにしてください。'}catch(e){$('status').textContent='カメラに接続できません：'+e.message+'。ボタンでも遊べます。'}finally{$('camera').disabled=false}}
+$('camera').onclick=startCamera;$('start').onclick=start;$('reset').onclick=reset;$('run').onclick=()=>command('run');$('jump').onclick=()=>command('jump');$('duck').onclick=()=>command('duck');
+$('auto').onclick=()=>{if(!active)start();auto=!auto;$('auto').textContent=auto?'■ オート停止':'▶ オート操作';audio()};
+$('sound').onclick=()=>{sound=!sound;$('sound').textContent=sound?'♪ 音 ON':'♪ 音 OFF';audio()};$('full').onclick=()=>{if(document.fullscreenElement)document.exitFullscreen?.();else cv.requestFullscreen?.().catch(()=>{})};$('count').onchange=reset;
+window.addEventListener('pagehide',()=>{stream?.getTracks().forEach(t=>t.stop());cancelAnimationFrame(raf)});reset();raf=requestAnimationFrame(frame);
+</script></body></html>
