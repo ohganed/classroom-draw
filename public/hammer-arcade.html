@@ -51,7 +51,7 @@ function update(now){if(!live)return;const elapsed=now-startAt;refreshSlots(now)
 function draw(now){const grad=g.createLinearGradient(0,0,0,H);grad.addColorStop(0,'#25224e');grad.addColorStop(.8,'#40245d');grad.addColorStop(1,'#1a2140');g.fillStyle=grad;g.fillRect(0,0,W,H);
  // アーケード筐体のように大きい5つの穴だけを表示
  g.fillStyle='#111629';g.fillRect(0,0,W,77);g.fillStyle='#fff0a4';g.font='900 37px system-ui';g.textAlign='center';g.fillText('🔨 HAMMER ARCADE 40',600,49);
- const places=[[180,266],[460,266],[740,266],[320,535],[880,535]];
+ const places=[[145,340],[370,340],[600,340],[830,340],[1055,340]];
  for(let i=0;i<5;i++){const [x,y]=places[i];g.fillStyle='#14182f';g.beginPath();g.ellipse(x,y+65,107,40,0,0,7);g.fill();g.strokeStyle='#8e729f';g.lineWidth=5;g.stroke();
  const m=slots[i];if(!m||!m.alive||!live)continue;
  g.save();g.translate(x,y);const bob=Math.sin(now*.005+i*2)*6;g.translate(0,bob);
