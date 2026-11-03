@@ -8,9 +8,6 @@ export function makeDarumaRound(count,winner,seed) {
 }
 export function darumaPosition(round,n,elapsed) {
  const t=Math.max(0,Math.min(DARUMA_DURATION,elapsed));
- const final=t>=DARUMA_DURATION;
- if(final)return n===round.winner?1:Math.min(.965,.69+hash(round.seed,n,99)*.24);
-
  // Each contestant keeps a fixed lane and accumulates progress from completed
  // movement phases. A phase change never re-rolls their current position.
  const phaseLength=3500,moveLength=2485,phaseCount=8;
