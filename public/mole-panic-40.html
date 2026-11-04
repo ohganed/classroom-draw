@@ -1,0 +1,93 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#140a38"><title>🔨 もぐらパニック40 | だれの番？</title><style>
+*{box-sizing:border-box}body{margin:0;color:#f6f6ff;background:radial-gradient(ellipse at top,#51237a 0,#130d35 50%,#080820 100%);font-family:system-ui,-apple-system,sans-serif}main{max-width:1380px;margin:auto;padding:12px;border-left:5px solid #6e41aa;border-right:5px solid #6e41aa;background:#0f1232;min-height:100vh;box-shadow:0 0 34px #7139d7}a{color:#a7faff;font-weight:700}h1{margin:4px 0;font-size:clamp(25px,4vw,44px);color:#ffed82;text-shadow:0 0 13px #f75ccd}.head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.settings{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.settings label{font-weight:900}.settings input{font-size:19px;border-radius:9px;padding:7px;width:69px;border:2px solid #9edbff}.settings button,.controls button{cursor:pointer;border:2px solid #e5f5ff;border-radius:14px;padding:10px 14px;background:#c6d9ff;color:#1e224a;font-size:16px;font-weight:950;box-shadow:0 4px 0 #58679f;touch-action:manipulation}.settings button:disabled,.controls button:disabled{opacity:.5;cursor:not-allowed}.marquee{margin:12px 0 7px;border:3px solid #f68fe3;border-radius:13px;background:linear-gradient(100deg,#2f1757,#172a5d,#411954);box-shadow:0 0 20px #cf62f265;display:flex;gap:12px;justify-content:space-around;padding:9px;align-items:center;font-weight:950;flex-wrap:wrap}.marquee strong{font-size:clamp(17px,2.7vw,28px);color:#ffe58a;text-shadow:0 0 12px #ffa23d}#screen{width:100%;height:auto;display:block;border:7px solid #19265d;outline:3px solid #79dfff;border-radius:14px;background:#182a50;box-shadow:0 0 0 8px #31214f,0 0 24px #73d8ff6d;touch-action:manipulation;cursor:crosshair}.progress{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:15px 0 9px}.progress div{border:2px solid #7186c4;border-radius:9px;background:#19224f;text-align:center;padding:9px 5px;font-size:clamp(13px,2vw,19px);font-weight:900}.progress div.now{background:#7045ae;border-color:#ffde77;color:#ffefb4;box-shadow:0 0 16px #af65f5}.controls{display:grid;grid-template-columns:1fr 1fr 1fr 1.2fr;gap:9px;margin:14px 0}.controls button{min-height:70px;background:linear-gradient(#fff2a4,#ef9a5f);border:3px solid #fff2cd;box-shadow:inset 0 -6px 0 #c0674a,0 5px 0 #754261;font-size:clamp(14px,2vw,22px)}#hit{background:linear-gradient(#faeafb,#db88f2);box-shadow:inset 0 -6px 0 #9a52bf,0 5px 0 #5b277c}.controls button:active{transform:translateY(3px)}.status{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;margin:10px 0;font-size:clamp(16px,2.4vw,27px);font-weight:950;color:#ffe2a7}#winner{font-size:clamp(22px,4vw,45px);color:#ffe28a;text-shadow:0 0 14px #ff9c3c;text-align:center;min-height:45px}.numbers{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:5px;margin:9px 0}.numbers span{text-align:center;padding:4px;background:#2c4272;border:1px solid #658ed3;border-radius:7px;font-size:clamp(12px,1.7vw,19px);font-weight:950}.numbers span.out{opacity:.27;filter:grayscale(1)}.numbers span.win{background:#ffe27d;color:#1c2d4a;outline:2px solid white}.hint{color:#afc4e7;line-height:1.65;font-size:13px}.controls button:focus-visible,.settings button:focus-visible,a:focus-visible{outline:3px solid #fff;outline-offset:4px}@media(max-width:600px){main{padding:9px;border-width:2px}.controls{grid-template-columns:repeat(3,1fr)}#hit{grid-column:1/-1;order:-1}.numbers{grid-template-columns:repeat(8,1fr)}.settings button{padding:9px 11px}}
+</style></head><body><main>
+<div class="head"><div><a href="./menu.html?stage=3">← ディープ・アーケードへ戻る</a><h1>🔨 もぐらパニック40</h1></div><div class="settings"><label>人数 <input id="count" type="number" min="1" max="40" value="40"></label><button id="sound" type="button">♪ 音 OFF</button><button id="fullscreen" type="button">⛶ 全画面</button></div></div>
+<div class="marquee"><span>🕹️ ARCADE CHALLENGE</span><span>SCORE <strong id="score">000000</strong></span><span>COMBO <strong id="combo">0</strong></span><span>TIME <strong id="time">30.0</strong></span></div>
+<canvas id="screen" width="1200" height="720" aria-label="40匹の番号付きもぐら、地下鉱山のトロッコ、黄金の宝箱の三場面が続くゲーム"></canvas>
+<div class="progress"><div id="step0" class="now">ROUND 1<br>🔨 もぐら叩き</div><div id="step1">ROUND 2<br>💎 トロッコ逃走</div><div id="step2">FINAL ROUND<br>🏆 黄金の宝箱</div></div>
+<div class="controls"><button id="left" type="button">⬅️ 左</button><button id="hit" type="button">🔨 アクション！</button><button id="right" type="button">右 ➡️</button><button id="start" type="button">▶ ゲーム開始</button></div>
+<div class="status"><span id="status" aria-live="polite">40匹のもぐらがスタンバイ！</span><span id="phase">各ラウンド10秒</span></div>
+<div id="winner" aria-live="polite"></div><div id="numbers" class="numbers" aria-label="全参加番号"></div>
+<p class="hint">第1ラウンドは画面タップまたはアクションボタンでもぐら叩き。第2ラウンドは左右ボタンまたは←→キーでトロッコのレーン変更。決勝はボタン連打で宝箱の鍵を開けよう！ 先生の操作は得点・コンボ・演出に反映されますが、番号ごとの当選確率は全員同じです。強い点滅は使いません。</p></main>
+<script>
+'use strict';
+const $=id=>document.getElementById(id),canvas=$('screen'),c=canvas.getContext('2d'),W=1200,H=720,TOTAL=30000;
+const colors=['#f28d8c','#83bbf2','#f0c96e','#93d8b1','#cbb0ee','#eda9c7'];
+let playing=false,round=null,frame=0,started=0,paused=0,elapsed=0,sound=false,audio=null,score=0,combo=0,lastHit=-1,track=1,shimmer=[],lastStage=-1,actionTime=0;
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),ease=t=>{t=clamp(t,0,1);return t*t*(3-2*t)};
+function seeded(seed){let x=seed>>>0||1;return()=>{x^=x<<13;x^=x>>>17;x^=x<<5;return(x>>>0)/4294967296}}
+function uniform(n){const a=new Uint32Array(1),limit=Math.floor(4294967296/n)*n;do{crypto.getRandomValues(a)}while(a[0]>=limit);return a[0]%n}
+function newRound(n){const seed=crypto.getRandomValues(new Uint32Array(1))[0],r=seeded(seed),numbers=Array.from({length:n},(_,i)=>i+1),winner=uniform(n)+1;
+ for(let i=n-1;i>0;i--){const j=Math.floor(r()*(i+1));[numbers[i],numbers[j]]=[numbers[j],numbers[i]]}
+ const teams=Array.from({length:5},()=>[]);numbers.forEach((v,i)=>teams[i%5].push(v));
+ const winningTeam=teams.findIndex(a=>a.includes(winner));
+ const finalists=teams[winningTeam].slice();for(let i=finalists.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[finalists[i],finalists[j]]=[finalists[j],finalists[i]]}
+ const finalThree=[winner,...finalists.filter(v=>v!==winner).slice(0,2)];
+ const grid=Array.from({length:40},(_,i)=>i<n?i+1:null);
+ for(let i=grid.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[grid[i],grid[j]]=[grid[j],grid[i]]}
+ return {n,seed,winner,teams,winningTeam,finalThree,grid};
+}
+function stageAt(ms){return ms<10000?0:ms<20000?1:2}
+function eligible(ms){if(ms<10000)return new Set(Array.from({length:round.n},(_,i)=>i+1));if(ms<20000)return new Set(round.teams[round.winningTeam]);return new Set(round.finalThree)}
+function line(x1,y1,x2,y2,col='#fff',width=3){c.strokeStyle=col;c.lineWidth=width;c.beginPath();c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke()}
+function rect(x,y,w,h,color,r=0){c.fillStyle=color;c.beginPath();c.roundRect(x,y,w,h,r);c.fill()}
+function text(s,x,y,size=32,color='#fff',align='center'){c.font='900 '+size+'px system-ui,sans-serif';c.textAlign=align;c.lineWidth=4;c.strokeStyle='#15223b55';c.strokeText(String(s),x,y);c.fillStyle=color;c.fillText(String(s),x,y)}
+function circle(x,y,r,col){c.fillStyle=col;c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill()}
+function background(top,bottom){const g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,top);g.addColorStop(1,bottom);c.fillStyle=g;c.fillRect(0,0,W,H)}
+function mole(x,y,n,t,scale=1){c.save();c.translate(x,y);c.scale(scale,scale);const bob=reduced?0:Math.sin(t/230+n*2)*7;
+ rect(-46,25,92,27,'#432b59',17);c.fillStyle='#12263c';c.beginPath();c.ellipse(0,34,40,16,0,0,7);c.fill();
+ c.translate(0,bob);circle(0,-9,35,colors[n%colors.length]);circle(-12,-14,5,'#fff');circle(12,-14,5,'#fff');circle(-11,-13,2.8,'#26354e');circle(13,-13,2.8,'#26354e');circle(0,1,10,'#fbd1bf');circle(0,-1,4,'#a76770');rect(-24,10,48,22,'#fff1bd',9);text(n,0,29,24,'#27344d');c.restore()}
+function drawMoles(ms){
+ background('#3f2c77','#55346c');text('ROUND 1  🔨 MOLE PANIC!',600,68,47,'#ffe799');text('画面をタップ！ もぐらを叩いてスコアGET',600,112,24,'#a9fff0');
+ for(let i=0;i<40;i++){const x=92+(i%8)*145,y=177+Math.floor(i/8)*108;rect(x-58,y+34,116,36,'#76557c',18);const n=round.grid[i];if(n!==null)mole(x,y,n,ms,.72);else{circle(x,y+12,15,'#655073')}}
+ const flash=lastHit>0&&ms-lastHit<350; if(flash){circle(600,639,32,'#fff1a2');text('HIT! +100',600,648,26,'#73307c')}
+}
+function crystals(ms){for(let i=0;i<24;i++){const x=(i*151+73)%1200,y=100+(i*103)%600,s=8+i%4*5;circle(x,y,s/2,['#8ee4ff','#b8a4ff','#ffe493'][i%3]);line(x,y-s,x,y+s,'#d2fbff',3);line(x-s,y,x+s,y,'#d2fbff',3)}}
+function cart(x,y,n,t,opacity=1){c.save();c.globalAlpha=opacity;c.translate(x,y);rect(-61,-15,122,59,'#d28555',12);rect(-54,-25,108,22,'#ffc983',12);circle(-39,47,15,'#38465f');circle(38,47,15,'#38465f');circle(0,-47,27,colors[n%colors.length]);text(n,0,-35,25,'#213b54');c.restore()}
+function drawMine(ms){
+ background('#211344','#2a2460');crystals(ms);text('ROUND 2  💎 MINE CART ESCAPE',600,68,43,'#ffe49b');text('⬅️ ➡️ レーンを切り替えて宝石を集めろ！',600,113,24,'#b9fff8');
+ for(let i=0;i<3;i++){const y=280+i*145;line(0,y+67,1200,y+67,'#87729c',19);line(0,y+84,1200,y+84,'#af8cb7',6);for(let k=0;k<13;k++)rect(k*110-35,y+64,11,26,'#a68269',3)}
+ const riders=round.teams[round.winningTeam];for(let i=0;i<riders.length;i++){const n=riders[i],lane=i%3;const x=110+((ms-10000)*(0.065+i*.003)+i*135)%1030;cart(x,280+lane*145,n,ms,1)}
+ for(let i=0;i<4;i++){const x=950-((ms-10000)*.15+i*280)%1100;circle(x,255+(i%3)*145,18,'#7ef4e2');text('◆',x,265,24,'#145374')}
+ rect(420,625,360,65,'#3f3970',17);text('先生のトロッコ  ←  '+['上段','中段','下段'][track]+'  →',600,670,25,'#ffe28f');
+}
+function drawFinal(ms,finished=false){
+ background('#421a62','#732c70');for(let i=0;i<28;i++){const x=(i*177+75)%1200,y=(i*111+29)%720;circle(x,y,2+i%4,'#ecc5f1')}
+ text('FINAL ROUND  🏆 GOLDEN TREASURE!',600,69,42,'#ffed88');text('アクション連打！ 宝箱のカギを開けろ！',600,113,26,'#bcffef');
+ rect(355,220,490,340,'#9a572f',38);rect(385,250,430,265,'#f2b963',25);rect(420,286,360,194,'#d89b3e',22);rect(438,309,325,146,'#ffe2a0',18);
+ const p=ease((ms-20000)/10000),open=finished?1:p*.92;
+ c.save();c.translate(600,255);c.rotate(-open*.45);rect(-260,-105,520,138,'#e7ab53',22);rect(-226,-80,450,88,'#ffdd91',14);c.restore();
+ circle(600,386,48,'#ffe58e');text('🔒',600,402,47,'#5b3379');
+ const finalists=round.finalThree;finalists.forEach((n,i)=>{const x=390+i*(finalists.length===1?0:430/(finalists.length-1));const y=590-(reduced?0:Math.sin(ms/145+i*2)*9);mole(x,y,n,ms,.8)});
+ if(ms>26000){text('💓 のこり '+Math.max(1,Math.ceil((30000-ms)/1000))+' 秒！',600,677,36,'#fff6b2')}
+ if(finished){rect(240,218,720,282,'#161d47',31);text('🎉 JACKPOT!',600,310,67,'#ffe078');text(round.winner+' 番が宝箱を開けた！',600,419,50,'#a5ffea')}
+}
+function draw(ms,finished=false){const stage=stageAt(ms);if(stage===0)drawMoles(ms);else if(stage===1)drawMine(ms);else drawFinal(ms,finished)}
+function updateNumbers(ms){const group=eligible(ms);for(const node of $('numbers').children){const n=Number(node.textContent);node.classList.toggle('out',!group.has(n));node.classList.toggle('win',ms>=TOTAL&&n===round.winner)}}
+function updateUi(ms){const phase=stageAt(ms),remaining=clamp((TOTAL-ms)/1000,0,30);$('time').textContent=remaining.toFixed(1);$('score').textContent=String(score).padStart(6,'0');$('combo').textContent=combo;for(let i=0;i<3;i++)$('step'+i).classList.toggle('now',i===phase);
+ const names=['もぐら叩き','トロッコ逃走','黄金の宝箱'];$('phase').textContent=names[phase]+' · 残り'+Math.ceil((10000-(ms%10000))/1000)+'秒';
+ $('status').textContent=phase===0?'🔨 40匹のもぐらを連続ヒット！':phase===1?'💎 '+round.teams[round.winningTeam].length+'匹が鉱山へ！左右で宝石ゲット': '🏆 残り'+round.finalThree.length+'匹！宝箱を開けろ！';
+ updateNumbers(ms)}
+function audioReady(){if(!sound)return;try{audio??=new(window.AudioContext||window.webkitAudioContext)();audio.resume()}catch{}}
+function tone(f=440,d=.08){if(!sound||!audio||audio.state!=='running'||document.hidden)return;const o=audio.createOscillator(),g=audio.createGain(),t=audio.currentTime;o.type='triangle';o.frequency.setValueAtTime(f,t);g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(.09,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(audio.destination);o.start(t);o.stop(t+d+.03)}
+function action(x=null,y=null){if(!playing)return;const stage=stageAt(elapsed);if(stage===0&&x!==null&&y!==null){const col=Math.round((x-92)/145),row=Math.round((y-177)/108),idx=row*8+col;if(col>=0&&col<8&&row>=0&&row<5&&Math.abs(x-(92+col*145))<58&&Math.abs(y-(177+row*108))<53&&round.grid[idx]!==null){score+=100+Math.min(combo,15)*20;combo++;lastHit=elapsed;tone(500+combo*15,.06)}else{combo=0;tone(210,.07)}}else{score+=stage===2?120:70;combo++;lastHit=elapsed;tone(stage===2?720:430,.06)}
+ updateUi(elapsed)}
+function steer(dir){if(!playing)return;const stage=stageAt(elapsed);if(stage===1){track=clamp(track+dir,0,2);score+=60;combo++;tone(340+track*95,.07)}else{action()}updateUi(elapsed)}
+function clear(){cancelAnimationFrame(frame);frame=0;playing=false;elapsed=0;paused=0;score=0;combo=0;lastHit=-1;lastStage=-1;track=1;$('winner').textContent='';
+ const n=clamp(Math.floor(Number($('count').value)||40),1,40);$('count').value=n;round=newRound(n);
+ $('numbers').replaceChildren();for(let i=1;i<=n;i++){const span=document.createElement('span');span.textContent=i;$('numbers').append(span)}
+ $('start').disabled=false;$('count').disabled=false;updateUi(0);draw(0)}
+function loop(now){if(!playing)return;frame=0;elapsed=clamp(now-started,0,TOTAL);const stage=stageAt(elapsed);if(stage!==lastStage){if(lastStage>=0)tone(700,.18);lastStage=stage}draw(elapsed);updateUi(elapsed);
+ if(elapsed>=TOTAL){playing=false;draw(TOTAL,true);updateUi(TOTAL);$('status').textContent='🏆 '+round.winner+'番が黄金の宝箱をゲット！';$('phase').textContent='GAME CLEAR';$('winner').textContent='🎉 '+round.winner+' 番が当選！';$('start').disabled=false;$('count').disabled=false;[520,660,790].forEach((f,i)=>setTimeout(()=>tone(f,.22),i*180));return}
+ frame=requestAnimationFrame(loop)}
+$('start').onclick=()=>{if(playing)return;clear();playing=true;$('start').disabled=true;$('count').disabled=true;started=performance.now();lastStage=-1;audioReady();frame=requestAnimationFrame(loop)};
+$('count').onchange=clear;
+$('hit').onclick=()=>action();$('left').onclick=()=>steer(-1);$('right').onclick=()=>steer(1);
+canvas.addEventListener('pointerdown',e=>{const box=canvas.getBoundingClientRect(),x=(e.clientX-box.left)/box.width*W,y=(e.clientY-box.top)/box.height*H;if(stageAt(elapsed)===0)action(x,y);else action()});
+document.addEventListener('keydown',e=>{if(e.target?.tagName==='INPUT'||e.repeat||!playing)return;if(e.code==='ArrowLeft'){e.preventDefault();steer(-1)}else if(e.code==='ArrowRight'){e.preventDefault();steer(1)}else if(e.code==='Space'){e.preventDefault();action()}});
+$('sound').onclick=()=>{sound=!sound;$('sound').textContent='♪ 音 '+(sound?'ON':'OFF');audioReady();tone(560,.11)};
+$('fullscreen').onclick=()=>{if(document.fullscreenElement)document.exitFullscreen?.();else canvas.requestFullscreen?.().catch(()=>{})};
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&playing){paused=performance.now()-started;cancelAnimationFrame(frame);frame=0}else if(!document.hidden&&playing&&!frame){started=performance.now()-paused;frame=requestAnimationFrame(loop)}});
+clear();
+</script></body></html>
