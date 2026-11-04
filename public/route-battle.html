@@ -199,8 +199,10 @@ function bakeryRunners(sec,finished=false){
   const pace=number===round.winner?1:survivor?.80+((number*19+round.seed)%10)/100:.60+((number*13+round.seed)%13)/100;
   const raw=clamp((elapsed/15)*pace,0,1);
   const eased=raw*raw*(3-2*raw);
-  const x=365+eased*590;
-  const y=330+slot*36+Math.sin(elapsed*8+slot)*Math.min(4,elapsed*2);
+  const x=365+eased*623;
+  const launchY=330+slot*36;
+  const targetY=435+(number===round.winner?0:(slot-3)*6);
+  const y=launchY+(targetY-launchY)*eased+Math.sin(elapsed*8+slot)*Math.min(4,elapsed*2)*(1-eased);
   const bounce=p>0&&p<1?Math.abs(Math.sin(elapsed*9+slot))*7:0;
   const person=el('g',{transform:'translate('+x+' '+(y-bounce)+')',opacity:sec>=40&&!survivor?.5:1});
   person.append(el('ellipse',{cx:0,cy:19,rx:19,ry:6,fill:'#426477',opacity:.25}));
@@ -220,7 +222,7 @@ function bakeryRunners(sec,finished=false){
  $('distance').textContent=finished?'メロンパン獲得！':'パン屋まで '+Math.max(0,Math.ceil((1-p)*100))+' m';
  $('eventCount').textContent='最終勝負';
  updateCandidates(sec);
- $('status').textContent=finished?'🎉 '+round.winner+'番が最後のメロンパンをゲット！':sec<40?'🏃 改札からパン屋へ！'+entrants.length+'人がダッシュ！':sec<45?'💓 最後の3人に絞られた！':'🥐 最後のメロンパン1個を奪い合う！';
+ $('status').textContent=finished?'🎉 '+round.winner+'番が最後のメロンパンをゲット！':sec<40?'🏃 改札からパン屋へ！'+entrants.length+'人がダッシュ！':sec<45?'💓 最後の'+round.finalists.length+'人に絞られた！':'🥐 最後のメロンパン1個を奪い合う！';
 }
 function paintScene(sec,finished=false){
  const map=sec<33,transition=sec>=30&&sec<33;
@@ -262,7 +264,7 @@ function tick(now){
  const ms=clamp(now-started,0,DURATION),sec=ms/1000;
  paintScene(sec);if(sec<30)badges(sec);else $('eventBadge').setAttribute('opacity',0);
  $('clock').textContent=sec.toFixed(1)+' / 48秒';
- $('phase').textContent=sec<17?'5列車が競走中':sec<24?'3列車に絞られた':sec<29?'2列車の接戦':sec<30?'最後の1列車':sec<33?'改札へ移動中':sec<40?'全員ダッシュ':sec<45?'残り3人':sec<48?'最後のメロンパン争奪！':'決着';
+ $('phase').textContent=sec<17?'5列車が競走中':sec<24?'3列車に絞られた':sec<29?'2列車の接戦':sec<30?'最後の1列車':sec<33?'改札へ移動中':sec<40?'全員ダッシュ':sec<45?'残り'+round.finalists.length+'人':sec<48?'最後のメロンパン争奪！':'決着';
  const beat=Math.floor(sec*2);if(beat!==lastBeat){lastBeat=beat;if(beat%2===0)beep(sec>=33?540+(beat%5)*70:310+(beat%6)*57,.08);}
  if(ms>=DURATION){
   playing=false;paintScene(48,true);$('eventBadge').setAttribute('opacity',0);
