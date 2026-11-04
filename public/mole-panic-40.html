@@ -8,13 +8,13 @@
 <div class="controls"><button id="left" type="button">⬅️ 左</button><button id="hit" type="button">🔨 アクション！</button><button id="right" type="button">右 ➡️</button><button id="start" type="button">▶ ゲーム開始</button></div>
 <div class="status"><span id="status" aria-live="polite">40匹のもぐらがスタンバイ！</span><span id="phase">各ラウンド10秒</span></div>
 <div id="winner" aria-live="polite"></div><div id="numbers" class="numbers" aria-label="全参加番号"></div>
-<p class="hint">第1ラウンドは不規則な9つの穴から次々に飛び出すもぐらを画面タップまたはアクションボタンで叩きます（同じ出現への連打は得点になりません）。第2ラウンドは崩れる地下鉱山をトロッコで大脱走！左右ボタン／←→キー／画面スワイプでレーンを変え、アクション・スペースキー・画面タップで落石をジャンプ。宝石を拾って得点を増やします。決勝はボタン連打で宝箱の鍵を開けよう！ 先生の操作は得点・コンボ・演出に反映されますが、番号ごとの当選確率は全員同じです。強い点滅は使いません。</p></main>
+<p class="hint">第1ラウンドは不規則な9つの穴から次々に飛び出すもぐらを画面タップまたはアクションボタンで叩きます（同じ出現への連打は得点になりません）。第2ラウンドは崩れる地下鉱山をトロッコで大脱走！左右ボタン／←→キー／画面スワイプでレーンを変え、アクション・スペースキー・画面タップを連打すると磁力がチャージされ、MAGNET発動中は別のレーンの宝石まで吸い寄せます！ ボタン1回でもジャンプでき、落石を回避できます。宝石を集めて得点を増やしましょう。決勝はボタン連打で宝箱の鍵を開けよう！ 先生の操作は得点・コンボ・演出に反映されますが、番号ごとの当選確率は全員同じです。強い点滅は使いません。</p></main>
 <script>
 'use strict';
 const $=id=>document.getElementById(id),canvas=$('screen'),c=canvas.getContext('2d'),W=1200,H=720,TOTAL=30000;
 const colors=['#f28d8c','#83bbf2','#f0c96e','#93d8b1','#cbb0ee','#eda9c7'];
 let playing=false,round=null,frame=0,started=0,paused=0,elapsed=0,sound=false,audio=null,score=0,combo=0,lastHit=-1,track=1,shimmer=[],lastStage=-1,actionTime=0;
-let mineEvents=[],mineResolved=new Set(),mineGems=0,mineRocks=0,jumpUntil=0,jumpReady=0,mineNotice="",mineNoticeUntil=0,pointerStart=null;
+let mineEvents=[],mineResolved=new Set(),mineGems=0,mineRocks=0,jumpUntil=0,jumpReady=0,mineNotice="",mineNoticeUntil=0,pointerStart=null,magnetCharge=0,magnetUntil=0,magnetCount=0,magnetCaught=0,lastMagnetTap=-10000;
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),ease=t=>{t=clamp(t,0,1);return t*t*(3-2*t)};
 function seeded(seed){let x=seed>>>0||1;return()=>{x^=x<<13;x^=x>>>17;x^=x<<5;return(x>>>0)/4294967296}}
@@ -93,16 +93,34 @@ function makeMineEvents(seed){
  return events;
 }
 function mineX(e,ms){return 1230-(ms-e.at)*MINE_SPEED}
+function chargeMagnet(ms){
+ // A fast tapping rhythm charges the magnetic scoop; single taps still jump.
+ if(ms-lastMagnetTap<85)return;
+ magnetCharge=ms-lastMagnetTap>650?19:Math.min(100,magnetCharge+19);
+ lastMagnetTap=ms;
+ if(magnetCharge>=100){
+  magnetCharge=0;magnetUntil=ms+2300;magnetCount++;
+  mineNotice='🧲 MAGNET FEVER! 宝石を吸い込め！';
+  mineNoticeUntil=ms+850;score+=250;combo++;
+  tone(960,.16);
+ }else if(magnetCharge%38===0)tone(490+magnetCharge*3,.06);
+}
 function mineUpdate(ms){
  for(let i=0;i<mineEvents.length;i++){
   if(mineResolved.has(i))continue;
   const item=mineEvents[i],x=mineX(item,ms);
   if(x>MINE_PLAYER_X+24)continue;
   mineResolved.add(i);
-  if(item.lane!==track)continue;
+  // The magnet can collect a gem from a different lane. Rocks are never
+  // attracted; they still require steering or a timed jump.
+  const attracted=item.type==='gem'&&ms<magnetUntil;
+  if(item.lane!==track&&!attracted)continue;
   if(item.type==='gem'){
-   mineGems++;combo++;score+=item.bonus+Math.min(combo,12)*12;
-   mineNotice='💎 CRYSTAL +'+item.bonus;mineNoticeUntil=ms+500;tone(750+mineGems*43,.10);
+   const bonus=item.bonus+(attracted&&item.lane!==track?90:0);
+   if(attracted&&item.lane!==track)magnetCaught++;
+   mineGems++;combo++;score+=bonus+Math.min(combo,12)*12;
+   mineNotice=attracted?'🧲 宝石吸引！ +'+bonus:'💎 CRYSTAL +'+bonus;
+   mineNoticeUntil=ms+550;tone(750+mineGems*43,.10);
   }else if(jumpUntil>=ms){
    score+=210;combo++;mineNotice='🚀 ROCK JUMP! +210';mineNoticeUntil=ms+510;tone(630,.13);
   }else{
@@ -186,12 +204,24 @@ function drawMine(ms){
   const x=mineX(item,ms);
   if(x<-60||x>1320)return;
   const y=MINE_LANES[item.lane]-(item.type==='gem'?57:31);
-  if(item.type==='gem')mineCrystal(x,y+Math.sin(t*.01+i)*8,28);
+  if(item.type==='gem'){
+   const pull=ms<magnetUntil?ease((260-Math.max(0,x-MINE_PLAYER_X))/260):0;
+   const gx=x+(MINE_PLAYER_X-x)*pull*.78;
+   const gy=y+(MINE_LANES[track]-64-y)*pull*.83+Math.sin(t*.01+i)*8*(1-pull);
+   mineCrystal(gx,gy,28);
+   if(pull>.1)line(gx,gy,MINE_PLAYER_X+24,MINE_LANES[track]-40,'#8beef7',2);
+  }
   else{mineRock(x,y,ms,36);line(x-17,y-51,x-28,y-62,'#9a8c99',3)}
  });
  const jump=Math.max(0,jumpUntil-ms);
  const height=jump>0?(reduced?30:Math.sin((650-jump)/650*Math.PI)*93):0;
  mineCart(MINE_PLAYER_X,MINE_LANES[track], '先生',height,true);
+ if(ms<magnetUntil){
+  c.save();c.strokeStyle='#8df9f3';c.lineWidth=6;c.globalAlpha=.7;
+  c.beginPath();c.arc(MINE_PLAYER_X,MINE_LANES[track]-35,115,Math.PI*.12,Math.PI*1.91);c.stroke();
+  c.beginPath();c.arc(MINE_PLAYER_X,MINE_LANES[track]-35,155,Math.PI*.24,Math.PI*1.72);c.stroke();
+  c.restore();text('🧲 MAGNET!',MINE_PLAYER_X+98,MINE_LANES[track]-125,25,'#a0fff7');
+ }
  if(jump>0)text('JUMP!',MINE_PLAYER_X,MINE_LANES[track]-110-height,28,'#fff3a1');
  // A huge rock wall approaches from the left, for cinematic pressure only.
  const wall=16+((t*.035)%90);
@@ -202,9 +232,12 @@ function drawMine(ms){
  // Big readable overlay, HUD and stage prompt.
  rect(178,7,844,115,'#181833',18);
  text('💎 地下鉱山へ大脱走！',600,53,44,'#ffe68c');
- text('⬅️ ➡️ レーン変更　　🚀 ジャンプで落石回避！',600,96,25,'#9ef8ee');
+ text('⬅️ ➡️ レーン変更　 🚀 連打で磁力チャージ＋ジャンプ！',600,96,24,'#9ef8ee');
+ rect(822,137,317,45,'#18263d',12);
+ rect(836,151,Math.max(0,magnetCharge)*2.06,16,'#78e9e7',6);
+ text(ms<magnetUntil?'🧲 吸引中 '+Math.ceil((magnetUntil-ms)/1000)+'秒':'🧲 MAGNET '+magnetCharge+'%',979,133,22,'#a3ffed');
  rect(319,632,560,74,'#191834',18);
- text('💎 '+mineGems+' 個   ⚡ SCORE '+String(score).padStart(5,'0')+'   💥 '+mineRocks,600,680,29,'#ffdf8b');
+ text('💎 '+mineGems+' 個   🧲 '+magnetCaught+' 吸引   ⚡ '+String(score).padStart(5,'0')+'   💥 '+mineRocks,600,680,29,'#ffdf8b');
  if(ms<mineNoticeUntil)text(mineNotice,600,180,33,'#fff6b6');
  else if(t<900)text('⚠️ 落石注意！ 脱出開始！',600,184,35,'#ffeeb5');
  else if(t>8550)text('🚪 出口まであと少し！',600,185,36,'#b5fff0');
@@ -223,7 +256,7 @@ function drawFinal(ms,finished=false){
 function draw(ms,finished=false){const stage=stageAt(ms);if(stage===0)drawMoles(ms);else if(stage===1)drawMine(ms);else drawFinal(ms,finished)}
 function updateNumbers(ms){const group=eligible(ms);for(const node of $('numbers').children){const n=Number(node.textContent);node.classList.toggle('out',!group.has(n));node.classList.toggle('win',ms>=TOTAL&&n===round.winner)}}
 function updateUi(ms){const phase=stageAt(ms),remaining=clamp((TOTAL-ms)/1000,0,30);$('time').textContent=remaining.toFixed(1);$('score').textContent=String(score).padStart(6,'0');$('combo').textContent=combo;for(let i=0;i<3;i++)$('step'+i).classList.toggle('now',i===phase);
- const names=['もぐら叩き','地下鉱山へ大脱走！','黄金の宝箱'];$('phase').textContent=names[phase]+' · 残り'+Math.ceil((10000-(ms%10000))/1000)+'秒';$('hit').textContent=phase===0?'🔨 たたく！':phase===1?'🚀 ジャンプ！':'🔑 カギを開ける！';
+ const names=['もぐら叩き','地下鉱山へ大脱走！','黄金の宝箱'];$('phase').textContent=names[phase]+' · 残り'+Math.ceil((10000-(ms%10000))/1000)+'秒';$('hit').textContent=phase===0?'🔨 たたく！':phase===1?'🧲 連打！＋ジャンプ':'🔑 カギを開ける！';
  $('status').textContent=phase===0?'🔨 40匹のもぐらを連続ヒット！':phase===1?'💎 トロッコ脱出中！宝石'+mineGems+'個・落石'+mineRocks+'回': '🏆 残り'+round.finalThree.length+'匹！宝箱を開けろ！';
  updateNumbers(ms)}
 function audioReady(){if(!sound)return;try{audio??=new(window.AudioContext||window.webkitAudioContext)();audio.resume()}catch{}}
@@ -247,13 +280,14 @@ function action(x=null,y=null){
   if(hit>=0){hitSpawns.add(popAt(elapsed,hit).key);score+=100+Math.min(combo,15)*20;combo++;lastHit=elapsed;tone(500+combo*15,.06)}
   else{combo=0;tone(210,.07)}
   }else if(stage===1){
-  // A timed jump is the actual action in the escape stage.
+  // Repeated taps charge the gem magnet; spaced taps still perform jumps.
+  chargeMagnet(elapsed);
   if(elapsed>=jumpReady){jumpUntil=elapsed+650;jumpReady=elapsed+790;tone(610,.09);}
  }else{score+=120;combo++;lastHit=elapsed;tone(720,.06)}
  updateUi(elapsed);
 }
 function steer(dir){if(!playing)return;const stage=stageAt(elapsed);if(stage===1){const previous=track;track=clamp(track+dir,0,2);if(track!==previous)tone(340+track*95,.07)}else{action()}updateUi(elapsed)}
-function clear(){cancelAnimationFrame(frame);frame=0;playing=false;elapsed=0;paused=0;score=0;combo=0;lastHit=-1;lastStage=-1;track=1;hitSpawns.clear();mineEvents=[];mineResolved.clear();mineGems=0;mineRocks=0;jumpUntil=0;jumpReady=0;mineNotice='';mineNoticeUntil=0;pointerStart=null;$('winner').textContent='';
+function clear(){cancelAnimationFrame(frame);frame=0;playing=false;elapsed=0;paused=0;score=0;combo=0;lastHit=-1;lastStage=-1;track=1;hitSpawns.clear();mineEvents=[];mineResolved.clear();mineGems=0;mineRocks=0;jumpUntil=0;jumpReady=0;mineNotice='';mineNoticeUntil=0;pointerStart=null;magnetCharge=0;magnetUntil=0;magnetCount=0;magnetCaught=0;lastMagnetTap=-10000;$('winner').textContent='';
  const n=clamp(Math.floor(Number($('count').value)||40),1,40);$('count').value=n;round=newRound(n);mineEvents=makeMineEvents(round.seed);
  $('numbers').replaceChildren();for(let i=1;i<=n;i++){const span=document.createElement('span');span.textContent=i;$('numbers').append(span)}
  $('start').disabled=false;$('count').disabled=false;updateUi(0);draw(0)}
