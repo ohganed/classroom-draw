@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#172e47"><title>🚃 出発進行！路線バトル | だれの番？</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(160deg,#142f50,#0a162a);color:#f2f7fc;font-family:system-ui,-apple-system,sans-serif}main{max-width:1320px;margin:auto;padding:12px}.head,.toolbar,.hud,.cards{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.head{justify-content:space-between}h1{font-size:clamp(22px,3.7vw,37px);margin:5px 0}a{color:#9deaf6;font-weight:700}.toolbar{padding:10px 0}.toolbar label{font-weight:750}.toolbar input{width:75px;font-size:19px;padding:8px;border-radius:12px;border:2px solid #89b9d4}.toolbar button{border:0;border-radius:14px;padding:12px 18px;font-size:17px;font-weight:900;color:#18304a;background:#d8f5f7;cursor:pointer}.toolbar button.primary{background:#ffcf6c}.toolbar button:disabled{opacity:.55}.hud{justify-content:space-around;background:#182f4b;border:2px solid #618aa2;border-radius:15px;padding:9px;margin:8px 0;font-weight:850}.hud strong{color:#ffdf82;font-variant-numeric:tabular-nums}#world{width:100%;height:auto;display:block;border:4px solid #78a3b8;border-radius:20px;background:#a3d9ea;box-shadow:0 10px 30px #0006}.bottom{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin-top:10px}#status{font-size:clamp(16px,2.2vw,24px);font-weight:850;min-height:35px;color:#ffe2a3}#result{font-size:clamp(24px,4vw,48px);font-weight:950;color:#ffdc7d;min-height:48px;text-align:center}.cards{justify-content:center;margin:10px 0}.card{background:linear-gradient(#e5f6ff,#9bc8df);color:#1b364b;border-radius:13px;min-width:104px;text-align:center;padding:9px;box-shadow:0 5px 0 #49718e;font-weight:900}.card b{font-size:26px;display:block}.small{color:#b7d2dd;font-size:13px;line-height:1.6;margin:10px 0}progress{width:100%;height:13px;accent-color:#f8c65d}#lineup{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;margin-top:10px}#lineup span{border-radius:7px;background:#2e526d;padding:3px;text-align:center;font-size:clamp(11px,1.8vw,17px);font-weight:800}#lineup span.active{background:#ffcf67;color:#173149}#lineup span.win{background:#ffdb69;color:#142a41;outline:3px solid white}button:focus-visible,a:focus-visible{outline:4px solid #ffef8d;outline-offset:3px}@media(max-width:600px){main{padding-top:max(12px,env(safe-area-inset-top))}.card{min-width:70px;padding:6px}.card b{font-size:21px}.hud{font-size:12px}.toolbar button{padding:10px 13px}#lineup{grid-template-columns:repeat(8,1fr)}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style></head><body><main><div class="head"><div><a href="./menu.html?stage=3">← ディープ・アーケードへ戻る</a><h1>🚃 出発進行！路線バトル</h1></div><div class="toolbar"><label>人数 <input id="count" type="number" min="1" max="40" value="40"></label><button id="sound" aria-pressed="false">♪ 音 OFF</button><button id="fullscreen">⛶ 全画面</button></div></div>
+<div class="hud"><span>🚉 <strong id="station">始発・ひかり中央</strong></span><span>🛤️ <strong id="distance">あと 8 駅</strong></span><span>🎴 EVENT <strong id="eventCount">0 / 4</strong></span><span>⏱️ <strong id="clock">0.0 / 35秒</strong></span></div>
+<svg id="world" viewBox="0 0 1200 750" role="img" aria-label="斜め上から見たオリジナルの街と線路。5つの列車が駅を巡る抽選ゲーム" xmlns="http://www.w3.org/2000/svg">
+<defs><linearGradient id="grass" x2="0" y2="1"><stop stop-color="#b2e4a7"/><stop offset="1" stop-color="#69b695"/></linearGradient><linearGradient id="water"><stop stop-color="#8de6ff"/><stop offset="1" stop-color="#50a3da"/></linearGradient><linearGradient id="sky" x2="0" y2="1"><stop stop-color="#c1f3fd"/><stop offset="1" stop-color="#9cd3c9"/></linearGradient><filter id="shadow"><feDropShadow dx="4" dy="7" stdDeviation="5" flood-opacity=".26"/></filter></defs>
+<rect width="1200" height="750" fill="url(#grass)"/><g id="scenery"></g><g id="rails"></g><g id="buildings"></g><g id="stations"></g><g id="trains"></g><g id="effects"></g>
+<g id="eventBadge" opacity="0"><rect x="345" y="245" width="510" height="154" rx="25" fill="#14283c" stroke="#ffe49e" stroke-width="7"/><text id="eventEmoji" x="600" y="310" font-size="45" text-anchor="middle">🚧</text><text id="eventLabel" x="600" y="357" fill="#ffe49e" font-weight="900" font-size="34" text-anchor="middle">イベント</text></g>
+<g id="winnerBanner" opacity="0"><rect x="225" y="265" width="750" height="198" rx="31" fill="#12334f" stroke="#ffe19c" stroke-width="9"/><text x="600" y="329" text-anchor="middle" fill="#e9f9ff" font-size="36" font-weight="900">🏁 終点・スターライト駅 到着！</text><text id="winnerText" x="600" y="418" text-anchor="middle" fill="#ffd56c" font-size="83" font-weight="950">1 番</text></g>
+</svg>
+<div class="toolbar"><button class="primary" id="start">▶ 出発進行！</button><button id="reset">↻ 街を作り直す</button><span id="phase">待機中</span></div><progress id="meter" max="35" value="0"></progress>
+<div class="bottom"><div id="status" aria-live="polite">🏙️ 5つの列車がホームで出発を待っています。</div><div id="result" aria-live="polite"></div></div>
+<div class="cards"><div class="card"><b>🚄</b>急行便</div><div class="card"><b>🎁</b>幸運駅</div><div class="card"><b>🚧</b>工事中</div><div class="card"><b>🌈</b>ワープ</div></div>
+<div id="lineup" aria-label="抽選対象となる全番号"></div>
+<p class="small">各番号は等確率で抽選されます。街の出来事や列車の色、先生の操作は当選番号に影響しません。40人全員の番号を下に表示し、出発前の抽選結果は最後まで非公開です。明滅の激しい演出は使いません。</p>
+</main><script>
+'use strict';
+const $=id=>document.getElementById(id),NS='http://www.w3.org/2000/svg',WORLD=$('world');
+const DURATION=35000,STOPS=['ひかり中央','若葉通り','青空公園','みずいろ橋','星の丘','新都市タワー','虹の市場','スターライト駅'];
+const EVENTS=[['🚄','急行運転！スピードアップ'],['🎁','幸運駅で宝箱を発見！'],['🚧','工事中！別の路線へ'],['🌈','虹のトンネルをワープ！']];
+const COLORS=['#f06470','#498de3','#ffd168','#45bca6','#9b7de6'];
+const RAILS=[
+ [[78,490],[215,445],[365,413],[520,347],[690,318],[835,241],[1090,165]],
+ [[80,533],[220,502],[375,467],[555,413],[720,355],[870,309],[1100,230]],
+ [[81,584],[233,545],[405,515],[570,465],[729,431],[922,370],[1090,306]],
+ [[73,639],[240,604],[420,572],[574,532],[755,488],[924,442],[1100,385]],
+ [[75,692],[258,660],[432,625],[610,586],[768,545],[940,498],[1100,454]]
+];
+const el=(name,props={},label='')=>{const e=document.createElementNS(NS,name);for(const [k,v] of Object.entries(props))e.setAttribute(k,String(v));if(label)e.textContent=label;return e;};
+const rng=seed=>{let x=seed>>>0||1;return()=>{x^=x<<13;x^=x>>>17;x^=x<<5;return(x>>>0)/4294967296}};
+let round=null,playing=false,started=0,raf=0,sound=false,audio=null,pausedElapsed=0,lastBeat=-1;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function setup(n,seed){
+ const r=rng(seed),numbers=Array.from({length:n},(_,i)=>i+1);
+ const x=new Uint32Array(1);crypto.getRandomValues(x);
+ const winningIndex=x[0]%n; // Uniform random choice from a cryptographic 32-bit seed.
+ return {n,seed,winner:numbers[winningIndex],trains:Array.from({length:5},(_,i)=>({lane:i,phase:r()*0.07})),events:EVENTS.map((e,i)=>({at:(i+1)*6900,...{kind:i}}))};
+}
+function drawCity(seed){
+ const r=rng(seed),scenery=$('scenery'),buildings=$('buildings'),rails=$('rails'),stations=$('stations');
+ scenery.replaceChildren();buildings.replaceChildren();rails.replaceChildren();stations.replaceChildren();
+ // Roads, parkland, river and riverside bridges.
+ for(let i=0;i<7;i++){const y=82+i*98;scenery.append(el('path',{d:'M -50 '+(y+115)+' L 1250 '+(y-105),stroke:'#f3f4ee','stroke-width':50,opacity:.97}));scenery.append(el('path',{d:'M -50 '+(y+115)+' L 1250 '+(y-105),stroke:'#a7b1b2','stroke-width':2,'stroke-dasharray':'10 18'}));}
+ scenery.append(el('path',{d:'M 850 -40 Q 720 190 945 340 T 840 800',fill:'none',stroke:'url(#water)','stroke-width':65,opacity:.78}));
+ for(let i=0;i<65;i++){let x=23+r()*1160,y=18+r()*704;if(x>860&&x<970)continue;const rr=7+r()*10;scenery.append(el('circle',{cx:x,cy:y,r:rr,fill:i%3?'#3f9e75':'#f0e19b',opacity:.8}));}
+ const roof=['#d77479','#f3c07c','#78b7dd','#a4a2d5','#7eb8a1','#e7d1a0'];
+ for(let i=0;i<112;i++){
+  const x=25+r()*1130,y=30+r()*660,w=19+r()*36,h=18+r()*42,z=13+r()*39;
+  if(y>340&&x<1120&&y<705&&r()<.76)continue;
+  const tone=roof[Math.floor(r()*roof.length)];
+  const group=el('g',{filter:i%7===0?'url(#shadow)':undefined});
+  group.append(el('polygon',{points:[x+','+y,(x+w)+','+y,(x+w)+','+(y-z),x+','+(y-z)],fill:'#e0e6d7'}));
+  group.append(el('polygon',{points:[(x+w)+','+y,(x+w+10)+','+(y-7),(x+w+10)+','+(y-z-7),(x+w)+','+(y-z)],fill:'#7695a4'}));
+  group.append(el('polygon',{points:[x+','+(y-z),(x+10)+','+(y-z-9),(x+w+10)+','+(y-z-9),(x+w)+','+(y-z)],fill:tone}));
+  for(let k=0;k<3;k++)group.append(el('rect',{x:x+5+k*9,y:y-z+9,width:5,height:5,fill:'#8cb9d3'}));
+  buildings.append(group);
+ }
+ RAILS.forEach((track,lane)=>{
+  const d='M '+track.map(p=>p.join(' ')).join(' L ');
+  rails.append(el('path',{d,fill:'none',stroke:'#576d73','stroke-width':16,'stroke-linecap':'round','stroke-linejoin':'round'}));
+  rails.append(el('path',{d,fill:'none',stroke:'#e3d5ae','stroke-width':12,'stroke-dasharray':'4 13'}));
+  rails.append(el('path',{d,fill:'none',stroke:'#edf5fa','stroke-width':4,'stroke-linecap':'round','stroke-linejoin':'round'}));
+ });
+ for(let i=0;i<8;i++){
+  const cx=110+(i%4)*280,cy=40+Math.floor(i/4)*140;
+  stations.append(el('rect',{x:cx-60,y:cy-7,width:120,height:31,rx:9,fill:'#16384e',stroke:'#e0f9ff','stroke-width':2}));
+  stations.append(el('text',{x:cx,y:cy+15,'font-size':14,'font-weight':900,fill:'#fff','text-anchor':'middle'},STOPS[i]));
+ }
+ // Tall central city tower and recognizable station landmark.
+ buildings.append(el('rect',{x:515,y:104,width:110,height:177,rx:8,fill:'#a2bfcd',stroke:'#557c95','stroke-width':7}));
+ buildings.append(el('polygon',{points:'515,104 552,60 663,60 625,104',fill:'#63adca'}));
+ for(let i=0;i<5;i++)for(let j=0;j<3;j++)buildings.append(el('rect',{x:530+j*30,y:125+i*27,width:18,height:13,fill:'#dff5ff'}));
+ buildings.append(el('rect',{x:508,y:262,width:124,height:37,rx:8,fill:'#fff2cb',stroke:'#cf9e55','stroke-width':3}));
+ buildings.append(el('text',{x:570,y:288,fill:'#153e5a','font-size':20,'font-weight':900,'text-anchor':'middle'},'中央駅'));
+}
+function lerpPath(points,t){const segments=points.length-1,v=clamp(t,0,1)*segments,i=Math.min(segments-1,Math.floor(v)),k=v-i;return {x:points[i][0]+(points[i+1][0]-points[i][0])*k,y:points[i][1]+(points[i+1][1]-points[i][1])*k};}
+function paint(progress,finished=false){
+ const trains=$('trains');trains.replaceChildren();
+ RAILS.forEach((line,i)=>{
+  // Everyone moves through the same journey; the winning lane gets only a
+  // visible celebration at the finish, not a better chance of being chosen.
+  const t=clamp(progress*(.90+(i*.027)),0,1),p=lerpPath(line,t);
+  const q=lerpPath(line,Math.min(1,t+.003)),angle=Math.atan2(q.y-p.y,q.x-p.x)*180/Math.PI;
+  const group=el('g',{transform:'translate('+p.x+' '+p.y+') rotate('+angle+')',filter:'url(#shadow)'});
+  group.append(el('rect',{x:-49,y:-17,width:100,height:34,rx:11,fill:COLORS[i],stroke:'#fff','stroke-width':4}));
+  for(let k=0;k<4;k++)group.append(el('rect',{x:-35+k*20,y:-12,width:13,height:12,rx:2,fill:'#e5f6ff'}));
+  group.append(el('text',{x:0,y:12,fill:'#11293a','font-size':13,'font-weight':950,'text-anchor':'middle'},String(i+1)+'号'));
+  trains.append(group);
+ });
+ $('meter').value=progress*35;
+ $('distance').textContent='あと '+Math.max(0,Math.ceil((1-progress)*8))+' 駅';
+ $('station').textContent=STOPS[Math.min(7,Math.floor(progress*8))];
+ $('eventCount').textContent=Math.min(4,Math.floor(progress*5))+' / 4';
+ if(finished){$('winnerBanner').setAttribute('opacity',1);$('winnerText').textContent=round.winner+' 番';}
+}
+function badges(sec){
+ const badge=$('eventBadge');let current=-1;
+ for(let i=0;i<4;i++){if(sec>=6.9*(i+1)&&sec<6.9*(i+1)+2.5)current=i;}
+ if(current<0){badge.setAttribute('opacity',0);return;}
+ badge.setAttribute('opacity',1);
+ $('eventEmoji').textContent=EVENTS[current][0];$('eventLabel').textContent=EVENTS[current][1];
+ $('status').textContent=EVENTS[current][1];
+}
+function displayNumbers(){
+ const zone=$('lineup');zone.replaceChildren();
+ for(let i=1;i<=round.n;i++){const span=document.createElement('span');span.textContent=i;span.id='number-'+i;zone.append(span);}
+}
+function soundReady(){if(!sound)return;try{audio??=new(window.AudioContext||window.webkitAudioContext)();audio.resume();}catch{}}
+function beep(frequency=450,len=.1){if(!sound||!audio||audio.state!=='running'||document.hidden)return;const t=audio.currentTime,o=audio.createOscillator(),g=audio.createGain();o.type='triangle';o.frequency.setValueAtTime(frequency,t);g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(.06,t+.008);g.gain.exponentialRampToValueAtTime(.0001,t+len);o.connect(g);g.connect(audio.destination);o.start(t);o.stop(t+len+.01);}
+function prepare(){
+ cancelAnimationFrame(raf);playing=false;pausedElapsed=0;
+ const n=clamp(Math.floor(Number($('count').value)||40),1,40);$('count').value=n;
+ round=setup(n,crypto.getRandomValues(new Uint32Array(1))[0]);
+ drawCity(round.seed);displayNumbers();
+ $('winnerBanner').setAttribute('opacity',0);$('eventBadge').setAttribute('opacity',0);
+ $('clock').textContent='0.0 / 35秒';$('result').textContent='';$('phase').textContent='待機中';
+ $('status').textContent='🏙️ '+n+'人の番号が出発を待っています。';
+ $('start').disabled=false;$('count').disabled=false;paint(0);
+}
+function tick(now){
+ if(!playing)return;raf=0;
+ const ms=clamp(now-started,0,DURATION),sec=ms/1000,progress=ms/DURATION;
+ paint(progress);badges(sec);
+ $('clock').textContent=sec.toFixed(1)+' / 35秒';
+ $('phase').textContent=sec<28?'路線走行中':'終点に接近中';
+ const beat=Math.floor(sec*2);if(beat!==lastBeat){lastBeat=beat;if(beat%2===0)beep(310+(beat%6)*57,.08);}
+ if(ms>=DURATION){
+  playing=false;paint(1,true);$('eventBadge').setAttribute('opacity',0);
+  $('status').textContent='🏁 スターライト駅に到着！';
+  $('result').textContent='🎉 '+round.winner+' 番に決定！';
+  $('phase').textContent='到着';$('start').disabled=false;$('count').disabled=false;
+  $('number-'+round.winner)?.classList.add('win');
+  [523,659,784].forEach((f,i)=>setTimeout(()=>beep(f,.22),i*190));return;
+ }
+ raf=requestAnimationFrame(tick);
+}
+$('start').onclick=()=>{if(playing)return;prepare();playing=true;started=performance.now();lastBeat=-1;pauseElapsed=0;soundReady();$('start').disabled=true;$('count').disabled=true;raf=requestAnimationFrame(tick);};
+$('reset').onclick=prepare;$('count').onchange=prepare;
+$('sound').onclick=()=>{sound=!sound;$('sound').textContent='♪ 音 '+(sound?'ON':'OFF');$('sound').setAttribute('aria-pressed',String(sound));if(sound){soundReady();beep(620,.1)}};
+$('fullscreen').onclick=()=>{if(document.fullscreenElement)document.exitFullscreen?.();else WORLD.requestFullscreen?.().catch(()=>{})};
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&playing){pausedElapsed=performance.now()-started;cancelAnimationFrame(raf);raf=0;}else if(!document.hidden&&playing&&!raf){started=performance.now()-pausedElapsed;raf=requestAnimationFrame(tick);}});
+prepare();
+</script></body></html>
