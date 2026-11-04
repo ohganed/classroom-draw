@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#172e47"><title>🚃 出発進行！路線バトル | だれの番？</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:linear-gradient(160deg,#142f50,#0a162a);color:#f2f7fc;font-family:system-ui,-apple-system,sans-serif}main{max-width:1320px;margin:auto;padding:12px}.head,.toolbar,.hud,.cards{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.head{justify-content:space-between}h1{font-size:clamp(22px,3.7vw,37px);margin:5px 0}a{color:#9deaf6;font-weight:700}.toolbar{padding:10px 0}.toolbar label{font-weight:750}.toolbar input{width:75px;font-size:19px;padding:8px;border-radius:12px;border:2px solid #89b9d4}.toolbar button{border:0;border-radius:14px;padding:12px 18px;font-size:17px;font-weight:900;color:#18304a;background:#d8f5f7;cursor:pointer}.toolbar button.primary{background:#ffcf6c}.toolbar button:disabled{opacity:.55}.hud{justify-content:space-around;background:#182f4b;border:2px solid #618aa2;border-radius:15px;padding:9px;margin:8px 0;font-weight:850}.hud strong{color:#ffdf82;font-variant-numeric:tabular-nums}#world{width:100%;height:auto;display:block;border:4px solid #78a3b8;border-radius:20px;background:#a3d9ea;box-shadow:0 10px 30px #0006}.bottom{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin-top:10px}#status{font-size:clamp(16px,2.2vw,24px);font-weight:850;min-height:35px;color:#ffe2a3}#result{font-size:clamp(24px,4vw,48px);font-weight:950;color:#ffdc7d;min-height:48px;text-align:center}.cards{justify-content:center;margin:10px 0}.card{background:linear-gradient(#e5f6ff,#9bc8df);color:#1b364b;border-radius:13px;min-width:104px;text-align:center;padding:9px;box-shadow:0 5px 0 #49718e;font-weight:900}.card b{font-size:26px;display:block}.small{color:#b7d2dd;font-size:13px;line-height:1.6;margin:10px 0}progress{width:100%;height:13px;accent-color:#f8c65d}#lineup{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;margin-top:10px}#lineup span{border-radius:7px;background:#2e526d;padding:3px;text-align:center;font-size:clamp(11px,1.8vw,17px);font-weight:800}#lineup span.active{background:#ffcf67;color:#173149}#lineup span.win{background:#ffdb69;color:#142a41;outline:3px solid white}#lineup span.out{opacity:.28;filter:grayscale(1)}#lineup span.finalist{background:#ffdc7c;color:#14283b;transform:scale(1.09)}.train-list{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin:12px 0}.train-list>div{background:#234763;border:2px solid var(--train);border-radius:12px;padding:7px;font-weight:800;transition:opacity .3s}.train-list>div.out{opacity:.3}.train-list>div.finalist{background:#2c5675;box-shadow:0 0 0 2px #ffe5a4 inset}.train-list small{display:block;color:#e2f1ff;font-size:12px;line-height:1.5;margin-top:4px}@media(max-width:600px){.train-list{grid-template-columns:repeat(2,minmax(0,1fr))}}button:focus-visible,a:focus-visible{outline:4px solid #ffef8d;outline-offset:3px}@media(max-width:600px){main{padding-top:max(12px,env(safe-area-inset-top))}.card{min-width:70px;padding:6px}.card b{font-size:21px}.hud{font-size:12px}.toolbar button{padding:10px 13px}#lineup{grid-template-columns:repeat(8,1fr)}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
-</style></head><body><main><div class="head"><div><a href="./menu.html?stage=3">← ディープ・アーケードへ戻る</a><h1>🚃 出発進行！路線バトル</h1></div><div class="toolbar"><label>人数 <input id="count" type="number" min="1" max="40" value="40"></label><button id="sound" aria-pressed="false">♪ 音 OFF</button><button id="fullscreen">⛶ 全画面</button></div></div>
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(160deg,#f2ead9,#d6e5dc);color:#26465a;font-family:system-ui,-apple-system,sans-serif}main{max-width:1320px;margin:auto;padding:12px}.head,.toolbar,.hud,.cards{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.head{justify-content:space-between}h1{font-size:clamp(22px,3.7vw,37px);margin:5px 0}a{color:#226e84;font-weight:700}.toolbar{padding:10px 0}.toolbar label{font-weight:750}.toolbar input{width:75px;font-size:19px;padding:8px;border-radius:12px;border:2px solid #89b9d4}.toolbar button{border:0;border-radius:14px;padding:12px 18px;font-size:17px;font-weight:900;color:#18304a;background:#d8f5f7;cursor:pointer}.toolbar button.primary{background:#ffcf6c}.toolbar button:disabled{opacity:.55}.hud{justify-content:space-around;background:#fff8e9;border:2px solid #c9b7a0;border-radius:15px;padding:9px;margin:8px 0;font-weight:850}.hud strong{color:#b16a4c;font-variant-numeric:tabular-nums}#world{width:100%;height:auto;display:block;border:4px solid #78a3b8;border-radius:20px;background:#a3d9ea;box-shadow:0 10px 30px #0006}.bottom{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin-top:10px}#status{font-size:clamp(16px,2.2vw,24px);font-weight:850;min-height:35px;color:#915738}#result{font-size:clamp(24px,4vw,48px);font-weight:950;color:#b96c49;min-height:48px;text-align:center}.cards{justify-content:center;margin:10px 0}.card{background:linear-gradient(#fffaf0,#e6d1ab);color:#72533d;border-radius:13px;min-width:104px;text-align:center;padding:9px;box-shadow:0 5px 0 #bb9c7b;font-weight:900}.card b{font-size:26px;display:block}.small{color:#b7d2dd;font-size:13px;line-height:1.6;margin:10px 0}progress{width:100%;height:13px;accent-color:#f8c65d}#lineup{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;margin-top:10px}#lineup span{border-radius:7px;background:#a9cfce;color:#253b4c;padding:3px;text-align:center;font-size:clamp(11px,1.8vw,17px);font-weight:800}#lineup span.active{background:#ffcf67;color:#173149}#lineup span.win{background:#ffdb69;color:#142a41;outline:3px solid white}#lineup span.out{opacity:.28;filter:grayscale(1)}#lineup span.finalist{background:#ffdc7c;color:#14283b;transform:scale(1.09)}.train-list{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin:12px 0}.train-list>div{background:#fff6e5;border:2px solid var(--train);border-radius:12px;padding:7px;font-weight:800;transition:opacity .3s}.train-list>div.out{opacity:.3}.train-list>div.finalist{background:#2c5675;box-shadow:0 0 0 2px #ffe5a4 inset}.train-list small{display:block;color:#4c6875;font-size:12px;line-height:1.5;margin-top:4px}@media(max-width:600px){.train-list{grid-template-columns:repeat(2,minmax(0,1fr))}}button:focus-visible,a:focus-visible{outline:4px solid #ffef8d;outline-offset:3px}@media(max-width:600px){main{padding-top:max(12px,env(safe-area-inset-top))}.card{min-width:70px;padding:6px}.card b{font-size:21px}.hud{font-size:12px}.toolbar button{padding:10px 13px}#lineup{grid-template-columns:repeat(8,1fr)}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style></head><body><main><div class="head"><div><a href="./menu.html?stage=3">← ディープ・アーケードへ戻る</a><h1>🚃 出発進行！路線バトル 🍈</h1></div><div class="toolbar"><label>人数 <input id="count" type="number" min="1" max="40" value="40"></label><button id="sound" aria-pressed="false">♪ 音 OFF</button><button id="fullscreen">⛶ 全画面</button></div></div>
 <div class="hud"><span>🚉 <strong id="station">始発・ひかり中央</strong></span><span>🛤️ <strong id="distance">あと 8 駅</strong></span><span>🎴 EVENT <strong id="eventCount">0 / 4</strong></span><span>⏱️ <strong id="clock">0.0 / 48秒</strong></span></div>
 <svg id="world" viewBox="0 0 1200 750" role="img" aria-label="斜め上から見たオリジナルの街と線路。5つの列車が駅を巡る抽選ゲーム" xmlns="http://www.w3.org/2000/svg">
 <defs><linearGradient id="grass" x2="0" y2="1"><stop stop-color="#b2e4a7"/><stop offset="1" stop-color="#69b695"/></linearGradient><linearGradient id="water"><stop stop-color="#8de6ff"/><stop offset="1" stop-color="#50a3da"/></linearGradient><linearGradient id="sky" x2="0" y2="1"><stop stop-color="#c1f3fd"/><stop offset="1" stop-color="#9cd3c9"/></linearGradient><filter id="shadow"><feDropShadow dx="4" dy="7" stdDeviation="5" flood-opacity=".26"/></filter></defs>
@@ -53,39 +53,71 @@ function setup(n,seed){
 function drawCity(seed){
  const r=rng(seed),scenery=$('scenery'),buildings=$('buildings'),rails=$('rails'),stations=$('stations');
  scenery.replaceChildren();buildings.replaceChildren();rails.replaceChildren();stations.replaceChildren();
- // Roads, parkland, river and riverside bridges.
- for(let i=0;i<7;i++){const y=82+i*98;scenery.append(el('path',{d:'M -50 '+(y+115)+' L 1250 '+(y-105),stroke:'#f3f4ee','stroke-width':50,opacity:.97}));scenery.append(el('path',{d:'M -50 '+(y+115)+' L 1250 '+(y-105),stroke:'#a7b1b2','stroke-width':2,'stroke-dasharray':'10 18'}));}
- scenery.append(el('path',{d:'M 850 -40 Q 720 190 945 340 T 840 800',fill:'none',stroke:'url(#water)','stroke-width':65,opacity:.78}));
- for(let i=0;i<65;i++){let x=23+r()*1160,y=18+r()*704;if(x>860&&x<970)continue;const rr=7+r()*10;scenery.append(el('circle',{cx:x,cy:y,r:rr,fill:i%3?'#3f9e75':'#f0e19b',opacity:.8}));}
- const roof=['#d77479','#f3c07c','#78b7dd','#a4a2d5','#7eb8a1','#e7d1a0'];
- for(let i=0;i<112;i++){
-  const x=25+r()*1130,y=30+r()*660,w=19+r()*36,h=18+r()*42,z=13+r()*39;
-  if(y>340&&x<1120&&y<705&&r()<.76)continue;
-  const tone=roof[Math.floor(r()*roof.length)];
-  const group=el('g',{filter:i%7===0?'url(#shadow)':undefined});
-  group.append(el('polygon',{points:[x+','+y,(x+w)+','+y,(x+w)+','+(y-z),x+','+(y-z)],fill:'#e0e6d7'}));
-  group.append(el('polygon',{points:[(x+w)+','+y,(x+w+10)+','+(y-7),(x+w+10)+','+(y-z-7),(x+w)+','+(y-z)],fill:'#7695a4'}));
-  group.append(el('polygon',{points:[x+','+(y-z),(x+10)+','+(y-z-9),(x+w+10)+','+(y-z-9),(x+w)+','+(y-z)],fill:tone}));
-  for(let k=0;k<3;k++)group.append(el('rect',{x:x+5+k*9,y:y-z+9,width:5,height:5,fill:'#8cb9d3'}));
-  buildings.append(group);
+ // Soft toy-town geography: paths, park lawns, pond, trees and flowerbeds.
+ scenery.append(el('rect',{width:1200,height:750,fill:'#b8ddb1'}));
+ scenery.append(el('path',{d:'M0 0 H1200 V95 Q940 165 750 90 T0 153Z',fill:'#dce9bd'}));
+ scenery.append(el('path',{d:'M780 -35 Q710 175 880 300 T806 785',fill:'none',stroke:'#86cddd','stroke-width':82,opacity:.8}));
+ scenery.append(el('path',{d:'M781 -35 Q711 175 880 300 T806 785',fill:'none',stroke:'#baf0ec','stroke-width':48,opacity:.75}));
+ for(let i=0;i<6;i++){
+  const y=110+i*117;
+  scenery.append(el('path',{d:'M-80 '+(y+105)+' L1280 '+(y-90),stroke:'#f4e9ce','stroke-width':39,opacity:.9}));
+  scenery.append(el('path',{d:'M-80 '+(y+105)+' L1280 '+(y-90),stroke:'#d2c7aa','stroke-width':3,'stroke-dasharray':'13 26',opacity:.7}));
  }
- RAILS.forEach((track,lane)=>{
-  const d='M '+track.map(p=>p.join(' ')).join(' L ');
-  rails.append(el('path',{d,fill:'none',stroke:'#576d73','stroke-width':16,'stroke-linecap':'round','stroke-linejoin':'round'}));
-  rails.append(el('path',{d,fill:'none',stroke:'#e3d5ae','stroke-width':12,'stroke-dasharray':'4 13'}));
-  rails.append(el('path',{d,fill:'none',stroke:'#edf5fa','stroke-width':4,'stroke-linecap':'round','stroke-linejoin':'round'}));
+ for(let i=0;i<95;i++){
+  const x=18+r()*1160,y=12+r()*720;
+  if(i%9===0){
+   scenery.append(el('circle',{cx:x,cy:y,r:12,fill:'#e6af99'}));
+   scenery.append(el('circle',{cx:x+7,cy:y-6,r:8,fill:'#f7d1bb'}));
+  }else{
+   scenery.append(el('ellipse',{cx:x+4,cy:y+10,rx:12,ry:5,fill:'#77a988',opacity:.35}));
+   scenery.append(el('rect',{x:x-2,y:y,width:5,height:16,rx:2,fill:'#96755e'}));
+   scenery.append(el('circle',{cx:x,cy:y-7,r:10+r()*8,fill:['#70b58b','#82c79b','#a0ce93'][i%3]}));
+  }
+ }
+ const roofs=['#d7857b','#e9ad7a','#83bdd3','#9db99a','#beabcf','#e6c37c'];
+ // Isometric miniature houses with three shaded visible sides and pitched roofs.
+ for(let i=0;i<103;i++){
+  const x=25+r()*1140,y=28+r()*630,w=20+r()*28,h=18+r()*25,z=14+r()*24;
+  if(y>345&&y<710&&r()<.73)continue;
+  const roof=roofs[Math.floor(r()*roofs.length)],g=el('g',{filter:i%9===0?'url(#shadow)':null});
+  g.append(el('polygon',{points:x+','+(y-z)+' '+(x+w)+','+(y-z)+' '+(x+w)+','+y+' '+x+','+y,fill:'#ffebd1'}));
+  g.append(el('polygon',{points:(x+w)+','+(y-z)+' '+(x+w+12)+','+(y-z-11)+' '+(x+w+12)+','+(y-11)+' '+(x+w)+','+y,fill:'#bdc6bf'}));
+  g.append(el('polygon',{points:(x-5)+','+(y-z)+' '+(x+w/2)+','+(y-z-23)+' '+(x+w+6)+','+(y-z)+' '+(x+w+14)+','+(y-z-10)+' '+(x+w/2+9)+','+(y-z-32)+' '+(x+4)+','+(y-z-9),fill:roof,stroke:'#b17d70','stroke-width':1.5,'stroke-linejoin':'round'}));
+  g.append(el('rect',{x:x+5,y:y-z+6,width:7,height:9,rx:1.5,fill:'#81bdd4'}));
+  g.append(el('rect',{x:x+w-13,y:y-z+6,width:7,height:9,rx:1.5,fill:'#81bdd4'}));
+  g.append(el('rect',{x:x+w/2-3,y:y-15,width:9,height:15,rx:2,fill:'#c19075'}));
+  buildings.append(g);
+ }
+ // Draw sleepers beneath every actual path and rounded toy rails above them.
+ RAILS.forEach((track,i)=>{
+  const path='M '+track.map(p=>p.join(' ')).join(' L ');
+  rails.append(el('path',{d:path,fill:'none',stroke:'#a28268','stroke-width':25,'stroke-linecap':'round','stroke-linejoin':'round','stroke-dasharray':'5 11',opacity:.95}));
+  rails.append(el('path',{d:path,fill:'none',stroke:'#637a83','stroke-width':15,'stroke-linecap':'round','stroke-linejoin':'round'}));
+  rails.append(el('path',{d:path,fill:'none',stroke:'#dfeced','stroke-width':7,'stroke-linecap':'round','stroke-linejoin':'round'}));
  });
- for(let i=0;i<8;i++){
-  const cx=110+(i%4)*280,cy=40+Math.floor(i/4)*140;
-  stations.append(el('rect',{x:cx-60,y:cy-7,width:120,height:31,rx:9,fill:'#16384e',stroke:'#e0f9ff','stroke-width':2}));
-  stations.append(el('text',{x:cx,y:cy+15,'font-size':14,'font-weight':900,fill:'#fff','text-anchor':'middle'},STOPS[i]));
+ // Tiny station buildings, roofs and signs follow the route.
+ const stopLabels=[['🚉','ひかり中央'],['🌳','若葉通り'],['🎠','青空公園'],['🌊','みずいろ橋'],['🌟','星の丘'],['🏙️','新都市'],['🎁','虹の市場'],['🏁','スターライト']];
+ for(let i=0;i<stopLabels.length;i++){
+  const x=52+(i%4)*282,y=45+Math.floor(i/4)*142;
+  const g=el('g',{filter:'url(#shadow)'});
+  g.append(el('rect',{x,y:y+20,width:160,height:62,rx:11,fill:'#fff1d8',stroke:'#bdaf91','stroke-width':3}));
+  g.append(el('polygon',{points:(x-9)+','+(y+23)+' '+(x+80)+','+(y-10)+' '+(x+170)+','+(y+23),fill:roofs[i%roofs.length],stroke:'#aa786f','stroke-width':3,'stroke-linejoin':'round'}));
+  g.append(el('rect',{x:x+9,y:y+39,width:39,height:30,rx:5,fill:'#9ad2df'}));
+  g.append(el('rect',{x:x+58,y:y+39,width:91,height:31,rx:7,fill:'#fffdf1',stroke:'#b4a78c','stroke-width':2}));
+  g.append(el('text',{x:x+105,y:y+60,'text-anchor':'middle','font-size':16,'font-weight':900,fill:'#426075'},stopLabels[i][1]));
+  g.append(el('text',{x:x+31,y:y+17,'text-anchor':'middle','font-size':28},stopLabels[i][0]));
+  stations.append(g);
  }
- // Tall central city tower and recognizable station landmark.
- buildings.append(el('rect',{x:515,y:104,width:110,height:177,rx:8,fill:'#a2bfcd',stroke:'#557c95','stroke-width':7}));
- buildings.append(el('polygon',{points:'515,104 552,60 663,60 625,104',fill:'#63adca'}));
- for(let i=0;i<5;i++)for(let j=0;j<3;j++)buildings.append(el('rect',{x:530+j*30,y:125+i*27,width:18,height:13,fill:'#dff5ff'}));
- buildings.append(el('rect',{x:508,y:262,width:124,height:37,rx:8,fill:'#fff2cb',stroke:'#cf9e55','stroke-width':3}));
- buildings.append(el('text',{x:570,y:288,fill:'#153e5a','font-size':20,'font-weight':900,'text-anchor':'middle'},'中央駅'));
+ // A landmark station: cream plaster, brick-red roof and striped awning.
+ const base=el('g',{filter:'url(#shadow)'});
+ base.append(el('rect',{x:486,y:48,width:170,height:185,rx:10,fill:'#fcdfbc',stroke:'#bc967b','stroke-width':7}));
+ base.append(el('polygon',{points:'466,58 572,-14 682,58 658,73 569,16 486,76',fill:'#c97967',stroke:'#a95e4f','stroke-width':6,'stroke-linejoin':'round'}));
+ base.append(el('rect',{x:515,y:98,width:111,height:76,rx:8,fill:'#8bc2cc',stroke:'#b78d6f','stroke-width':6}));
+ base.append(el('path',{d:'M485 178 H657 V207 H485Z',fill:'#f6f3dd',stroke:'#b48d69','stroke-width':3}));
+ for(let i=0;i<7;i++)base.append(el('polygon',{points:(485+i*25)+',178 '+(498+i*25)+',178 '+(489+i*25)+',207 '+(485+i*25)+',207',fill:'#e7b98e'}));
+ base.append(el('rect',{x:514,y:219,width:120,height:45,rx:10,fill:'#fff8de',stroke:'#ba9778','stroke-width':3}));
+ base.append(el('text',{x:574,y:250,'text-anchor':'middle','font-size':27,'font-weight':900,fill:'#745849'},'🚉 中央駅'));
+ buildings.append(base);
 }
 function lerpPath(points,t){const segments=points.length-1,v=clamp(t,0,1)*segments,i=Math.min(segments-1,Math.floor(v)),k=v-i;return {x:points[i][0]+(points[i+1][0]-points[i][0])*k,y:points[i][1]+(points[i+1][1]-points[i][1])*k};}
 function activeLanes(sec){
@@ -130,9 +162,16 @@ function paintTrain(progress){
   const p=lerpPath(line,t),q=lerpPath(line,Math.min(1,t+.003));
   const angle=Math.atan2(q.y-p.y,q.x-p.x)*180/Math.PI;
   const group=el('g',{transform:'translate('+p.x+' '+p.y+') rotate('+angle+')',filter:'url(#shadow)',opacity:retained?1:.42});
-  group.append(el('rect',{x:-49,y:-17,width:100,height:34,rx:11,fill:COLORS[i],stroke:retained?'#fff':'#8ca4b0','stroke-width':retained?4:2}));
-  for(let k=0;k<4;k++)group.append(el('rect',{x:-35+k*20,y:-12,width:13,height:12,rx:2,fill:'#e5f6ff'}));
-  group.append(el('text',{x:0,y:12,fill:'#11293a','font-size':13,'font-weight':950,'text-anchor':'middle'},String(i+1)+'号'));
+  // Rounded miniature two-car train, window highlights and tiny wheels.
+  group.append(el('rect',{x:-54,y:-21,width:111,height:42,rx:17,fill:'#fff8ea',stroke:'#718f94','stroke-width':3}));
+  group.append(el('rect',{x:-51,y:-8,width:105,height:25,rx:11,fill:COLORS[i],stroke:'none'}));
+  group.append(el('rect',{x:-46,y:-17,width:38,height:17,rx:6,fill:'#a9dbe5'}));
+  for(let k=0;k<3;k++)group.append(el('rect',{x:-1+k*16,y:-17,width:12,height:16,rx:3,fill:'#9fd2e3'}));
+  group.append(el('rect',{x:-19,y:-17,width:4,height:33,rx:2,fill:'#a7a998'}));
+  group.append(el('circle',{cx:-33,cy:19,r:6,fill:'#4e6476'}));
+  group.append(el('circle',{cx:34,cy:19,r:6,fill:'#4e6476'}));
+  group.append(el('rect',{x:-27,y:-4,width:47,height:20,rx:8,fill:'#fff2d1',stroke:'#e5cb9f','stroke-width':1.5}));
+  group.append(el('text',{x:-4,y:11,fill:'#163349','font-size':15,'font-weight':950,'text-anchor':'middle'},String(i+1)+'号'));
   trains.append(group);
  });
  $('meter').value=progress*30;
@@ -144,42 +183,70 @@ function paintTrain(progress){
 // A second, self-contained world replaces the train scene at the terminus.
 function buildBakery(){
  const stage=$('bakeryStage'),transition=$('transitionStage');stage.replaceChildren();transition.replaceChildren();
- transition.append(el('rect',{width:1200,height:750,fill:'#23465e'}));
- transition.append(el('rect',{x:175,y:110,width:850,height:460,rx:22,fill:'#def0ea',stroke:'#659caa','stroke-width':12}));
- transition.append(el('rect',{x:330,y:165,width:540,height:110,rx:18,fill:'#235e80'}));
- transition.append(el('text',{x:600,y:240,'text-anchor':'middle','font-size':53,'font-weight':900,fill:'#fff'},'🚉 スターライト駅'));
- transition.append(el('text',{x:600,y:360,'text-anchor':'middle','font-size':45,'font-weight':900,fill:'#214760'},(round.winningLane+1)+'号列車 到着！'));
- transition.append(el('text',{x:600,y:452,'text-anchor':'middle','font-size':34,'font-weight':900,fill:'#a45d27'},'改札を抜けて、パン屋へ急げ！'));
- transition.append(el('text',{x:600,y:505,'text-anchor':'middle','font-size':29,fill:'#355d6e'},'🥐 ラスト1個のメロンパン争奪戦！'));
- stage.append(el('rect',{width:1200,height:750,fill:'#b9e9e0'}));
- stage.append(el('rect',{x:0,y:185,width:1200,height:565,fill:'#dfd9bb'}));
- // Shopping street, crosswalks and houses set a warm station-town mood.
+ // Scene two: a cozy ticket-gate room rather than a text-only transition.
+ transition.append(el('rect',{width:1200,height:750,fill:'#e3efdf'}));
+ transition.append(el('rect',{x:95,y:73,width:1010,height:608,rx:40,fill:'#fff3df',stroke:'#bfa28d','stroke-width':12}));
+ transition.append(el('rect',{x:155,y:97,width:890,height:93,rx:20,fill:'#8cb7c6'}));
+ transition.append(el('text',{x:600,y:163,'text-anchor':'middle','font-size':48,'font-weight':900,fill:'#fff9e9'},'🚉 スターライト駅に到着！'));
+ for(let i=0;i<6;i++){
+  const x=215+i*134;
+  transition.append(el('rect',{x,y:281,width:96,height:176,rx:13,fill:i%2?'#9cc6dd':'#eaa6a9',stroke:'#718d97','stroke-width':5}));
+  transition.append(el('rect',{x:x+9,y:289,width:78,height:17,rx:5,fill:'#d4f8dd'}));
+  transition.append(el('rect',{x:x+26,y:332,width:44,height:60,rx:10,fill:'#eaf6f1'}));
+  transition.append(el('rect',{x:x+13,y:409,width:70,height:12,rx:4,fill:'#477e91'}));
+ }
+ transition.append(el('text',{x:600,y:538,'text-anchor':'middle','font-size':42,'font-weight':900,fill:'#785e48'},(round.winningLane+1)+'号列車の乗客が改札を通過！'));
+ transition.append(el('text',{x:600,y:614,'text-anchor':'middle','font-size':41,'font-weight':900,fill:'#b16a43'},'🥐 パン屋さんへ急げ〜！'));
+ // Scene three: warm Japanese shopping street, red storefront and melon pan.
+ stage.append(el('rect',{width:1200,height:750,fill:'#cfe9d9'}));
+ stage.append(el('rect',{x:0,y:185,width:1200,height:565,fill:'#ebdfc7'}));
  for(let i=0;i<9;i++){
-  const x=i*143-16;
-  stage.append(el('rect',{x,y:70,width:118,height:116,rx:8,fill:i%2?'#f1cfae':'#aed1db',stroke:'#718d92','stroke-width':4}));
-  stage.append(el('polygon',{points:x+','+70+' '+(x+59)+',28 '+(x+118)+',70',fill:['#d88780','#7caa9f','#e9b873'][i%3]}));
-  for(let j=0;j<3;j++)stage.append(el('rect',{x:x+15+j*32,y:105,width:20,height:32,fill:'#e4f5fb',stroke:'#598999','stroke-width':2}));
+  const x=i*148-20,roof=['#d68d80','#9ac2bb','#ddbd85'][i%3];
+  stage.append(el('rect',{x,y:75,width:120,height:140,rx:9,fill:i%2?'#f7dfc2':'#e2e7d1',stroke:'#b8a18b','stroke-width':4}));
+  stage.append(el('polygon',{points:x+',85 '+(x+60)+',28 '+(x+128)+',85',fill:roof,stroke:'#aa7b70','stroke-width':5,'stroke-linejoin':'round'}));
+  for(let k=0;k<3;k++)stage.append(el('rect',{x:x+16+k*35,y:117,width:22,height:38,rx:3,fill:'#99cbd6',stroke:'#a48b72','stroke-width':2}));
+  stage.append(el('rect',{x:x+32,y:170,width:40,height:45,rx:5,fill:'#b88974'}));
  }
- stage.append(el('rect',{x:35,y:220,width:315,height:392,rx:20,fill:'#cce5ef',stroke:'#5e92aa','stroke-width':10}));
- stage.append(el('rect',{x:70,y:237,width:248,height:74,rx:12,fill:'#20587c'}));
- stage.append(el('text',{x:193,y:285,'text-anchor':'middle','font-size':39,'font-weight':900,fill:'#fff'},'🚉 改札'));
+ // Gate building
+ stage.append(el('rect',{x:24,y:225,width:331,height:385,rx:27,fill:'#d4e9ed',stroke:'#8eaaa5','stroke-width':9,filter:'url(#shadow)'}));
+ stage.append(el('polygon',{points:'8,240 177,156 372,240',fill:'#bf7970',stroke:'#a46d62','stroke-width':7}));
+ stage.append(el('rect',{x:66,y:252,width:244,height:71,rx:11,fill:'#377b8b'}));
+ stage.append(el('text',{x:188,y:299,'text-anchor':'middle','font-size':42,'font-weight':900,fill:'#fff7e5'},'🚉 改札口'));
  for(let i=0;i<4;i++){
-  stage.append(el('rect',{x:95+i*50,y:335,width:26,height:110,rx:8,fill:'#276a83'}));
-  stage.append(el('rect',{x:96+i*50,y:339,width:24,height:15,rx:3,fill:'#8cf9c9'}));
+  const x=92+i*54;
+  stage.append(el('rect',{x,y:356,width:35,height:116,rx:10,fill:i%2?'#e3a1a1':'#9dc7dd',stroke:'#799e9f','stroke-width':4}));
+  stage.append(el('rect',{x:x+6,y:363,width:23,height:16,rx:4,fill:'#c8f5ca'}));
+  stage.append(el('path',{d:'M '+(x+9)+' 419 h 17',stroke:'#fff6e9','stroke-width':5}));
  }
- stage.append(el('text',{x:192,y:538,'text-anchor':'middle','font-size':28,'font-weight':900,fill:'#205474'},(round.winningLane+1)+'号列車の乗客'));
- stage.append(el('rect',{x:360,y:305,width:450,height:305,rx:23,fill:'#ece8cf',stroke:'#c7b28b','stroke-width':9}));
- for(let i=0;i<10;i++)stage.append(el('rect',{x:385+i*42,y:312,width:23,height:285,fill:'#fff9eb',opacity:.72}));
- stage.append(el('rect',{x:820,y:213,width:340,height:404,rx:22,fill:'#fae1af',stroke:'#ae7247','stroke-width':10}));
- stage.append(el('polygon',{points:'800,220 990,87 1180,220',fill:'#c67570',stroke:'#884a4d','stroke-width':7}));
- stage.append(el('rect',{x:836,y:232,width:310,height:72,rx:12,fill:'#744a3e'}));
- stage.append(el('text',{x:989,y:282,'text-anchor':'middle','font-size':39,'font-weight':900,fill:'#fff4ca'},'🥖 パン屋さん'));
- stage.append(el('rect',{x:865,y:334,width:248,height:175,rx:9,fill:'#bde7ea',stroke:'#789fac','stroke-width':5}));
- stage.append(el('text',{x:988,y:379,'text-anchor':'middle','font-size':30,'font-weight':900,fill:'#805039'},'のこり 1 個！'));
- stage.append(el('circle',{cx:988,cy:435,r:34,fill:'#d99038',stroke:'#a65e21','stroke-width':6}));
- for(let i=-2;i<=2;i++)stage.append(el('path',{d:'M '+(974+i*6)+' 418 l 27 29',stroke:'#f5c97a','stroke-width':4,'stroke-linecap':'round'}));
- stage.append(el('text',{x:988,y:565,'text-anchor':'middle','font-size':24,'font-weight':800,fill:'#7f4b38'},'🍈 メロンパン売り切れ間近'));
- stage.append(el('path',{d:'M 340 616 H 822',stroke:'#a89173','stroke-width':9,'stroke-dasharray':'14 17'}));
+ stage.append(el('text',{x:188,y:546,'text-anchor':'middle','font-size':25,'font-weight':900,fill:'#456b75'},(round.winningLane+1)+'号列車から出発！'));
+ // Street: a visible route with paving and flower planters.
+ stage.append(el('rect',{x:358,y:305,width:463,height:322,rx:22,fill:'#e8d5ad',stroke:'#bca37f','stroke-width':6}));
+ for(let y=328;y<605;y+=35)for(let x=375;x<808;x+=55)stage.append(el('rect',{x:x+(y%2)*10,y,width:48,height:28,rx:4,fill:(x+y)%3===0?'#f8e6c2':'#f1ddbd',stroke:'#d6c09c','stroke-width':1.3}));
+ for(let k=0;k<5;k++){
+  const x=385+k*86;
+  stage.append(el('rect',{x,y:225,width:15,height:56,rx:5,fill:'#ba9572'}));
+  stage.append(el('circle',{cx:x+7,cy:216,r:23,fill:k%2?'#a2c99d':'#88bfa7'}));
+  stage.append(el('circle',{cx:x+16,cy:208,r:17,fill:'#c4dba1'}));
+ }
+ // Large red bakery storefront with curved awning and bread-shaped logo.
+ stage.append(el('rect',{x:814,y:193,width:354,height:436,rx:24,fill:'#d76158',stroke:'#aa494a','stroke-width':11,filter:'url(#shadow)'}));
+ stage.append(el('polygon',{points:'787,214 995,99 1180,214',fill:'#a94448',stroke:'#873c42','stroke-width':10,'stroke-linejoin':'round'}));
+ stage.append(el('rect',{x:840,y:231,width:297,height:72,rx:13,fill:'#563f3c',stroke:'#f6d5ad','stroke-width':4}));
+ stage.append(el('text',{x:989,y:283,'text-anchor':'middle','font-size':41,'font-weight':950,fill:'#fbedce'},'メロンパン屋'));
+ stage.append(el('circle',{cx:991,cy:163,r:49,fill:'#e6b46a',stroke:'#fff2ce','stroke-width':9}));
+ for(let k=-2;k<=2;k++)stage.append(el('path',{d:'M '+(971+k*10)+' 144 l 35 39',stroke:'#fdf0ba','stroke-width':5,'stroke-linecap':'round'}));
+ stage.append(el('rect',{x:847,y:339,width:290,height:167,rx:14,fill:'#a6d6d7',stroke:'#f6ebcf','stroke-width':9}));
+ stage.append(el('rect',{x:865,y:350,width:254,height:39,rx:10,fill:'#fff4dd'}));
+ stage.append(el('text',{x:993,y:379,'text-anchor':'middle','font-size':27,'font-weight':900,fill:'#a44e3b'},'最後の 1 個！'));
+ // Bakery display shelves and several pastries.
+ for(let k=0;k<3;k++){
+  stage.append(el('line',{x1:862,y1:408+k*33,x2:1122,y2:408+k*33,stroke:'#a46f58','stroke-width':7}));
+  for(let j=0;j<5;j++)stage.append(el('ellipse',{cx:883+j*50,cy:399+k*34,rx:14,ry:9,fill:k%2?'#bd8559':'#e8ad63',stroke:'#f8db9b','stroke-width':2}));
+ }
+ stage.append(el('circle',{cx:988,cy:436,r:38,fill:'#e2a64c',stroke:'#a96a39','stroke-width':6}));
+ for(let k=-2;k<=2;k++)stage.append(el('path',{d:'M '+(970+k*7)+' 417 l 31 32',stroke:'#f8d48c','stroke-width':4,'stroke-linecap':'round'}));
+ stage.append(el('rect',{x:845,y:530,width:288,height:54,rx:13,fill:'#fff0c7'}));
+ stage.append(el('text',{x:990,y:566,'text-anchor':'middle','font-size':28,'font-weight':900,fill:'#a35d4f'},'🥐 のこり１個！'));
  stage.append(el('g',{id:'runners'}));stage.append(el('g',{id:'bakeryEffects'}));
 }
 function bakeryRunners(sec,finished=false){
@@ -206,10 +273,14 @@ function bakeryRunners(sec,finished=false){
   const bounce=p>0&&p<1?Math.abs(Math.sin(elapsed*9+slot))*7:0;
   const person=el('g',{transform:'translate('+x+' '+(y-bounce)+')',opacity:sec>=40&&!survivor?.5:1});
   person.append(el('ellipse',{cx:0,cy:19,rx:19,ry:6,fill:'#426477',opacity:.25}));
-  person.append(el('circle',{cx:0,cy:-10,r:13,fill:'#ffe4bb',stroke:'#68483c','stroke-width':2}));
-  person.append(el('rect',{x:-15,y:2,width:30,height:25,rx:9,fill:COLORS[slot%5],stroke:'#fff','stroke-width':3}));
+  person.append(el('circle',{cx:0,cy:-10,r:15,fill:'#ffe4bb',stroke:'#986f59','stroke-width':2}));
+  person.append(el('path',{d:'M -15 -13 Q -9 -31 6 -24 Q 19 -22 14 -7 Q 8 -18 2 -17 Q -8 -23 -15 -13',fill:['#765e4f','#aa7856','#574b59'][slot%3]}));
+  person.append(el('circle',{cx:-5,cy:-9,r:1.8,fill:'#392d35'}));
+  person.append(el('circle',{cx:6,cy:-9,r:1.8,fill:'#392d35'}));
+  person.append(el('path',{d:'M -3 -3 q 4 4 8 0',stroke:'#ad715e','stroke-width':1.5,fill:'none'}));
+  person.append(el('rect',{x:-17,y:2,width:34,height:29,rx:12,fill:COLORS[slot%5],stroke:'#fff4df','stroke-width':3}));
   person.append(el('text',{x:0,y:20,'text-anchor':'middle','font-size':18,'font-weight':950,fill:'#142e40'},String(number)));
-  person.append(el('path',{d:'M -8 27 l -5 10 M 8 27 l 5 10',stroke:'#273d52','stroke-width':4,'stroke-linecap':'round'}));
+  person.append(el('path',{d:'M -10 26 l -7 10 M 10 26 l 7 10 M -18 9 l -8 9 M 18 9 l 8 -9',stroke:'#36546b','stroke-width':5,'stroke-linecap':'round'}));
   run.append(person);
  }
  const effects=$('bakeryEffects');effects.replaceChildren();
