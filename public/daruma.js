@@ -39,7 +39,7 @@ export function darumaPosition(round,n,elapsed) {
  }else{
    position=Math.min(position,t<26000?.88:.90+hash(round.seed,n,5)*.07);
  }
- return Math.min(.985,position);
+ return n===round.winner?Math.min(1,position):Math.min(.985,position);
 }
 export function darumaFacing(elapsed){
  const t=Math.max(0,elapsed)%3500;
