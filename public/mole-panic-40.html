@@ -8,7 +8,7 @@
 <div class="controls"><button id="left" type="button">⬅️ 左</button><button id="hit" type="button">🔨 アクション！</button><button id="right" type="button">右 ➡️</button><button id="start" type="button">▶ ゲーム開始</button></div>
 <div class="status"><span id="status" aria-live="polite">40匹のもぐらがスタンバイ！</span><span id="phase">各ラウンド10秒</span></div>
 <div id="winner" aria-live="polite"></div><div id="numbers" class="numbers" aria-label="全参加番号"></div>
-<p class="hint">第1ラウンドは画面タップまたはアクションボタンでもぐら叩き。第2ラウンドは左右ボタンまたは←→キーでトロッコのレーン変更。決勝はボタン連打で宝箱の鍵を開けよう！ 先生の操作は得点・コンボ・演出に反映されますが、番号ごとの当選確率は全員同じです。強い点滅は使いません。</p></main>
+<p class="hint">第1ラウンドは不規則な9つの穴から次々に飛び出すもぐらを画面タップまたはアクションボタンで叩きます（同じ出現への連打は得点になりません）。第2ラウンドは左右ボタンまたは←→キーでトロッコのレーン変更。決勝はボタン連打で宝箱の鍵を開けよう！ 先生の操作は得点・コンボ・演出に反映されますが、番号ごとの当選確率は全員同じです。強い点滅は使いません。</p></main>
 <script>
 'use strict';
 const $=id=>document.getElementById(id),canvas=$('screen'),c=canvas.getContext('2d'),W=1200,H=720,TOTAL=30000;
@@ -38,10 +38,45 @@ function background(top,bottom){const g=c.createLinearGradient(0,0,0,H);g.addCol
 function mole(x,y,n,t,scale=1){c.save();c.translate(x,y);c.scale(scale,scale);const bob=reduced?0:Math.sin(t/230+n*2)*7;
  rect(-46,25,92,27,'#432b59',17);c.fillStyle='#12263c';c.beginPath();c.ellipse(0,34,40,16,0,0,7);c.fill();
  c.translate(0,bob);circle(0,-9,35,colors[n%colors.length]);circle(-12,-14,5,'#fff');circle(12,-14,5,'#fff');circle(-11,-13,2.8,'#26354e');circle(13,-13,2.8,'#26354e');circle(0,1,10,'#fbd1bf');circle(0,-1,4,'#a76770');rect(-24,10,48,22,'#fff1bd',9);text(n,0,29,24,'#27344d');c.restore()}
+// Nine asymmetric, arcade-scale holes rather than a static 8x5 student grid.
+// All 1..n numbers circulate through them on deterministic 850ms waves.
+const HOLES=[
+ {x:180,y:235,s:1.07},{x:480,y:208,s:.87},{x:827,y:244,s:1.22},
+ {x:1080,y:345,s:.83},{x:663,y:395,s:1.02},{x:288,y:452,s:1.24},
+ {x:124,y:580,s:.84},{x:526,y:572,s:1.12},{x:954,y:578,s:1.00}
+];
+let hitSpawns=new Set();
+function popAt(ms,index){
+ const wave=Math.max(0,Math.floor(ms/850)),phase=(ms%850)/850;
+ const indexInDeck=(wave*9+index)%40,number=round.grid[indexInDeck];
+ const visible=number!==null && (wave+index*3)%7!==0 && phase<.88;
+ return {wave,number,visible,phase,key:wave+'-'+index};
+}
 function drawMoles(ms){
- background('#3f2c77','#55346c');text('ROUND 1  🔨 MOLE PANIC!',600,68,47,'#ffe799');text('画面をタップ！ もぐらを叩いてスコアGET',600,112,24,'#a9fff0');
- for(let i=0;i<40;i++){const x=92+(i%8)*145,y=177+Math.floor(i/8)*108;rect(x-58,y+34,116,36,'#76557c',18);const n=round.grid[i];if(n!==null)mole(x,y,n,ms,.72);else{circle(x,y+12,15,'#655073')}}
- const flash=lastHit>0&&ms-lastHit<350; if(flash){circle(600,639,32,'#fff1a2');text('HIT! +100',600,648,26,'#73307c')}
+ background('#392867','#66427b');
+ text('ROUND 1  🔨 MOLE PANIC!',600,67,47,'#ffe799');
+ text('つぎつぎ飛び出す！ ねらって叩こう！',600,113,27,'#a9fff0');
+ for(let i=0;i<28;i++){const x=(i*193+65)%1200,y=140+(i*157)%555;circle(x,y,5+(i%4)*2,i%2?'#6f4b90':'#856ca2')}
+ // Irregular, overlapping foreground platforms and scattered arcade props.
+ rect(10,342,240,40,'#7755a0',18);
+ rect(355,334,265,33,'#8a659f',17);
+ rect(729,400,354,38,'#7f559f',17);
+ rect(60,635,1010,40,'#64447e',20);
+ for(let i=0;i<HOLES.length;i++){
+  const h=HOLES[i],pop=popAt(ms,i),rise=reduced?1:Math.min(1,pop.phase*7,(.88-pop.phase)*10);
+  c.save();c.translate(h.x,h.y);c.scale(h.s,h.s);
+  circle(0,37,64,'#c39d74');circle(0,33,52,'#47324d');
+  c.restore();
+  if(pop.visible){
+   const raised=Math.max(0,rise),bounce=(1-raised)*32;
+   mole(h.x,h.y+bounce,pop.number,ms,h.s*.93);
+   if(hitSpawns.has(pop.key)){
+    c.save();c.globalAlpha=.75;text('💥',h.x,h.y-60*h.s,35,'#fff1af');c.restore();
+   }
+  }
+ }
+ const flash=lastHit>=0&&ms-lastHit<310;
+ if(flash){rect(455,626,290,57,'#fff1bf',16);text('HIT!  COMBO '+combo,600,666,28,'#673b70')}
 }
 function crystals(ms){for(let i=0;i<24;i++){const x=(i*151+73)%1200,y=100+(i*103)%600,s=8+i%4*5;circle(x,y,s/2,['#8ee4ff','#b8a4ff','#ffe493'][i%3]);line(x,y-s,x,y+s,'#d2fbff',3);line(x-s,y,x+s,y,'#d2fbff',3)}}
 function cart(x,y,n,t,opacity=1){c.save();c.globalAlpha=opacity;c.translate(x,y);rect(-61,-15,122,59,'#d28555',12);rect(-54,-25,108,22,'#ffc983',12);circle(-39,47,15,'#38465f');circle(38,47,15,'#38465f');circle(0,-47,27,colors[n%colors.length]);text(n,0,-35,25,'#213b54');c.restore()}
@@ -71,10 +106,29 @@ function updateUi(ms){const phase=stageAt(ms),remaining=clamp((TOTAL-ms)/1000,0,
  updateNumbers(ms)}
 function audioReady(){if(!sound)return;try{audio??=new(window.AudioContext||window.webkitAudioContext)();audio.resume()}catch{}}
 function tone(f=440,d=.08){if(!sound||!audio||audio.state!=='running'||document.hidden)return;const o=audio.createOscillator(),g=audio.createGain(),t=audio.currentTime;o.type='triangle';o.frequency.setValueAtTime(f,t);g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(.09,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(audio.destination);o.start(t);o.stop(t+d+.03)}
-function action(x=null,y=null){if(!playing)return;const stage=stageAt(elapsed);if(stage===0&&x!==null&&y!==null){const col=Math.round((x-92)/145),row=Math.round((y-177)/108),idx=row*8+col;if(col>=0&&col<8&&row>=0&&row<5&&Math.abs(x-(92+col*145))<58&&Math.abs(y-(177+row*108))<53&&round.grid[idx]!==null){score+=100+Math.min(combo,15)*20;combo++;lastHit=elapsed;tone(500+combo*15,.06)}else{combo=0;tone(210,.07)}}else{score+=stage===2?120:70;combo++;lastHit=elapsed;tone(stage===2?720:430,.06)}
- updateUi(elapsed)}
+function action(x=null,y=null){
+ if(!playing)return;
+ const stage=stageAt(elapsed);
+ if(stage===0){
+  let hit=-1;
+  if(x!==null&&y!==null){
+   // Account for each differently sized, irregularly placed hole.
+   for(let i=HOLES.length-1;i>=0;i--){
+    const h=HOLES[i],pop=popAt(elapsed,i);
+    if(pop.visible&&!hitSpawns.has(pop.key)&&Math.hypot((x-h.x)/h.s,(y-h.y+8)/h.s)<67){hit=i;break}
+   }
+  }else{
+   // The large physical button still works without directly touching screen.
+   const options=HOLES.map((_,i)=>i).filter(i=>{const p=popAt(elapsed,i);return p.visible&&!hitSpawns.has(p.key)});
+   if(options.length)hit=options[Math.floor(elapsed/125)%options.length];
+  }
+  if(hit>=0){hitSpawns.add(popAt(elapsed,hit).key);score+=100+Math.min(combo,15)*20;combo++;lastHit=elapsed;tone(500+combo*15,.06)}
+  else{combo=0;tone(210,.07)}
+ }else{score+=stage===2?120:70;combo++;lastHit=elapsed;tone(stage===2?720:430,.06)}
+ updateUi(elapsed);
+}
 function steer(dir){if(!playing)return;const stage=stageAt(elapsed);if(stage===1){track=clamp(track+dir,0,2);score+=60;combo++;tone(340+track*95,.07)}else{action()}updateUi(elapsed)}
-function clear(){cancelAnimationFrame(frame);frame=0;playing=false;elapsed=0;paused=0;score=0;combo=0;lastHit=-1;lastStage=-1;track=1;$('winner').textContent='';
+function clear(){cancelAnimationFrame(frame);frame=0;playing=false;elapsed=0;paused=0;score=0;combo=0;lastHit=-1;lastStage=-1;track=1;hitSpawns.clear();$('winner').textContent='';
  const n=clamp(Math.floor(Number($('count').value)||40),1,40);$('count').value=n;round=newRound(n);
  $('numbers').replaceChildren();for(let i=1;i<=n;i++){const span=document.createElement('span');span.textContent=i;$('numbers').append(span)}
  $('start').disabled=false;$('count').disabled=false;updateUi(0);draw(0)}
