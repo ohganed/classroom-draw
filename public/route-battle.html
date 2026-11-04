@@ -2,19 +2,50 @@
 <html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#172e47"><title>🚃 出発進行！路線バトル | だれの番？</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:linear-gradient(160deg,#f2ead9,#d6e5dc);color:#26465a;font-family:system-ui,-apple-system,sans-serif}main{max-width:1320px;margin:auto;padding:12px}.head,.toolbar,.hud,.cards{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.head{justify-content:space-between}h1{font-size:clamp(22px,3.7vw,37px);margin:5px 0}a{color:#226e84;font-weight:700}.toolbar{padding:10px 0}.toolbar label{font-weight:750}.toolbar input{width:75px;font-size:19px;padding:8px;border-radius:12px;border:2px solid #89b9d4}.toolbar button{border:0;border-radius:14px;padding:12px 18px;font-size:17px;font-weight:900;color:#18304a;background:#d8f5f7;cursor:pointer}.toolbar button.primary{background:#ffcf6c}.toolbar button:disabled{opacity:.55}.hud{justify-content:space-around;background:#fff8e9;border:2px solid #c9b7a0;border-radius:15px;padding:9px;margin:8px 0;font-weight:850}.hud strong{color:#b16a4c;font-variant-numeric:tabular-nums}#world{width:100%;height:auto;display:block;border:4px solid #78a3b8;border-radius:20px;background:#a3d9ea;box-shadow:0 10px 30px #0006}.bottom{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin-top:10px}#status{font-size:clamp(16px,2.2vw,24px);font-weight:850;min-height:35px;color:#915738}#result{font-size:clamp(24px,4vw,48px);font-weight:950;color:#b96c49;min-height:48px;text-align:center}.cards{justify-content:center;margin:10px 0}.card{background:linear-gradient(#fffaf0,#e6d1ab);color:#72533d;border-radius:13px;min-width:104px;text-align:center;padding:9px;box-shadow:0 5px 0 #bb9c7b;font-weight:900}.card b{font-size:26px;display:block}.small{color:#b7d2dd;font-size:13px;line-height:1.6;margin:10px 0}progress{width:100%;height:13px;accent-color:#f8c65d}#lineup{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;margin-top:10px}#lineup span{border-radius:7px;background:#a9cfce;color:#253b4c;padding:3px;text-align:center;font-size:clamp(11px,1.8vw,17px);font-weight:800}#lineup span.active{background:#ffcf67;color:#173149}#lineup span.win{background:#ffdb69;color:#142a41;outline:3px solid white}#lineup span.out{opacity:.28;filter:grayscale(1)}#lineup span.finalist{background:#ffdc7c;color:#14283b;transform:scale(1.09)}.train-list{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin:12px 0}.train-list>div{background:#fff6e5;border:2px solid var(--train);border-radius:12px;padding:7px;font-weight:800;transition:opacity .3s}.train-list>div.out{opacity:.3}.train-list>div.finalist{background:#2c5675;box-shadow:0 0 0 2px #ffe5a4 inset}.train-list small{display:block;color:#4c6875;font-size:12px;line-height:1.5;margin-top:4px}@media(max-width:600px){.train-list{grid-template-columns:repeat(2,minmax(0,1fr))}}button:focus-visible,a:focus-visible{outline:4px solid #ffef8d;outline-offset:3px}@media(max-width:600px){main{padding-top:max(12px,env(safe-area-inset-top))}.card{min-width:70px;padding:6px}.card b{font-size:21px}.hud{font-size:12px}.toolbar button{padding:10px 13px}#lineup{grid-template-columns:repeat(8,1fr)}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+
+/* Neon arcade cabinet outside, warm miniature world inside. */
+body{background:radial-gradient(ellipse at 50% 0%,#243f72 0%,#080a1b 63%,#040610 100%);color:#f8f5ff;min-height:100vh}
+main{max-width:1400px;border-left:7px solid #34376e;border-right:7px solid #34376e;box-shadow:0 0 0 3px #71e7ff44,0 0 64px #45b3ff18;background:#0f1732}
+.head{background:linear-gradient(90deg,#321359,#142a62,#571753);border:2px solid #7ceeff;border-radius:15px;padding:8px 14px;box-shadow:inset 0 0 18px #52a7ef4b,0 0 18px #e879f555}
+h1{color:#ffe6a0;text-shadow:0 2px 0 #9b3f6e,0 0 14px #f55dcd;font-size:clamp(23px,4vw,44px);letter-spacing:.02em}
+a{color:#abf5ff}.toolbar label{color:#f8ecb8}.toolbar button{background:linear-gradient(#f7efff,#adcbf7);border:2px solid #e8f9ff;box-shadow:0 4px 0 #315486,0 0 14px #539cff4a}
+.toolbar button.primary{background:linear-gradient(#ffed92,#ffad50);border-color:#fff9d3;box-shadow:0 5px 0 #c16b35,0 0 18px #ffc64c7a}
+.hud{background:#0b142f;border:2px solid #49cff5;box-shadow:inset 0 0 19px #295e8d,0 0 18px #52cafa50;color:#e9f5ff}
+.hud strong{color:#ffdf7c;text-shadow:0 0 10px #ffcb65}
+#world{border:7px solid #192b6d;outline:3px solid #7bf1ff;box-shadow:0 0 0 10px #1b1448,0 0 28px #2cd5ff95;border-radius:12px;background:#d1eecf}
+#status{color:#ffdc8b;text-shadow:0 0 8px #a06b43;font-size:clamp(17px,2.7vw,27px)}#result{color:#ffe48c;text-shadow:0 0 15px #ffb048}
+.card{background:linear-gradient(#243d76,#141e52);color:#e8f3ff;border:2px solid #749bff;box-shadow:0 4px 0 #172349,0 0 13px #5470f355}
+.train-list>div{background:#182e56;color:#f3f4ff}.train-list small{color:#b1e4f3}
+#lineup span{background:#233461;color:#e6edff;border:1px solid #4975af}
+.small{color:#a7bfda}
+.arcade-top{display:flex;justify-content:space-between;gap:10px;align-items:center;margin:9px 0;padding:9px 16px;border-radius:15px;border:2px solid #ff75d7;background:#150e35;box-shadow:0 0 18px #df60e86d}
+.arcade-top .arcade-logo{font-size:clamp(17px,3vw,30px);font-weight:950;color:#fff0ad;text-shadow:0 0 10px #f57ccc}
+.arcade-top .arcade-kpi{font-weight:900;white-space:nowrap;color:#8cfded;font-variant-numeric:tabular-nums;font-size:clamp(15px,2.5vw,24px)}
+.arcade-controls{display:flex;gap:10px;align-items:stretch;margin:14px 0;padding:14px;background:linear-gradient(130deg,#271648,#101d4b);border:3px solid #df63d2;border-radius:23px;box-shadow:inset 0 0 23px #7426b07a,0 0 20px #873ce254}
+.arcade-controls .action{flex:1;border-radius:22px;border:4px solid #fff1c8;background:radial-gradient(circle at 36% 27%,#fff4a7,#f98740 62%,#b72f4b);color:#281b3d;font-weight:950;font-size:clamp(21px,3vw,32px);min-height:83px;box-shadow:inset 0 -8px 2px #9d264c,0 7px 0 #691d40,0 0 25px #fd9c6270;touch-action:manipulation;cursor:pointer}
+.arcade-controls .action:active{transform:translateY(5px);box-shadow:inset 0 -3px 2px #9d264c,0 2px 0 #691d40}
+.arcade-controls .action:disabled{opacity:.5;cursor:not-allowed}
+.arcade-controls .control-help{flex:1.1;display:flex;flex-direction:column;justify-content:center;gap:5px;font-size:clamp(12px,1.7vw,17px);color:#f3eafa;font-weight:750}
+.arcade-controls .control-help strong{color:#91f9e8;font-size:clamp(17px,2.5vw,23px)}
+#energy{width:100%;accent-color:#72f9d1;height:14px}
+#fever{font-weight:950;color:#ffdc83;min-height:20px;text-align:center}
+#screenLabel{display:block;color:#a4f0ff;letter-spacing:.15em;font-size:12px;font-weight:900;text-align:center;margin:3px 0 14px}
+@media(max-width:600px){main{border-left-width:3px;border-right-width:3px}.head{padding:6px 9px}.arcade-top{flex-wrap:wrap}.arcade-controls{padding:9px;gap:7px}.arcade-controls .action{min-height:75px}.arcade-controls .control-help{font-size:12px}}
 </style></head><body><main><div class="head"><div><a href="./menu.html?stage=3">← ディープ・アーケードへ戻る</a><h1>🚃 出発進行！路線バトル 🍈</h1></div><div class="toolbar"><label>人数 <input id="count" type="number" min="1" max="40" value="40"></label><button id="sound" aria-pressed="false">♪ 音 OFF</button><button id="fullscreen">⛶ 全画面</button></div></div>
+<div class="arcade-top"><span class="arcade-logo">★ ROUTE BATTLE ARCADE ★</span><span class="arcade-kpi">SCORE <strong id="score">000000</strong></span><span class="arcade-kpi">COMBO <strong id="combo">0</strong></span></div>
 <div class="hud"><span>🚉 <strong id="station">始発・ひかり中央</strong></span><span>🛤️ <strong id="distance">あと 8 駅</strong></span><span>🎴 EVENT <strong id="eventCount">0 / 4</strong></span><span>⏱️ <strong id="clock">0.0 / 48秒</strong></span></div>
 <svg id="world" viewBox="0 0 1200 750" role="img" aria-label="斜め上から見たオリジナルの街と線路。5つの列車が駅を巡る抽選ゲーム" xmlns="http://www.w3.org/2000/svg">
 <defs><linearGradient id="grass" x2="0" y2="1"><stop stop-color="#b2e4a7"/><stop offset="1" stop-color="#69b695"/></linearGradient><linearGradient id="water"><stop stop-color="#8de6ff"/><stop offset="1" stop-color="#50a3da"/></linearGradient><linearGradient id="sky" x2="0" y2="1"><stop stop-color="#c1f3fd"/><stop offset="1" stop-color="#9cd3c9"/></linearGradient><filter id="shadow"><feDropShadow dx="4" dy="7" stdDeviation="5" flood-opacity=".26"/></filter></defs>
 <rect width="1200" height="750" fill="url(#grass)"/><g id="scenery"></g><g id="rails"></g><g id="buildings"></g><g id="stations"></g><g id="trains"></g><g id="effects"></g>
 <g id="transitionStage" display="none"></g><g id="bakeryStage" display="none"></g><g id="eventBadge" opacity="0"><rect x="345" y="245" width="510" height="154" rx="25" fill="#14283c" stroke="#ffe49e" stroke-width="7"/><text id="eventEmoji" x="600" y="310" font-size="45" text-anchor="middle">🚧</text><text id="eventLabel" x="600" y="357" fill="#ffe49e" font-weight="900" font-size="34" text-anchor="middle">イベント</text></g>
 <g id="winnerBanner" opacity="0"><rect x="225" y="265" width="750" height="198" rx="31" fill="#12334f" stroke="#ffe19c" stroke-width="9"/><text x="600" y="329" text-anchor="middle" fill="#e9f9ff" font-size="36" font-weight="900">🥐 ラスト1個のメロンパンをゲット！</text><text id="winnerText" x="600" y="418" text-anchor="middle" fill="#ffd56c" font-size="83" font-weight="950">1 番</text></g>
-</svg>
+</svg><span id="screenLabel">STAGE 1 : RAILWAY BATTLE　→　STAGE 2 : MELON PAN DASH</span>
 <div class="toolbar"><button class="primary" id="start">▶ 出発進行！</button><button id="reset">↻ 街を作り直す</button><span id="phase">待機中</span></div><progress id="meter" max="48" value="0"></progress>
+<div class="arcade-controls"><button id="action" class="action" type="button" aria-label="アーケードアクションボタン">⚡ BOOST!</button><div class="control-help"><strong>⚡ 連打でフィーバー！</strong><span>タップ・クリック・スペースキーで応援</span><progress id="energy" max="100" value="0"></progress><span id="fever" aria-live="off">READY!</span></div><button id="motion" type="button" class="action" style="flex:.65;font-size:clamp(14px,2.2vw,22px)" aria-label="端末の傾き操作">📱 体感 OFF</button></div>
 <div class="bottom"><div id="status" aria-live="polite">🏙️ 5つの列車がホームで出発を待っています。</div><div id="result" aria-live="polite"></div></div>
 <div class="cards"><div class="card"><b>🚄</b>急行便</div><div class="card"><b>🎁</b>幸運駅</div><div class="card"><b>🚧</b>工事中</div><div class="card"><b>🌈</b>ワープ</div><div class="card"><b>🥐</b>メロンパン争奪</div></div>
 <div class="train-list" id="trainList" aria-label="各列車の乗客番号"></div><div id="lineup" aria-label="抽選対象となる全番号"></div>
-<p class="small">各番号は等確率で抽選されます。街の出来事や列車の色、先生の操作は当選番号に影響しません。各列車に乗客番号を割り当て、最後の1本に絞ります。その乗客が改札からパン屋へ走り、最後のメロンパン1個を取った番号が当選します。抽選結果は最後まで非公開です。明滅の激しい演出は使いません。</p>
+<p class="small">各番号は等確率で抽選されます。街の出来事や列車の色、先生のBOOST連打や端末の傾き操作は当選番号に影響しません。操作は応援スコアと画面のフィーバー演出に反映されます。各列車に乗客番号を割り当て、最後の1本に絞ります。その乗客が改札からパン屋へ走り、最後のメロンパン1個を取った番号が当選します。抽選結果は最後まで非公開です。明滅の激しい演出は使いません。</p>
 </main><script>
 'use strict';
 const $=id=>document.getElementById(id),NS='http://www.w3.org/2000/svg',WORLD=$('world');
@@ -31,6 +62,7 @@ const RAILS=[
 const el=(name,props={},label='')=>{const e=document.createElementNS(NS,name);for(const [k,v] of Object.entries(props))e.setAttribute(k,String(v));if(label)e.textContent=label;return e;};
 const rng=seed=>{let x=seed>>>0||1;return()=>{x^=x<<13;x^=x>>>17;x^=x<<5;return(x>>>0)/4294967296}};
 let round=null,playing=false,started=0,raf=0,sound=false,audio=null,pausedElapsed=0,lastBeat=-1;
+let score=0,combo=0,energy=0,lastAction=-10000,feverUntil=0,motionOn=false,lastTiltTime=0;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function setup(n,seed){
  const r=rng(seed),numbers=Array.from({length:n},(_,i)=>i+1);
@@ -320,20 +352,69 @@ function displayNumbers(){
 }
 function soundReady(){if(!sound)return;try{audio??=new(window.AudioContext||window.webkitAudioContext)();audio.resume();}catch{}}
 function beep(frequency=450,len=.1){if(!sound||!audio||audio.state!=='running'||document.hidden)return;const t=audio.currentTime,o=audio.createOscillator(),g=audio.createGain();o.type='triangle';o.frequency.setValueAtTime(frequency,t);g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(.06,t+.008);g.gain.exponentialRampToValueAtTime(.0001,t+len);o.connect(g);g.connect(audio.destination);o.start(t);o.stop(t+len+.01);}
+
+function updateArcade(){
+ $('score').textContent=String(score).padStart(6,'0');
+ $('combo').textContent=String(combo);
+ $('energy').value=energy;
+ const now=playing?performance.now()-started:0;
+ $('fever').textContent=playing&&now<feverUntil?'🔥 FEVER MODE!':'⚡ BOOSTをためよう！';
+}
+function cheer(){
+ if(!playing)return;
+ const now=performance.now()-started;
+ if(now-lastAction<115)return; // limits input rate, not chance of winning
+ combo=now-lastAction<1350?combo+1:1;
+ lastAction=now;score+=100+Math.min(combo,30)*12;energy=Math.min(100,energy+9);
+ if(energy>=100){energy=0;score+=1500;feverUntil=now+2600;beep(820,.13);}
+ else if(combo%4===0)beep(480+Math.min(combo,20)*20,.07);
+ updateArcade();
+}
+$('action').onclick=cheer;
+document.addEventListener('keydown',e=>{if(e.code==='Space'&&!e.repeat&&!['INPUT','BUTTON'].includes(document.activeElement?.tagName)){e.preventDefault();cheer();}});
+$('motion').onclick=async()=>{
+ if(motionOn){motionOn=false;$('motion').textContent='📱 体感 OFF';return;}
+ if(typeof DeviceMotionEvent==='undefined'){$('fever').textContent='端末の傾き非対応（BOOSTは使えます）';return;}
+ try{
+  if(typeof DeviceMotionEvent.requestPermission==='function'){
+   const permission=await DeviceMotionEvent.requestPermission();
+   if(permission!=='granted')return;
+  }
+  motionOn=true;$('motion').textContent='📱 体感 ON';
+ }catch(error){$('fever').textContent='モーション許可が必要です';}
+};
+window.addEventListener('devicemotion',e=>{
+ if(!motionOn||!playing)return;
+ const a=e.accelerationIncludingGravity;
+ if(!a)return;
+ const v=Math.hypot(a.x||0,a.y||0,a.z||0);
+ const time=performance.now();
+ if(v>13.8&&time-lastTiltTime>500){lastTiltTime=time;cheer();}
+});
+function renderArcadeFx(sec){
+ const fx=$('effects');fx.replaceChildren();
+ const live=playing&&performance.now()-started<feverUntil;
+ if(!live)return;
+ // A gentle border and static sparks, rather than flashing the whole screen.
+ fx.append(el('rect',{x:14,y:14,width:1172,height:722,rx:27,stroke:'#ffe98b','stroke-width':11,fill:'none',opacity:.88}));
+ fx.append(el('text',{x:600,y:102,'text-anchor':'middle','font-size':67,'font-weight':950,fill:'#ffdf75',stroke:'#724091','stroke-width':4,'paint-order':'stroke'},'🔥 FEVER!'));
+ for(let i=0;i<8;i++)fx.append(el('text',{x:75+i*145,y:130+(i%3)*220,'font-size':26,opacity:.85},'✦'));
+}
+
 function prepare(){
- cancelAnimationFrame(raf);playing=false;pausedElapsed=0;
+ cancelAnimationFrame(raf);playing=false;pausedElapsed=0;score=0;combo=0;energy=0;lastAction=-10000;feverUntil=0;updateArcade();
  const n=clamp(Math.floor(Number($('count').value)||40),1,40);$('count').value=n;
  round=setup(n,crypto.getRandomValues(new Uint32Array(1))[0]);
  drawCity(round.seed);buildBakery();displayNumbers();
  $('winnerBanner').setAttribute('opacity',0);$('eventBadge').setAttribute('opacity',0);
  $('clock').textContent='0.0 / 48秒';$('result').textContent='';$('phase').textContent='待機中';
  $('status').textContent='🏙️ '+n+'人の番号が出発を待っています。';
- $('start').disabled=false;$('count').disabled=false;paintScene(0);
+ $('start').disabled=false;$('count').disabled=false;paintScene(0);$('action').disabled=false;
 }
 function tick(now){
  if(!playing)return;raf=0;
  const ms=clamp(now-started,0,DURATION),sec=ms/1000;
- paintScene(sec);if(sec<30)badges(sec);else $('eventBadge').setAttribute('opacity',0);
+ paintScene(sec);renderArcadeFx(sec);updateArcade();if(sec<30)badges(sec);else $('eventBadge').setAttribute('opacity',0);
  $('clock').textContent=sec.toFixed(1)+' / 48秒';
  $('phase').textContent=sec<17?'5列車が競走中':sec<24?'3列車に絞られた':sec<29?'2列車の接戦':sec<30?'最後の1列車':sec<33?'改札へ移動中':sec<40?'全員ダッシュ':sec<45?'残り'+round.finalists.length+'人':sec<48?'最後のメロンパン争奪！':'決着';
  const beat=Math.floor(sec*2);if(beat!==lastBeat){lastBeat=beat;if(beat%2===0)beep(sec>=33?540+(beat%5)*70:310+(beat%6)*57,.08);}
@@ -341,7 +422,7 @@ function tick(now){
   playing=false;paintScene(48,true);$('eventBadge').setAttribute('opacity',0);
   $('status').textContent='🥐 '+round.winner+'番が最後のメロンパンをゲット！';
   $('result').textContent='🎉 '+round.winner+' 番に決定！';
-  $('phase').textContent='メロンパン獲得！';$('start').disabled=false;$('count').disabled=false;
+  $('phase').textContent='メロンパン獲得！';$('start').disabled=false;$('count').disabled=false;updateArcade();
   $('number-'+round.winner)?.classList.add('win');
   [523,659,784].forEach((f,i)=>setTimeout(()=>beep(f,.22),i*190));return;
  }
